@@ -1,164 +1,194 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>Stoppuhr</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { height: 100%; overscroll-behavior: none; -ms-touch-action: manipulation; touch-action: manipulation; }
-        body {
-            font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            background:#000;
-            color:#fff;
-            display:flex;
-            flex-direction:column;
-            min-height:100vh;
-            overflow:hidden; /* kein Scrollen */
-            -webkit-overflow-scrolling: auto;
-        }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Stoppuhr</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overscroll-behavior: none; -ms-touch-action: manipulation; touch-action: manipulation; }
+    body {
+        font-family: "SF Pro Display","SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background:#000;
+        color:#fff;
+        display:flex;
+        flex-direction:column;
+        min-height:100vh;
+        overflow:hidden;
+    }
 
-        .status-bar { display:flex; justify-content:flex-end; align-items:center; padding:10px 18px; font-size:17px; font-weight:600; color:#fff; }
+    .status-bar { display:flex; justify-content:flex-end; align-items:center; padding:10px 18px; font-size:17px; font-weight:600; color:#fff; }
 
-        /* Container füllt die Höhe, damit wir absolute Positionen innerhalb verwenden können */
-        .stopwatch-container {
-            position:relative;
-            height: calc(100vh - 86px); /* Platz lassen für bottom-nav (ca. 86px) */
-            padding: 20px 12px 0 12px;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            min-height:0;
-        }
+    /* Platz für bottom-nav (86px) + 30px Verschiebung -> insgesamt 116px */
+    .stopwatch-container {
+        position:relative;
+        height: calc(100vh - 116px);
+        padding: 20px 12px 0 12px;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        min-height:0;
+    }
 
-        /* Zeit-Anzeige: 10px nach unten verschoben gegenüber vorher (margin-top 14 -> 24) */
-        .time-display {
-            font-family: "SF Pro Display","SF Pro Text",-apple-system,system-ui,"Helvetica Neue",Arial;
-            font-weight:100;
-            font-size:110px;
-            line-height:1;
-            letter-spacing:-3px;
-            margin-top:24px; /* +10px gegenüber vorher */
-            margin-bottom:36px;
-            -webkit-font-smoothing:antialiased;
-            font-variant-numeric: tabular-nums;
-            text-rendering: optimizeLegibility;
-            white-space: nowrap;
-            user-select: none;
-            z-index: 5;
-        }
+    /* Zeit-Anzeige Container: 90px Höhe (zentriert) */
+    .time-display {
+        height: 90px;                 /* angefragt */
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-family: "SF Pro Display","SF Pro Text",-apple-system,system-ui,"Helvetica Neue",Arial;
+        font-weight:100;
+        font-size:110px;
+        line-height:1;
+        letter-spacing:-3px;
+        margin-top:24px; /* +10px wie gewünscht */
+        margin-bottom:20px;
+        -webkit-font-smoothing:antialiased;
+        font-variant-numeric: tabular-nums;
+        text-rendering: optimizeLegibility;
+        white-space: nowrap;
+        user-select: none;
+        z-index: 5;
+    }
 
-        /* Controls: absolut positioniert so dass der Mittelpunkt der Buttons auf 50% des Viewports liegt */
-        .controls {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            top: calc(50% - 44px); /* 44px = halbe Button-Höhe -> Mittelpunkt der Buttons bei 50% */
-            width: 100%;
-            max-width:420px;
-            height: 100px;
-            display: block;
-            margin: 0;
-            z-index: 20;
-        }
+    /* Controls: Mittelpunkt der Buttons auf 50% des Viewports */
+    .controls {
+        position:absolute;
+        left:50%;
+        transform:translateX(-50%);
+        top: calc(50% - 44px); /* 44px = halbe Button-Höhe */
+        width:100%;
+        max-width:420px;
+        height:100px;
+        margin:0;
+        z-index:20;
+        pointer-events: auto;
+    }
 
-        .control-button {
-            position: absolute;
-            width: 88px;
-            height: 88px;
-            border-radius: 50%;
-            border: none;
-            font-size: 18px;
-            font-weight: 400;
-            cursor: pointer;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            padding:0;
-            transition: transform .08s ease;
-            user-select:none;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-        }
-        .control-button:active { transform: scale(0.96); }
+    .control-button {
+        position:absolute;
+        width:88px;
+        height:88px;
+        border-radius:50%;
+        border:none;
+        font-size:18px;
+        font-weight:400;
+        cursor:pointer;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:0;
+        transition: transform .08s ease;
+        user-select:none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        color: #ffffff;
+    }
+    .control-button:active { transform: scale(0.96); }
 
-        /* Links/rechts Buttons bleiben am Rand innerhalb controls */
-        .control-button.left { left: 14px; top: 6px; }   /* top 6px damit optisch zentriert innerhalb controls */
-        .control-button.right { right: 14px; top: 6px; }
+    .control-button.left { left:14px; top:6px; }   /* optisch zentriert */
+    .control-button.right { right:14px; top:6px; }
 
-        .left-idle { background:#1C1B1E; color:#9A9AA0; }
-        .left-running, .left-stopped { background:#2C2C2E; color:#fff; }
-        .right-idle { background: rgba(39,108,58,0.12); color:#30D058; }
-        .right-running { background: rgba(255,68,58,0.12); color:#FF453A; }
-        .right-stopped { background: rgba(39,108,58,0.12); color:#30D058; }
+    /* Linker Button (Runde) */
+    .left-idle { background:#1C1C1E; color:#9A9AA0; }
+    .left-running, .left-stopped { background:#333333; color:#E8E8E8; }
 
-        /* Dots: auf Höhe der Button-Mittelpunkte (44px innerhalb controls) */
-        .dots {
-            position: absolute;
-            left: 50%;
-            top: 44px; /* Mitte der 88px Buttons */
-            transform: translateX(-50%);
-            display:flex;
-            gap:12px;
-            align-items:center;
-            justify-content:center;
-            z-index: 10;
-            pointer-events:none;
-        }
-        .dot { width:6px; height:6px; border-radius:50%; background:#333; }
-        .dot.active { background:#fff; }
+    /* Rechter Button: Zustände mit Hintergrundfarben (Text bleibt weiß) */
+    .right-start { background: #092A11; color: #30D058; }   /* Start = grün (deine Vorgabe) */
+    .right-running { background: #340E0B; color: #FF453A; } /* Stopp = rot */
+    .right-continue { background: #092A11; color: #30D058; }/* Weiter = grün */
 
-        .separator-line { width:100%; max-width:420px; height:1px; background:#2C2C2E; margin-top:6px; position: absolute; top: calc(50% + 56px); /* etwas unterhalb der Buttons */ left: 50%; transform: translateX(-50%); }
+    /* Dots: auf Höhe der Button-Mittelpunkte */
+    .dots {
+        position:absolute;
+        left:50%;
+        top:44px;
+        transform:translateX(-50%);
+        display:flex;
+        gap:12px;
+        align-items:center;
+        justify-content:center;
+        z-index:10;
+        pointer-events:none;
+    }
+    .dot { width:6px; height:6px; border-radius:50%; background:#333; }
+    .dot.active { background:#fff; }
 
-        .laps-container {
-            position: absolute;
-            top: calc(50% + 64px); /* Bereich unter den Buttons */
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            max-width:420px;
-            bottom: 0;
-            overflow:auto;
-            padding-bottom:12px;
-        }
+    /* Separator und Lap-Bereich: mit horizontalem Rand (nicht bis Kante) */
+    .separator-line {
+        position: absolute;
+        top: calc(50% + 56px); /* leicht unterhalb der Buttons */
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 48px); /* Platz links/rechts wie zuvor */
+        max-width: 420px;
+        height: 1px;
+        background:#2C2C2E;
+    }
 
-        .lap-item { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #2C2C2E; color:#fff; font-size:16px; font-weight:400; }
-        .lap-item:last-child { border-bottom:none; }
-        .lap-item.fastest { color:#30D058; }
-        .lap-item.slowest { color:#FF453A; }
+    .laps-container {
+        position: absolute;
+        top: calc(50% + 64px);
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 48px); /* Abstand zu den Rändern */
+        max-width:420px;
+        bottom: 0;
+        overflow:auto;
+        padding-bottom:12px;
+    }
 
-        /* bottom-nav bleibt an gleicher Höhe wie vorher */
-        .bottom-nav {
-            height: 86px; /* sicherstellen gleiche Höhe */
-            display:flex;
-            justify-content:space-around;
-            align-items:flex-end;
-            padding: 8px 6px 8px 6px;
-            background:transparent;
-            gap:6px;
-        }
-        .nav-item { display:flex; flex-direction:column; align-items:center; gap:6px; color:#7D7D7D; font-size:11px; font-weight:600; width:72px; }
-        .nav-item.active { color:#F4A30F; }
-        .nav-icon { width:28px; height:24px; display:flex; align-items:center; justify-content:center; }
+    .lap-item {
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        padding:12px 0;
+        border-bottom:1px solid #2C2C2E;
+        color:#fff;
+        font-size:16px;
+        font-weight:400;
+    }
+    .lap-item:last-child { border-bottom:none; }
+    .lap-item.fastest { color:#30D058; }
+    .lap-item.slowest { color:#FF453A; }
 
-        /* Home indicator entfernt (unsichtbar), bottom-nav bleibt */
-        .home-indicator { display:none !important; }
+    /* bottom-nav: 30px nach oben verschoben (positioniert) */
+    .bottom-nav {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 30px;            /* 30px höher als Rand */
+        height: 86px;
+        display:flex;
+        justify-content:space-around;
+        align-items:flex-end;
+        padding: 8px 6px 8px 6px;
+        background: transparent;
+        gap:6px;
+        z-index: 30;
+    }
+    .nav-item { display:flex; flex-direction:column; align-items:center; gap:6px; color:#7D7D7D; font-size:11px; font-weight:600; width:72px; }
+    .nav-item.active { color:#F4A30F; }
+    .nav-icon { width:28px; height:24px; display:flex; align-items:center; justify-content:center; }
 
-        @media (max-width:420px){
-            .time-display { font-size:86px; letter-spacing:-2px; margin-bottom:22px; }
-            .control-button { width:78px; height:78px; font-size:16px; }
-            .control-button.left { left:12px; top: 6px; }
-            .control-button.right { right:12px; top: 6px; }
-            .dots { top:39px; }
-        }
-        @media (max-height:700px){
-            .time-display { font-size:74px; letter-spacing:-1px; margin-bottom:12px; }
-        }
-    </style>
+    /* home-indicator verstecken */
+    .home-indicator { display:none !important; }
+
+    @media (max-width:420px) {
+        .time-display { font-size:86px; letter-spacing:-2px; margin-bottom:22px; }
+        .control-button { width:78px; height:78px; font-size:16px; }
+        .control-button.left { left:12px; top:6px; }
+        .control-button.right { right:12px; top:6px; }
+        .dots { top:39px; }
+    }
+    @media (max-height:700px) {
+        .time-display { font-size:74px; letter-spacing:-1px; margin-bottom:12px; }
+    }
+</style>
 </head>
 <body>
     <div class="status-bar"><div style="height:20px;"></div></div>
@@ -168,7 +198,8 @@
 
         <div class="controls" aria-hidden="false">
             <button id="leftButton" class="control-button left left-idle" disabled>Runde</button>
-            <button id="rightButton" class="control-button right right-idle">Start</button>
+            <!-- rechter Button initial als "Start" -> grün -->
+            <button id="rightButton" class="control-button right right-start">Start</button>
 
             <div class="dots" aria-hidden="true">
                 <div class="dot active"></div>
@@ -182,7 +213,7 @@
     </div>
 
     <div class="bottom-nav" role="navigation" aria-label="Uhr Navigation">
-        <!-- Dein angepasstes Weltuhr-Icon -->
+        <!-- Weltuhr: dein angepasstes Icon (bleibt) -->
         <div class="nav-item">
             <div class="nav-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -198,195 +229,245 @@
             <div>Weltuhr</div>
         </div>
 
-        <!-- restliche Icons unverändert -->
-        <div class="nav-item"><div class="nav-icon">…</div><div>Wecker</div></div>
-        <div class="nav-item active"><div class="nav-icon">…</div><div>Stoppuhr</div></div>
-        <div class="nav-item"><div class="nav-icon">…</div><div>Timer</div></div>
+        <!-- Alle anderen Icons wiederhergestellt (Original-SVGs) -->
+        <div class="nav-item">
+            <div class="nav-icon">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M381.2 64.1c-1.3-.1-2.6-.1-3.9-.1h-.2c-16.2 0-32 5.4-44.6 15.1-1.6 1.3-2.6 3.2-2.7 5.2-.1 2 .8 4 2.3 5.4l89.8 80.5c1.3 1.1 2.9 1.8 4.6 1.8h.4c1.9-.1 3.6-1 4.8-2.4C440.9 159 448 150.8 448 133c.1-36.4-29.1-66.8-66.8-68.9zM64 133c0 17.8 7.1 26 16.3 36.6 1.2 1.4 2.9 2.3 4.8 2.4h.4c1.7 0 3.3-.6 4.6-1.8L180 89.7c1.5-1.4 2.4-3.3 2.3-5.4-.1-2-1-3.9-2.7-5.2C167 69.4 151.2 64 135 64h-.2c-1.3 0-2.6 0-3.9.1-37.7 2.1-67 32.5-66.9 68.9z"/>
+                    <g>
+                        <path d="M390 386c26.2-30.7 42-70.5 42-114 0-97.2-78.8-176-176-176S80 174.8 80 272c0 43.5 15.8 83.3 42 114l-34.7 35.5c-6.2 6.3-6 15.5.3 21.6 3.1 3 7.4 4.8 11.4 4.8 4.2 0 8.1-1.9 11.2-5.1l34.6-34.5c30.3 24.7 69 39.6 111.2 39.6s80.9-14.8 111.2-39.6l33.6 34.5c3.1 3.2 7.3 5.1 11.5 5.1 4 0 8.1-1.8 11.2-4.8 6.3-6.2 7.5-15.3 1.3-21.6L390 386zM270 274c0 7.7-6.3 14-14 14h-82c-7.7 0-14-6.3-14-14s6.3-14 14-14h68V158c0-7.7 6.3-14 14-14s14 6.3 14 14v116z"/>
+                    </g>
+                </svg>
+            </div>
+            <div>Wecker</div>
+        </div>
+
+        <div class="nav-item active">
+            <div class="nav-icon">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M415.9 143.7c3.1 3.1 8.2 3.1 11.3 0l11.3-11.3c3.1-3.1 3.1-8.2 0-11.3L413 95.6c-3.1-3.1-8.2-3.1-11.3 0l-11.3 11.3c-3.1 3.1-3.1 8.2 0 11.3l25.5 25.5zM84.8 143.7c3.1 3.1 8.2 3.1 11.3 0l25.5-25.5c3.1-3.1 3.1-8.2 0-11.3l-11.3-11.3c-3.1-3.1-8.2-3.1-11.3 0L73.5 121c-3.1 3.1-3.1 8.2 0 11.3l11.3 11.4z"/>
+                    <path d="M280 81.5V64c0-8.8-7.2-16-16-16h-16c-8.8 0-16 7.2-16 16v17.5C137.3 93.3 64 174.1 64 272c0 106 86 192 192 192s192-86 192-192c0-97.9-73.3-178.7-168-190.5zm-10 219.3V320c0 7.7-6.3 14-14 14s-14-6.3-14-14v-19.2c-10.7-5.2-18-16.1-18-28.8s7.3-23.6 18-28.8V144c0-7.7 6.3-14 14-14s14 6.3 14 14v99.2c10.7 5.2 18 16.1 18 28.8s-7.3 23.6-18 28.8z"/>
+                </svg>
+            </div>
+            <div>Stoppuhr</div>
+        </div>
+
+        <div class="nav-item">
+            <div class="nav-icon">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M256 456c-110.3 0-200-89.7-200-200 0-54.8 21.7-105.9 61.2-144 6.4-6.2 16.6-6 22.7.4 6.2 6.4 6 16.6-.4 22.7-33.1 32-51.3 74.9-51.3 120.9 0 92.5 75.3 167.8 167.8 167.8S423.8 348.5 423.8 256c0-87.1-66.7-159-151.8-167.1v62.6c0 8.9-7.2 16.1-16.1 16.1s-16.1-7.2-16.1-16.1V72.1c0-8.9 7.2-16.1 16.1-16.1 110.3 0 200 89.7 200 200S366.3 456 256 456z"/>
+                    <path d="M175.9 161.9l99.5 71.5c13.5 9.7 16.7 28.5 7 42s-28.5 16.7-42 7c-2.8-2-5.2-4.4-7-7l-71.5-99.5c-3.2-4.5-2.2-10.8 2.3-14 3.6-2.6 8.3-2.4 11.7 0z"/>
+                </svg>
+            </div>
+            <div>Timer</div>
+        </div>
     </div>
 
-    <!-- home-indicator entfernt / ausgeblendet -->
     <div class="home-indicator" aria-hidden="true"></div>
 
-    <script>
-        // --- Stoppuhr-Logik (unverändert) ---
-        let startTime = 0;
-        let elapsedTime = 0;
-        let timerInterval = null;
-        let isRunning = false;
-        let lapCounter = 0;
-        let laps = [];
-        let currentLapStartTime = 0;
+<script>
+    // --- Stoppuhr-Logik (unverändert bis auf Button-Farbsteuerung) ---
+    let startTime = 0;
+    let elapsedTime = 0;
+    let timerInterval = null;
+    let isRunning = false;
+    let lapCounter = 0;
+    let laps = [];
+    let currentLapStartTime = 0;
 
-        const timeDisplay = document.getElementById('timeDisplay');
-        const leftButton = document.getElementById('leftButton');
-        const rightButton = document.getElementById('rightButton');
-        const lapsContainer = document.getElementById('lapsContainer');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const leftButton = document.getElementById('leftButton');
+    const rightButton = document.getElementById('rightButton');
+    const lapsContainer = document.getElementById('lapsContainer');
 
-        function formatTime(milliseconds) {
-            const totalSeconds = Math.floor(milliseconds / 1000);
-            const minutes = Math.floor(totalSeconds / 60);
-            const seconds = totalSeconds % 60;
-            const centiseconds = Math.floor((milliseconds % 1000) / 10);
-            return `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')},${centiseconds.toString().padStart(2,'0')}`;
-        }
+    function formatTime(milliseconds) {
+        const totalSeconds = Math.floor(milliseconds / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        const centiseconds = Math.floor((milliseconds % 1000) / 10);
+        return `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')},${centiseconds.toString().padStart(2,'0')}`;
+    }
 
-        function timeStringToMs(timeString) {
-            const parts = timeString.split(':');
-            const minutes = parseInt(parts[0],10) || 0;
-            const secondsParts = (parts[1] || '00').split(',');
-            const seconds = parseInt(secondsParts[0],10) || 0;
-            const centiseconds = parseInt(secondsParts[1],10) || 0;
-            return (minutes * 60 + seconds) * 1000 + centiseconds * 10;
-        }
+    function timeStringToMs(timeString) {
+        const parts = timeString.split(':');
+        const minutes = parseInt(parts[0],10) || 0;
+        const secondsParts = (parts[1] || '00').split(',');
+        const seconds = parseInt(secondsParts[0],10) || 0;
+        const centiseconds = parseInt(secondsParts[1],10) || 0;
+        return (minutes * 60 + seconds) * 1000 + centiseconds * 10;
+    }
 
-        function updateDisplay() {
-            const now = Date.now();
-            const total = elapsedTime + (isRunning ? (now - startTime) : 0);
-            timeDisplay.textContent = formatTime(total);
+    function updateDisplay() {
+        const now = Date.now();
+        const total = elapsedTime + (isRunning ? (now - startTime) : 0);
+        timeDisplay.textContent = formatTime(total);
 
-            if (laps.length > 0 && laps[0].isCurrent) {
-                let currentLapElapsed;
-                if (isRunning) currentLapElapsed = now - currentLapStartTime;
-                else currentLapElapsed = timeStringToMs(laps[0].time);
-                laps[0].time = formatTime(currentLapElapsed);
-                updateLapsDisplay();
-            }
-        }
-
-        function startStopwatch() {
-            isRunning = true;
-            startTime = Date.now();
-
-            if (lapCounter === 0) {
-                currentLapStartTime = startTime;
-                lapCounter = 1;
-                laps.unshift({ number: lapCounter, time: '00:00,00', isCurrent: true });
-                updateLapsDisplay();
-            }
-
-            timerInterval = setInterval(updateDisplay, 10);
-
-            rightButton.textContent = 'Stopp';
-            rightButton.className = 'control-button right right-running';
-            leftButton.textContent = 'Runde';
-            leftButton.className = 'control-button left left-running';
-            leftButton.disabled = false;
-        }
-
-        function stopStopwatch() {
-            isRunning = false;
-            elapsedTime += Date.now() - startTime;
-            clearInterval(timerInterval);
-
-            if (laps.length > 0 && laps[0].isCurrent) {
-                const currentLapElapsed = Date.now() - currentLapStartTime;
-                laps[0].time = formatTime(currentLapElapsed);
-                updateLapsDisplay();
-            }
-
-            rightButton.textContent = 'Weiter';
-            rightButton.className = 'control-button right right-stopped';
-            leftButton.textContent = 'Löschen';
-            leftButton.className = 'control-button left left-stopped';
-        }
-
-        function resetStopwatch() {
-            isRunning = false;
-            elapsedTime = 0;
-            lapCounter = 0;
-            laps = [];
-            currentLapStartTime = 0;
-            clearInterval(timerInterval);
-            timeDisplay.textContent = '00:00,00';
-
-            rightButton.textContent = 'Start';
-            rightButton.className = 'control-button right right-idle';
-            leftButton.textContent = 'Runde';
-            leftButton.className = 'control-button left left-idle';
-            leftButton.disabled = true;
-
+        if (laps.length > 0 && laps[0].isCurrent) {
+            let currentLapElapsed;
+            if (isRunning) currentLapElapsed = now - currentLapStartTime;
+            else currentLapElapsed = timeStringToMs(laps[0].time);
+            laps[0].time = formatTime(currentLapElapsed);
             updateLapsDisplay();
         }
+    }
 
-        function recordLap() {
-            const now = Date.now();
+    function updateLapsDisplay() {
+        lapsContainer.innerHTML = '';
+        const completedLaps = laps.filter(l => !l.isCurrent);
+        let fastest = null, slowest = null, fastestIdx = -1, slowestIdx = -1;
+        if (completedLaps.length >= 2) {
+            completedLaps.forEach(lap => {
+                const ms = timeStringToMs(lap.time);
+                if (fastest === null || ms < fastest) { fastest = ms; fastestIdx = laps.indexOf(lap); }
+                if (slowest === null || ms > slowest) { slowest = ms; slowestIdx = laps.indexOf(lap); }
+            });
+        }
+        laps.forEach((lap, idx) => {
+            const el = document.createElement('div');
+            let cls = 'lap-item';
+            if (!lap.isCurrent && completedLaps.length >= 2) {
+                if (idx === fastestIdx) cls += ' fastest';
+                else if (idx === slowestIdx) cls += ' slowest';
+            }
+            el.className = cls;
+            el.innerHTML = `<span class="lap-number">Runde ${lap.number}</span><span class="lap-time">${lap.time}</span>`;
+            lapsContainer.appendChild(el);
+        });
+    }
 
-            if (laps.length > 0 && laps[0].isCurrent) laps[0].isCurrent = false;
+    // Hilfsfunktion: setze rechten Button-Klasse passend zum Text
+    function setRightButtonStyleByText(text) {
+        rightButton.classList.remove('right-start','right-running','right-continue');
+        if (text === 'Start') {
+            rightButton.classList.add('right-start');
+            rightButton.textContent = 'Start';
+        } else if (text === 'Stopp') {
+            rightButton.classList.add('right-running');
+            rightButton.textContent = 'Stopp';
+        } else if (text === 'Weiter') {
+            rightButton.classList.add('right-continue');
+            rightButton.textContent = 'Weiter';
+        } else {
+            // default -> grün
+            rightButton.classList.add('right-start');
+            rightButton.textContent = text;
+        }
+    }
 
-            lapCounter++;
-            currentLapStartTime = now;
+    function startStopwatch() {
+        isRunning = true;
+        startTime = Date.now();
+
+        if (lapCounter === 0) {
+            currentLapStartTime = startTime;
+            lapCounter = 1;
             laps.unshift({ number: lapCounter, time: '00:00,00', isCurrent: true });
             updateLapsDisplay();
         }
 
-        function updateLapsDisplay() {
-            lapsContainer.innerHTML = '';
+        timerInterval = setInterval(updateDisplay, 10);
 
-            const completedLaps = laps.filter(l => !l.isCurrent);
-            let fastest = null, slowest = null, fastestIdx = -1, slowestIdx = -1;
+        setRightButtonStyleByText('Stopp');     // Stopp = rot
+        leftButton.textContent = 'Runde';
+        leftButton.className = 'control-button left left-running';
+        leftButton.disabled = false;
+    }
 
-            if (completedLaps.length >= 2) {
-                completedLaps.forEach(lap => {
-                    const ms = timeStringToMs(lap.time);
-                    if (fastest === null || ms < fastest) { fastest = ms; fastestIdx = laps.indexOf(lap); }
-                    if (slowest === null || ms > slowest) { slowest = ms; slowestIdx = laps.indexOf(lap); }
-                });
-            }
+    function stopStopwatch() {
+        isRunning = false;
+        elapsedTime += Date.now() - startTime;
+        clearInterval(timerInterval);
 
-            laps.forEach((lap, idx) => {
-                const el = document.createElement('div');
-                let cls = 'lap-item';
-                if (!lap.isCurrent && completedLaps.length >= 2) {
-                    if (idx === fastestIdx) cls += ' fastest';
-                    else if (idx === slowestIdx) cls += ' slowest';
-                }
-                el.className = cls;
-                el.innerHTML = `<span class="lap-number">Runde ${lap.number}</span><span class="lap-time">${lap.time}</span>`;
-                lapsContainer.appendChild(el);
-            });
+        if (laps.length > 0 && laps[0].isCurrent) {
+            const currentLapElapsed = Date.now() - currentLapStartTime;
+            laps[0].time = formatTime(currentLapElapsed);
+            updateLapsDisplay();
         }
 
-        // Button-Events
-        rightButton.addEventListener('click', () => {
-            if (!isRunning && elapsedTime === 0) startStopwatch();
-            else if (isRunning) stopStopwatch();
-            else startStopwatch();
-        });
+        setRightButtonStyleByText('Weiter');  // Weiter = grün
+        leftButton.textContent = 'Löschen';
+        leftButton.className = 'control-button left left-stopped';
+    }
 
-        leftButton.addEventListener('click', () => {
-            if (isRunning) recordLap();
-            else if (elapsedTime > 0) resetStopwatch();
-        });
+    function resetStopwatch() {
+        isRunning = false;
+        elapsedTime = 0;
+        lapCounter = 0;
+        laps = [];
+        currentLapStartTime = 0;
+        clearInterval(timerInterval);
+        timeDisplay.textContent = '00:00,00';
 
+        setRightButtonStyleByText('Start');  // Start = grün
+        leftButton.textContent = 'Runde';
+        leftButton.className = 'control-button left left-idle';
         leftButton.disabled = true;
-        updateDisplay();
 
-        /* ---------------------- Fullscreen & scroll/zoom prevention (beibehalten) ---------------------- */
-        function tryEnterFullscreen() {
-            const el = document.documentElement;
-            if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) return;
-            const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-            if (fn) {
-                try { fn.call(el); } catch (err) { /* ignore */ }
-            }
+        updateLapsDisplay();
+    }
+
+    function recordLap() {
+        const now = Date.now();
+
+        if (laps.length > 0 && laps[0].isCurrent) laps[0].isCurrent = false;
+
+        lapCounter++;
+        currentLapStartTime = now;
+        laps.unshift({ number: lapCounter, time: '00:00,00', isCurrent: true });
+        updateLapsDisplay();
+    }
+
+    // Event-Handler für rechten Button: Verhalten abhängig vom aktuellen Text
+    rightButton.addEventListener('click', function() {
+        const txt = rightButton.textContent.trim();
+        if ((txt === 'Start') || (txt === 'Weiter' && !isRunning && elapsedTime === 0)) {
+            // Start / Weiter -> start (if resumed)
+            startStopwatch();
+        } else if (txt === 'Stopp' && isRunning) {
+            stopStopwatch();
+        } else if (!isRunning && elapsedTime === 0) {
+            startStopwatch();
+        } else if (!isRunning && elapsedTime > 0) {
+            startStopwatch();
         }
-        const enterOnce = () => { tryEnterFullscreen(); document.removeEventListener('click', enterOnce); document.removeEventListener('touchstart', enterOnce); };
-        document.addEventListener('click', enterOnce, { once: true });
-        document.addEventListener('touchstart', enterOnce, { once: true });
+    });
 
-        document.addEventListener('touchmove', function(e){ e.preventDefault(); }, { passive: false });
-        let lastTouch = 0;
-        document.addEventListener('touchend', function(e){
-            const now = Date.now();
-            if (now - lastTouch <= 300) e.preventDefault();
-            lastTouch = now;
-        }, { passive: false });
-        document.addEventListener('gesturestart', function(e){ e.preventDefault && e.preventDefault(); });
-        document.addEventListener('dblclick', function(e){ e.preventDefault(); });
-        window.addEventListener('keydown', function(e){
-            const keysToPrevent = ['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' '];
-            if (keysToPrevent.includes(e.key)) e.preventDefault();
-        }, { passive: false });
-    </script>
+    leftButton.addEventListener('click', function() {
+        if (isRunning) recordLap();
+        else if (elapsedTime > 0) resetStopwatch();
+    });
+
+    // initialer Zustand
+    leftButton.disabled = true;
+    setRightButtonStyleByText('Start');
+    updateDisplay();
+
+    /* ---------------- Fullscreen & scroll/zoom prevention (beibehalten) ---------------- */
+    function tryEnterFullscreen() {
+        const el = document.documentElement;
+        if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) return;
+        const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+        if (fn) {
+            try { fn.call(el); } catch (err) { /* ignore */ }
+        }
+    }
+    const enterOnce = () => { tryEnterFullscreen(); document.removeEventListener('click', enterOnce); document.removeEventListener('touchstart', enterOnce); };
+    document.addEventListener('click', enterOnce, { once: true });
+    document.addEventListener('touchstart', enterOnce, { once: true });
+
+    document.addEventListener('touchmove', function(e){ e.preventDefault(); }, { passive: false });
+    let lastTouch = 0;
+    document.addEventListener('touchend', function(e){
+        const now = Date.now();
+        if (now - lastTouch <= 300) e.preventDefault();
+        lastTouch = now;
+    }, { passive: false });
+    document.addEventListener('gesturestart', function(e){ e.preventDefault && e.preventDefault(); });
+    document.addEventListener('dblclick', function(e){ e.preventDefault(); });
+    window.addEventListener('keydown', function(e){
+        const keysToPrevent = ['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' '];
+        if (keysToPrevent.includes(e.key)) e.preventDefault();
+    }, { passive: false });
+</script>
 </body>
 </html>
