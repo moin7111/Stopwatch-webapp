@@ -2,12 +2,15 @@
 <html lang="de">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <!-- viewport: max-scale=1 und user-scalable=no reduziert Zoom -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <!-- iOS Web App hints (wenn als Web App hinzugefügt wird) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Stoppuhr</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        html,body { height: 100%; }
-
+        html, body { height: 100%; overscroll-behavior: none; -ms-touch-action: manipulation; touch-action: manipulation; }
         body {
             font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             -webkit-font-smoothing: antialiased;
@@ -17,18 +20,11 @@
             display:flex;
             flex-direction:column;
             min-height:100vh;
-            overflow:hidden;
+            overflow:hidden; /* kein Scrollen */
+            -webkit-overflow-scrolling: auto;
         }
 
-        .status-bar {
-            display:flex;
-            justify-content:flex-end;
-            align-items:center;
-            padding:10px 18px;
-            font-size:17px;
-            font-weight:600;
-            color:#fff;
-        }
+        .status-bar { display:flex; justify-content:flex-end; align-items:center; padding:10px 18px; font-size:17px; font-weight:600; color:#fff; }
 
         .stopwatch-container {
             position:relative;
@@ -43,29 +39,24 @@
         .time-display {
             font-family: "SF Pro Display","SF Pro Text",-apple-system,system-ui,"Helvetica Neue",Arial;
             font-weight:100;
-            font-size: 110px;
-            line-height: 1;
-            letter-spacing: -3px;
-            margin-top: 14px;
-            margin-bottom: 36px;
+            font-size:110px;
+            line-height:1;
+            letter-spacing:-3px;
+            margin-top:14px;
+            margin-bottom:36px;
             -webkit-font-smoothing:antialiased;
             font-variant-numeric: tabular-nums;
             text-rendering: optimizeLegibility;
             white-space: nowrap;
+            user-select: none;
         }
 
-        .controls {
-            width:100%;
-            max-width:420px;
-            height: 100px;
-            position:relative;
-            margin-bottom: 12px;
-        }
+        .controls { width:100%; max-width:420px; height:100px; position:relative; margin-bottom:12px; }
 
         .control-button {
             position:absolute;
-            width: 88px;
-            height: 88px;
+            width:88px;
+            height:88px;
             border-radius:50%;
             border:none;
             font-size:18px;
@@ -77,20 +68,18 @@
             padding:0;
             transition: transform .08s ease;
             user-select:none;
+            -webkit-tap-highlight-color: transparent; /* kein blauer Tap-Ring */
+            touch-action: manipulation;
         }
-
         .control-button:active { transform: scale(0.96); }
-
-        .control-button.left { left: 14px; top: 0; }
-        .control-button.right { right: 14px; top: 0; }
+        .control-button.left { left:14px; top:0; }
+        .control-button.right { right:14px; top:0; }
 
         .left-idle { background:#1C1B1E; color:#9A9AA0; }
-        .left-running { background:#2C2C2E; color:#fff; }
-        .left-stopped { background:#2C2C2E; color:#fff; }
-
-        .right-idle { background: rgba(39,108,58,0.12); color: #30D058; }
-        .right-running { background: rgba(255,68,58,0.12); color: #FF453A; }
-        .right-stopped { background: rgba(39,108,58,0.12); color: #30D058; }
+        .left-running, .left-stopped { background:#2C2C2E; color:#fff; }
+        .right-idle { background: rgba(39,108,58,0.12); color:#30D058; }
+        .right-running { background: rgba(255,68,58,0.12); color:#FF453A; }
+        .right-stopped { background: rgba(39,108,58,0.12); color:#30D058; }
 
         .dots {
             position:absolute;
@@ -102,70 +91,26 @@
             align-items:center;
             justify-content:center;
             z-index:10;
+            pointer-events:none; /* damit Taps die Buttons treffen */
         }
         .dot { width:6px; height:6px; border-radius:50%; background:#333; }
         .dot.active { background:#fff; }
 
-        .separator-line {
-            width:100%;
-            max-width:420px;
-            height:1px;
-            background:#2C2C2E;
-            margin-top:6px;
-        }
+        .separator-line { width:100%; max-width:420px; height:1px; background:#2C2C2E; margin-top:6px; }
 
-        .laps-container {
-            flex:1;
-            width:100%;
-            max-width:420px;
-            overflow:auto;
-            margin-top:0;
-            padding-bottom:12px;
-            min-height:0;
-        }
+        .laps-container { flex:1; width:100%; max-width:420px; overflow:auto; margin-top:0; padding-bottom:12px; min-height:0; -webkit-overflow-scrolling: auto; }
 
-        .lap-item {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:12px 0;
-            border-bottom:1px solid #2C2C2E;
-            color:#fff;
-            font-size:16px;
-            font-weight:400;
-        }
+        .lap-item { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #2C2C2E; color:#fff; font-size:16px; font-weight:400; }
         .lap-item:last-child { border-bottom:none; }
-
         .lap-item.fastest { color:#30D058; }
         .lap-item.slowest { color:#FF453A; }
 
-        .bottom-nav {
-            display:flex;
-            justify-content:space-around;
-            padding:12px 6px 6px 6px;
-            background:transparent;
-            gap:6px;
-        }
-        .nav-item {
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            gap:6px;
-            color:#7D7D7D;
-            font-size:11px;
-            font-weight:600;
-            width:72px;
-        }
+        .bottom-nav { display:flex; justify-content:space-around; padding:12px 6px 6px 6px; background:transparent; gap:6px; }
+        .nav-item { display:flex; flex-direction:column; align-items:center; gap:6px; color:#7D7D7D; font-size:11px; font-weight:600; width:72px; }
         .nav-item.active { color:#F4A30F; }
         .nav-icon { width:28px; height:24px; display:flex; align-items:center; justify-content:center; }
 
-        .home-indicator {
-            width:134px;
-            height:5px;
-            background:#F5F5F7;
-            border-radius:3px;
-            margin:8px auto 16px auto;
-        }
+        .home-indicator { width:134px; height:5px; background:#F5F5F7; border-radius:3px; margin:8px auto 16px auto; }
 
         @media (max-width:420px){
             .time-display { font-size:86px; letter-spacing:-2px; margin-bottom:22px; }
@@ -201,20 +146,14 @@
     </div>
 
     <div class="bottom-nav" role="navigation" aria-label="Uhr Navigation">
-        <!-- Weltuhr: linke und rechte gekrümmte Linien sind weiter nach außen
-             (Steuerpunkte auf x=7.5 bzw. x=16.5 -> genau zwischen Zentrum und äußerem Kreis).
-             Beide Kurven starten bei (12,3) und enden bei (12,21). -->
+        <!-- (dein Weltuhr-Icon) -->
         <div class="nav-item">
             <div class="nav-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="9"></circle>
-                    <!-- Mittlere Vertikale -->
                     <path d="M12 3v18"></path>
-                    <!-- Linke Kurve: Steuerpunkte x=7.5 (mittig zwischen center und linkem Rand) -->
-                    <path d="M12 3 C5.5 7.5, 5.5 16.5, 12 21"></path>
-                    <!-- Rechte Kurve: Steuerpunkte x=16.5 (mittig zwischen center und rechtem Rand) -->
-                    <path d="M12 3 C18.5 7.5, 18.5 16.5, 12 21"></path>
-                    <!-- horizontale Linien etwas weiter vom Zentrum -->
+                    <path d="M12 3 C7.5 7.5, 7.5 16.5, 12 21"></path>
+                    <path d="M12 3 C16.5 7.5, 16.5 16.5, 12 21"></path>
                     <path d="M5.2 7.2c2 1.2 6 1.8 13.6 0"></path>
                     <path d="M4 12h16"></path>
                     <path d="M5.2 16.8c2-1.2 6-1.8 13.6 0"></path>
@@ -223,8 +162,10 @@
             <div>Weltuhr</div>
         </div>
 
+        <!-- restliche Icons (Original) -->
         <div class="nav-item">
             <div class="nav-icon">
+                <!-- Wecker original SVG (dein vorheriges) -->
                 <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
                     <path d="M381.2 64.1c-1.3-.1-2.6-.1-3.9-.1h-.2c-16.2 0-32 5.4-44.6 15.1-1.6 1.3-2.6 3.2-2.7 5.2-.1 2 .8 4 2.3 5.4l89.8 80.5c1.3 1.1 2.9 1.8 4.6 1.8h.4c1.9-.1 3.6-1 4.8-2.4C440.9 159 448 150.8 448 133c.1-36.4-29.1-66.8-66.8-68.9zM64 133c0 17.8 7.1 26 16.3 36.6 1.2 1.4 2.9 2.3 4.8 2.4h.4c1.7 0 3.3-.6 4.6-1.8L180 89.7c1.5-1.4 2.4-3.3 2.3-5.4-.1-2-1-3.9-2.7-5.2C167 69.4 151.2 64 135 64h-.2c-1.3 0-2.6 0-3.9.1-37.7 2.1-67 32.5-66.9 68.9z"/>
                     <g>
@@ -259,6 +200,7 @@
     <div class="home-indicator"></div>
 
     <script>
+        // --- Stoppuhr-Logik (unverändert, nur ergänzt um Fullscreen/Scroll/Zoom-Schutz) ---
         let startTime = 0;
         let elapsedTime = 0;
         let timerInterval = null;
@@ -396,6 +338,7 @@
             });
         }
 
+        // Button-Events
         rightButton.addEventListener('click', () => {
             if (!isRunning && elapsedTime === 0) startStopwatch();
             else if (isRunning) stopStopwatch();
@@ -409,6 +352,63 @@
 
         leftButton.disabled = true;
         updateDisplay();
+
+        /* ---------------------- Fullscreen & scroll/zoom prevention ---------------------- */
+
+        // Versuche beim ersten Nutzerinteraktion in den Fullscreen-Modus zu wechseln
+        function tryEnterFullscreen() {
+            const el = document.documentElement;
+            if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) return;
+            const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+            if (fn) {
+                try { fn.call(el); } catch (err) { /* ignore */ }
+            }
+        }
+        // bind to first user gesture (click/touch)
+        const enterOnce = () => { tryEnterFullscreen(); document.removeEventListener('click', enterOnce); document.removeEventListener('touchstart', enterOnce); };
+        document.addEventListener('click', enterOnce, { once: true });
+        document.addEventListener('touchstart', enterOnce, { once: true });
+
+        // Verhindere Scrollen / Pinch-Zoom / Double-Tap-Zoom
+        // touchmove verhindern (kein Scrollen)
+        document.addEventListener('touchmove', function(e){
+            // Wenn mehr als 1 Finger -> Pinch -> verhindern
+            if (e.touches && e.touches.length > 1) {
+                e.preventDefault();
+            } else {
+                // Generell Touch-Move verhindern, damit nicht gescrollt wird
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Double-Tap (kurze Abstände) verhindern
+        let lastTouch = 0;
+        document.addEventListener('touchend', function(e){
+            const now = Date.now();
+            if (now - lastTouch <= 300) {
+                // doppeltes Tippen sehr schnell: verhindern
+                e.preventDefault();
+            }
+            lastTouch = now;
+        }, { passive: false });
+
+        // Verhindere standardmäßiges pinch-gesture (iOS)
+        document.addEventListener('gesturestart', function(e) {
+            e.preventDefault && e.preventDefault();
+        });
+
+        // Prevent desktop double-click zoom (falls Browser reagiert)
+        document.addEventListener('dblclick', function(e){
+            e.preventDefault();
+        });
+
+        // Prevent keyboard scrolling (arrow keys / space)
+        window.addEventListener('keydown', function(e){
+            const keysToPrevent = ['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' '];
+            if (keysToPrevent.includes(e.key)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
     </script>
 </body>
 </html>
