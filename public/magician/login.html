@@ -5,24 +5,57 @@
 </head>
 <body>
   <main style="padding:18px;max-width:720px;margin:40px auto;">
-    <h1>Magier Login</h1>
-    <p>Falls du den Admin-Key hast, gib ihn hier ein. Ohne Key (Dev) einfach auf "Einloggen" klicken.</p>
-    <input id="keyInput" placeholder="Admin Key (optional)">
-    <div style="margin-top:12px;">
-      <button id="loginBtn">Einloggen</button>
-    </div>
-    <div id="msg" style="margin-top:12px;color:#aaa;"></div>
+    <h1>Magier Login / Registrierung</h1>
+
+    <section style="margin-top:12px;">
+      <h3>Neu registrieren (mit Lizenz-Code)</h3>
+      <input id="regCode" placeholder="Lizenz-Code">
+      <input id="regUser" placeholder="Benutzername (kurz)">
+      <input id="regPass" type="password" placeholder="Passwort">
+      <input id="regName" placeholder="Anzeigename (optional)">
+      <div style="margin-top:10px;"><button id="registerBtn">Registrieren</button></div>
+    </section>
+
+    <hr style="margin:18px 0; opacity:0.08">
+
+    <section>
+      <h3>Oder einloggen</h3>
+      <input id="loginUser" placeholder="Benutzername">
+      <input id="loginPass" type="password" placeholder="Passwort">
+      <div style="margin-top:10px;"><button id="loginBtn">Einloggen</button></div>
+    </section>
+
+    <div id="msg" style="margin-top:12px;color:#faa;"></div>
   </main>
+
 <script>
-  document.getElementById('loginBtn').addEventListener('click', async ()=>{
-    const key = document.getElementById('keyInput').value.trim();
+  async function postJSON(url, body) {
+    const r = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(()=>({}));
+    if (!r.ok) throw j;
+    return j;
+  }
+
+  document.getElementById('registerBtn').addEventListener('click', async ()=>{
+    const code = document.getElementById('regCode').value.trim();
+    const username = document.getElementById('regUser').value.trim();
+    const password = document.getElementById('regPass').value;
+    const displayName = document.getElementById('regName').value.trim();
+    if (!code || !username || !password) return alert('Bitte Code, Benutzername und Passwort ausfüllen');
     try {
-      const res = await fetch('/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(key?{key}: {})});
-      const j = await res.json();
-      if (!res.ok) return alert('Login fehlgeschlagen: '+(j.error||JSON.stringify(j)));
-      // redirect to dashboard
+      await postJSON('/auth/register', { code, username, password, displayName });
       location.href = '/magician/dashboard.html';
-    } catch(e){ alert('Netzwerkfehler'); }
+    } catch (e) { alert('Registrierung fehlgeschlagen: ' + (e.error||JSON.stringify(e))); }
+  });
+
+  document.getElementById('loginBtn').addEventListener('click', async ()=>{
+    const username = document.getElementById('loginUser').value.trim();
+    const password = document.getElementById('loginPass').value;
+    if (!username || !password) return alert('Benutzername und Passwort erforderlich');
+    try {
+      await postJSON('/auth/login', { username, password });
+      location.href = '/magician/dashboard.html';
+    } catch (e) { alert('Login fehlgeschlagen: ' + (e.error||JSON.stringify(e))); }
   });
 </script>
 </body></html>
