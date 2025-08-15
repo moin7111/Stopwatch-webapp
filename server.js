@@ -1,4 +1,4 @@
-// server.js (ersetzen)
+// server.js
 const express = require("express");
 const path = require("path");
 const crypto = require("crypto");
@@ -6,173 +6,125 @@ const crypto = require("crypto");
 const app = express();
 app.use(express.json());
 
-// --- CORS (erlaubt Shortcuts / externe Clients) ---
+// CORS (erlaubt Shortcuts / externe Clients)
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Origin", "*"); // bei Bedarf einschränken
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-admin-key, x-shortcut-key");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.sendStatus(200);
   next();
 });
 
-// In-memory stores
-const sessions = new Map();           // sessionId -> { sessionId, clientToken, expiresAt, queue:[] }
-const shortcutBindings = new Map();  // key -> sessionId
+// In-memory: tokens map -> { token, createdAt, queue: [ { id, force, createdAt } ] }
+const tokens = new Map();
 
-// Helpers
-function checkAdminKeyFromReq(req) {
-  const envAdminKey = process.env.ADMIN_KEY;
-  if (!envAdminKey) return true;
-  const provided = req.header("x-admin-key") || req.query.k || req.query.key;
-  return provided === envAdminKey;
-}
-function getProvidedKey(req) {
-  return req.header("x-shortcut-key") || req.query.k || req.query.key;
-}
-function checkShortcutAuth(req) {
-  const envShortcutKey = process.env.SHORTCUT_KEY;
-  const envAdminKey = process.env.ADMIN_KEY;
-  const provided = getProvidedKey(req);
-  if (envAdminKey && provided === envAdminKey) return true;
-  if (envShortcutKey && provided === envShortcutKey) return true;
-  if (!envAdminKey && !envShortcutKey) return true; // permissive dev mode
-  return false;
+// Hilfsfunktionen
+function generateToken(length = 6) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let s = "";
+  const bytes = crypto.randomBytes(length);
+  for (let i = 0; i < length; i++) s += alphabet[bytes[i] % alphabet.length];
+  return s;
 }
 
-// Admin: create session
-app.post("/api/session", (req, res) => {
-  if (!checkAdminKeyFromReq(req)) return res.status(401).json({ error: "unauthorized" });
-
-  const expiresInSec = parseInt(req.body.expiresInSec || 300, 10);
-  const sessionId = crypto.randomUUID();
-  const clientToken = crypto.randomBytes(12).toString("hex");
-  const now = Date.now();
-  const expiresAt = now + Math.max(30, expiresInSec) * 1000;
-
-  const session = { sessionId, clientToken, expiresAt, queue: [] };
-  sessions.set(sessionId, session);
-  return res.json({ sessionId, clientToken, expiresAt });
+// Create a token (optional admin protection: if ADMIN_KEY set, header x-admin-key required)
+// If no ADMIN_KEY, creation is open (dev mode)
+app.post("/api/token", (req, res) => {
+  const ADMIN_KEY = process.env.ADMIN_KEY;
+  if (ADMIN_KEY) {
+    const provided = req.header("x-admin-key") || req.query.k;
+    if (provided !== ADMIN_KEY) return res.status(401).json({ error: "unauthorized" });
+  }
+  // allow optional custom token passed in body.token (for testing), else generate
+  const requested = (req.body && req.body.token) ? String(req.body.token).toUpperCase() : null;
+  let token = requested || generateToken(6);
+  // avoid collisions
+  while (tokens.has(token)) token = generateToken(6);
+  tokens.set(token, { token, createdAt: Date.now(), queue: [] });
+  return res.json({ ok: true, token });
 });
 
-// Admin: push force
-app.post("/api/force", (req, res) => {
-  if (!checkAdminKeyFromReq(req)) return res.status(401).json({ error: "unauthorized" });
-  const { sessionId, force } = req.body || {};
-  if (!sessionId || !force) return res.status(400).json({ error: "missing sessionId or force" });
-  const session = sessions.get(sessionId);
-  if (!session) return res.status(404).json({ error: "session not found" });
-  const id = crypto.randomUUID();
-  session.queue.push({ id, force, createdAt: Date.now() });
-  return res.json({ ok: true, id });
+// List tokens (admin only if ADMIN_KEY set; if not set, this endpoint returns all tokens)
+app.get("/api/tokens", (req, res) => {
+  const ADMIN_KEY = process.env.ADMIN_KEY;
+  if (ADMIN_KEY) {
+    const provided = req.header("x-admin-key") || req.query.k;
+    if (provided !== ADMIN_KEY) return res.status(401).json({ error: "unauthorized" });
+  }
+  const data = Array.from(tokens.values()).map(t => ({ token: t.token, queued: t.queue.length, createdAt: t.createdAt }));
+  return res.json({ tokens: data });
 });
 
-// Admin: bind a shortcut key to a session (so shortcut doesn't need sessionId)
-app.post("/api/bind", (req, res) => {
-  if (!checkAdminKeyFromReq(req)) return res.status(401).json({ error: "unauthorized" });
-  const { key, sessionId } = req.body || {};
-  if (!key || !sessionId) return res.status(400).json({ error: "missing key or sessionId" });
-  if (!sessions.has(sessionId)) return res.status(404).json({ error: "session not found" });
-  shortcutBindings.set(key, sessionId);
-  return res.json({ ok: true, key, sessionId });
-});
+// Push force to a token: POST /api/data/:token
+// Body must contain either `force` object or flat fields that will be assembled into a force
+// Additionally, either payload.force.app === 'stopwatch' OR top-level body.app === 'stopwatch' OR query ?app=stopwatch must be present
+app.post("/api/data/:token", (req, res) => {
+  const token = String(req.params.token || "").toUpperCase();
+  if (!tokens.has(token)) return res.status(404).json({ error: "token not found" });
 
-// Shortcut endpoint: accepts POST/GET; sessionId optional.
-// If sessionId not provided, server tries following (in order):
-//  1) find binding: provided key -> bound sessionId
-//  2) if exactly one active session exists -> use that
-//  otherwise -> error (ask to bind)
-app.all("/shortcut", (req, res) => {
-  if (!checkShortcutAuth(req)) return res.status(401).json({ error: "unauthorized" });
-
-  const payload = req.method === "POST" ? (req.body || {}) : (req.query || {});
-  let sessionId = payload.sessionId || payload.sid || payload.s;
-  const providedKey = getProvidedKey(req);
-
-  // if no sessionId, try binding
-  if (!sessionId) {
-    if (providedKey && shortcutBindings.has(providedKey)) {
-      sessionId = shortcutBindings.get(providedKey);
-    } else {
-      // fallback: if exactly one session exists, use it
-      const activeSessions = Array.from(sessions.keys());
-      if (activeSessions.length === 1) sessionId = activeSessions[0];
-    }
+  const payload = req.body || {};
+  // resolve 'app' requirement
+  const appName = (payload.force && payload.force.app) || payload.app || req.query.app;
+  if (!appName || String(appName).toLowerCase() !== "stopwatch") {
+    return res.status(400).json({ error: "force must target app 'stopwatch' (provide force.app or app='stopwatch')" });
   }
 
-  if (!sessionId) return res.status(400).json({ error: "missing sessionId and no binding available; bind a key or provide sessionId" });
-
-  const force = payload.force || null;
+  // Accept either payload.force or build one from flat params
+  let force = payload.force || null;
   if (!force) {
-    // attempt to build from flat params
     const mode = payload.mode;
-    if (!mode) return res.status(400).json({ error: "missing force.mode or force object" });
-    // construct
-    const f = { mode };
-    if (payload.target !== undefined) f.target = payload.target;
-    if (payload.trigger !== undefined) f.trigger = payload.trigger;
-    if (payload.minDurationMs !== undefined) f.minDurationMs = Number(payload.minDurationMs);
-    if (payload.minPressCount !== undefined) f.minPressCount = Number(payload.minPressCount);
+    if (!mode) return res.status(400).json({ error: "missing force object or mode" });
+    force = { mode };
+    if (payload.target !== undefined) force.target = payload.target;
+    if (payload.trigger !== undefined) force.trigger = payload.trigger;
+    if (payload.minDurationMs !== undefined) force.minDurationMs = Number(payload.minDurationMs);
+    if (payload.minPressCount !== undefined) force.minPressCount = Number(payload.minPressCount);
     if (payload.list) {
-      try { f.list = typeof payload.list === "string" ? JSON.parse(payload.list) : payload.list; } catch (e) { f.list = payload.list; }
+      try { force.list = typeof payload.list === "string" ? JSON.parse(payload.list) : payload.list; } catch (e) { force.list = payload.list; }
     }
-    // assign
-    const session = sessions.get(sessionId);
-    if (!session) return res.status(404).json({ error: "session not found" });
-    const id = crypto.randomUUID();
-    session.queue.push({ id, force: f, createdAt: Date.now() });
-    return res.json({ ok: true, id, queued: session.queue.length });
-  } else {
-    const session = sessions.get(sessionId);
-    if (!session) return res.status(404).json({ error: "session not found" });
-    const id = crypto.randomUUID();
-    session.queue.push({ id, force, createdAt: Date.now() });
-    return res.json({ ok: true, id, queued: session.queue.length });
+    // ensure the app is present
+    force.app = "stopwatch";
   }
+
+  const id = crypto.randomUUID();
+  const entry = { id, force, createdAt: Date.now() };
+  const bucket = tokens.get(token);
+  bucket.queue.push(entry);
+
+  return res.json({ ok: true, id, queued: bucket.queue.length });
 });
 
-// Client poll config
-app.get("/api/config", (req, res) => {
-  const sessionId = req.query.sessionId;
-  const token = req.query.token;
-  if (!sessionId || !token) return res.status(400).json({ error: "missing sessionId or token" });
-  const session = sessions.get(sessionId);
-  if (!session) return res.status(404).json({ error: "session not found" });
-  if (session.clientToken !== token) return res.status(403).json({ error: "invalid token" });
-  return res.json({ queue: session.queue });
+// Poll endpoint for clients (spectator UI): GET /api/data/:token
+app.get("/api/data/:token", (req, res) => {
+  const token = String(req.params.token || "").toUpperCase();
+  const bucket = tokens.get(token);
+  if (!bucket) return res.status(404).json({ error: "token not found" });
+  // return the queue array
+  return res.json({ queue: bucket.queue });
 });
 
-// Client ack
-app.post("/api/ack", (req, res) => {
-  const { sessionId, token, forceId } = req.body || {};
-  if (!sessionId || !token || !forceId) return res.status(400).json({ error: "missing fields" });
-  const session = sessions.get(sessionId);
-  if (!session) return res.status(404).json({ error: "session not found" });
-  if (session.clientToken !== token) return res.status(403).json({ error: "invalid token" });
-  const idx = session.queue.findIndex(q => q.id === forceId);
-  if (idx >= 0) session.queue.splice(idx, 1);
+// Ack: remove force by id -> POST /api/ack/:token  with JSON { forceId: "..." }
+app.post("/api/ack/:token", (req, res) => {
+  const token = String(req.params.token || "").toUpperCase();
+  const bucket = tokens.get(token);
+  if (!bucket) return res.status(404).json({ error: "token not found" });
+  const forceId = req.body && req.body.forceId;
+  if (!forceId) return res.status(400).json({ error: "missing forceId" });
+  const idx = bucket.queue.findIndex(q => q.id === forceId);
+  if (idx >= 0) bucket.queue.splice(idx, 1);
   return res.json({ ok: true });
 });
 
-// List sessions
-app.get("/api/sessions", (req, res) => {
-  if (!checkAdminKeyFromReq(req)) return res.status(401).json({ error: "unauthorized" });
-  const data = [];
-  for (const s of sessions.values()) data.push({ sessionId: s.sessionId, expiresAt: s.expiresAt, queued: s.queue.length });
-  res.json({ sessions: data });
-});
-
-// Static files
+// Serve static frontend (index.html etc.)
 app.use(express.static(path.join(__dirname)));
 
+// small status endpoints
 app.get("/api/status", (req, res) => res.json({ ok: true, uptime: process.uptime() }));
 app.get("/health", (req, res) => res.send("ok"));
 
-// Cleanup
+// cleanup old tokens optionally (not removing by default)
 setInterval(() => {
-  const now = Date.now();
-  for (const [id, session] of sessions.entries()) {
-    if (session.expiresAt && session.expiresAt < now) sessions.delete(id);
-  }
+  // placeholder: tokens are persistent until removed; no auto-deletion
 }, 60 * 1000);
 
 const port = process.env.PORT || 3000;
