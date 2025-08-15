@@ -62,8 +62,29 @@ app.use((req,res,next) => {
   next();
 });
 
-// --- Serve static files from "public" folder ---
-app.use(express.static(path.join(__dirname, 'public')));
+// --- Middleware: require admin key ---
+function requireAdmin(req, res, next) {
+  const adminKey = process.env.ADMIN_KEY;
+  if (!adminKey) {
+    console.warn('ADMIN_KEY not set - admin endpoints are open!');
+    return next(); // dev mode, allow
+  }
+  const provided = req.headers['x-admin-key'];
+  if (provided !== adminKey) {
+    return res.status(403).json({ error: 'forbidden' });
+  }
+  next();
+}
+
+// --- Middleware: require login ---
+function requireLogin(req, res, next) {
+  const sid = req.cookies && req.cookies.MAGIC_SESSION;
+  if (!sid) return res.status(401).json({ error: 'not logged in' });
+  const s = sessions.get(sid);
+  if (!s) return res.status(401).json({ error: 'invalid session' });
+  req.user = s;
+  next();
+}
 
 // --- Auth endpoints for magicians (users) ---
 app.post('/auth/register', (req, res) => {
@@ -119,8 +140,193 @@ app.post('/auth/logout', (req,res) => {
   res.json({ ok:true });
 });
 
+// --- License management (Admin) ---
+app.post('/api/license', requireAdmin, (req, res) => {
+  const { count } = req.body || {};
+  const n = parseInt(count, 10) || 1;
+  if (n < 1 || n > 100) return res.status(400).json({ error: 'count must be 1-100' });
+  
+  const created = [];
+  for (let i = 0; i < n; i++) {
+    let code;
+    do { code = genCode(6); } while (licensesStore[code]);
+    licensesStore[code] = { code, createdAt: Date.now(), usedBy: null, usedAt: null };
+    created.push(code);
+  }
+  saveJSON(LICENSES_FILE, licensesStore);
+  res.json({ ok: true, created });
+});
+
+app.get('/api/licenses', requireAdmin, (req, res) => {
+  const list = Object.values(licensesStore);
+  res.json({ licenses: list });
+});
+
+app.get('/api/users', requireAdmin, (req, res) => {
+  const list = Object.values(usersStore).map(u => ({
+    username: u.username,
+    displayName: u.displayName,
+    createdAt: u.createdAt
+  }));
+  res.json({ users: list });
+});
+
+// --- User token management (logged in users) ---
+app.post('/api/user/token', requireLogin, (req, res) => {
+  const { token } = req.body || {};
+  let newToken = token ? String(token).toUpperCase() : genCode(6);
+  
+  // ensure unique
+  while (tokensStore[newToken]) {
+    newToken = genCode(6);
+  }
+  
+  tokensStore[newToken] = {
+    token: newToken,
+    createdAt: Date.now(),
+    owner: req.user.username,
+    queue: []
+  };
+  saveJSON(TOKENS_FILE, tokensStore);
+  res.json({ ok: true, token: newToken });
+});
+
+app.get('/api/user/tokens', requireLogin, (req, res) => {
+  const userTokens = Object.values(tokensStore)
+    .filter(t => t.owner === req.user.username)
+    .map(t => ({
+      token: t.token,
+      createdAt: t.createdAt,
+      queued: t.queue.length
+    }));
+  res.json({ tokens: userTokens });
+});
+
+app.delete('/api/user/token/:token', requireLogin, (req, res) => {
+  const token = req.params.token;
+  const tokenData = tokensStore[token];
+  if (!tokenData) return res.status(404).json({ error: 'token not found' });
+  if (tokenData.owner !== req.user.username) return res.status(403).json({ error: 'not your token' });
+  
+  delete tokensStore[token];
+  saveJSON(TOKENS_FILE, tokensStore);
+  res.json({ ok: true });
+});
+
+// --- Force / Queue endpoints (public, require valid token) ---
+app.post('/api/data/:token', (req, res) => {
+  const token = req.params.token;
+  const tokenData = tokensStore[token];
+  if (!tokenData) return res.status(404).json({ error: 'token not found' });
+
+  const body = req.body || {};
+  let force;
+  
+  // Handle both formats: { force: {...} } and flat { mode, target, ... }
+  if (body.force) {
+    force = body.force;
+  } else {
+    force = { ...body };
+  }
+  
+  // Validate app field
+  if (!force.app || force.app !== 'stopwatch') {
+    return res.status(400).json({ error: 'app must be "stopwatch"' });
+  }
+
+  const forceId = crypto.randomUUID();
+  const entry = {
+    id: forceId,
+    force,
+    createdAt: Date.now()
+  };
+  
+  tokenData.queue.push(entry);
+  saveJSON(TOKENS_FILE, tokensStore);
+  
+  res.json({ ok: true, id: forceId, queued: tokenData.queue.length });
+});
+
+app.get('/api/data/:token', (req, res) => {
+  const token = req.params.token;
+  const tokenData = tokensStore[token];
+  if (!tokenData) return res.status(404).json({ error: 'token not found' });
+  
+  res.json({ queue: tokenData.queue });
+});
+
+app.post('/api/ack/:token', (req, res) => {
+  const token = req.params.token;
+  const { forceId } = req.body || {};
+  const tokenData = tokensStore[token];
+  if (!tokenData) return res.status(404).json({ error: 'token not found' });
+  
+  const initialLength = tokenData.queue.length;
+  tokenData.queue = tokenData.queue.filter(entry => entry.id !== forceId);
+  
+  if (tokenData.queue.length < initialLength) {
+    saveJSON(TOKENS_FILE, tokensStore);
+  }
+  
+  res.json({ ok: true });
+});
+
+// --- Convenience admin endpoint for sending lists ---
+app.post('/api/list/:token', requireAdmin, (req, res) => {
+  const token = req.params.token;
+  const { list } = req.body || {};
+  const tokenData = tokensStore[token];
+  if (!tokenData) return res.status(404).json({ error: 'token not found' });
+  
+  if (!Array.isArray(list)) return res.status(400).json({ error: 'list must be array' });
+  
+  const forceId = crypto.randomUUID();
+  const entry = {
+    id: forceId,
+    force: {
+      mode: 'list',
+      list: list.slice(), // copy array
+      app: 'stopwatch'
+    },
+    createdAt: Date.now()
+  };
+  
+  tokenData.queue.push(entry);
+  saveJSON(TOKENS_FILE, tokensStore);
+  
+  res.json({ ok: true, id: forceId });
+});
+
+// --- Admin global token list ---
+app.get('/api/tokens', requireAdmin, (req, res) => {
+  const tokens = Object.values(tokensStore).map(t => ({
+    token: t.token,
+    owner: t.owner,
+    queued: t.queue.length
+  }));
+  res.json({ tokens });
+});
+
+// --- Health endpoints ---
+app.get('/health', (req, res) => {
+  res.send('ok');
+});
+
+app.get('/api/status', (req, res) => {
+  res.json({ ok: true, uptime: process.uptime() });
+});
+
+// --- Serve static files from "public" folder ---
+app.use(express.static(path.join(__dirname, 'public')));
+
+// --- Root redirect ---
+app.get('/', (req, res) => {
+  res.redirect('/magician/login.html');
+});
+
 // --- 404 fallback ---
 app.use((req, res) => {
+  console.log('404:', req.url);
   res.status(404).send('Seite nicht gefunden');
 });
 
@@ -128,4 +334,5 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server läuft auf Port ${PORT}`);
+  console.log('Static files served from:', path.join(__dirname, 'public'));
 });
