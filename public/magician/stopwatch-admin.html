@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="de">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Stoppuhr Admin</title>
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <main style="padding:16px;max-width:820px;margin:18px auto;">
+    <h1>Stoppuhr Admin</h1>
+    <div>Token: <span id="tokenSpan"></span></div>
+
+    <h3>Liste erstellen (Beispiel: mehrere ms Einträge)</h3>
+    <div id="listEditor">
+      <div class="item">
+        <input class="mode" value="ms" style="width:70px"/>
+        <input class="target" value="15" style="width:70px"/>
+        <select class="trigger"><option>stop</option><option>lap</option></select>
+        <button class="remove">X</button>
+      </div>
+    </div>
+    <div style="margin-top:8px;">
+      <button id="addRow">+ hinzufügen</button>
+      <button id="sendList" style="margin-left:8px;">Liste senden</button>
+    </div>
+  </main>
+
+<script src="/js/shared.js"></script>
+<script>
+  // simple DOM helper
+  const token = new URLSearchParams(location.search).get('token') || '';
+  document.getElementById('tokenSpan').textContent = token;
+
+  function addRow(mode='ms', target='15', trigger='stop') {
+    const el = document.createElement('div');
+    el.className = 'item';
+    el.innerHTML = `<input class="mode" value="${mode}" style="width:70px"/><input class="target" value="${target}" style="width:70px"/><select class="trigger"><option>stop</option><option>lap</option></select><button class="remove">X</button>`;
+    el.querySelector('.trigger').value = trigger;
+    el.querySelector('.remove').addEventListener('click', ()=> el.remove());
+    document.getElementById('listEditor').appendChild(el);
+  }
+
+  document.getElementById('addRow').addEventListener('click', ()=> addRow());
+  document.getElementById('sendList').addEventListener('click', async ()=>{
+    const rows = Array.from(document.querySelectorAll('#listEditor .item'));
+    const list = rows.map(r => ({ mode: r.querySelector('.mode').value||'ms', target: Number(r.querySelector('.target').value||0), trigger: r.querySelector('.trigger').value||'stop' }));
+    if (!token) return alert('Kein Token');
+    const res = await fetch(`/api/list/${encodeURIComponent(token)}`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ list })});
+    const j = await res.json();
+    if (!res.ok) return alert('Fehler: '+(j.error||JSON.stringify(j)));
+    alert('Liste gesendet, id='+j.id);
+  });
+
+  // start with one row
+  addRow();
+</script>
+</body></html>
