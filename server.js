@@ -1,127 +1,223 @@
-// server.js (komplett ersetzten)
+// server.js (ERSETZEN)
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
 const cookieParser = require('cookie-parser');
+const fs = require('fs');
 
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-// --- CORS (erlaubt Shortcuts / externe Clients) ---
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-admin-key");
-  if (req.method === "OPTIONS") return res.sendStatus(200);
+// --- file-backed simple stores (users, licenses, tokens) ---
+const DATA_DIR = path.join(__dirname, 'data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
+
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const LICENSES_FILE = path.join(DATA_DIR, 'licenses.json');
+const TOKENS_FILE = path.join(DATA_DIR, 'tokens.json');
+
+function loadJSON(file, def) {
+  try {
+    if (!fs.existsSync(file)) { fs.writeFileSync(file, JSON.stringify(def, null, 2)); return def; }
+    const txt = fs.readFileSync(file, 'utf8');
+    return JSON.parse(txt || 'null') || def;
+  } catch (e) { console.error('loadJSON error', file, e); return def; }
+}
+function saveJSON(file, obj) {
+  try { fs.writeFileSync(file, JSON.stringify(obj, null, 2)); } catch (e) { console.error('saveJSON error', file, e); }
+}
+
+const usersStore = loadJSON(USERS_FILE, {});      // username -> { username, displayName, salt, passwordHash, createdAt }
+const licensesStore = loadJSON(LICENSES_FILE, {});// code -> { code, createdAt, usedBy: null|username, usedAt:null }
+const tokensStore = loadJSON(TOKENS_FILE, {});    // token -> { token, createdAt, owner: username|null, queue:[] }
+
+// helper crypto password hash (scrypt)
+function hashPassword(password, salt = null) {
+  salt = salt || crypto.randomBytes(12).toString('hex');
+  const derived = crypto.scryptSync(String(password), salt, 64).toString('hex');
+  return { salt, hash: derived };
+}
+function verifyPassword(password, salt, hash) {
+  const derived = crypto.scryptSync(String(password), salt, 64).toString('hex');
+  return crypto.timingSafeEqual(Buffer.from(derived, 'hex'), Buffer.from(hash, 'hex'));
+}
+function genCode(len = 6) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const r = crypto.randomBytes(len);
+  let out = "";
+  for (let i=0;i<len;i++) out += alphabet[r[i] % alphabet.length];
+  return out;
+}
+
+// in-memory session store: sessionId -> { username, createdAt }
+const sessions = new Map();
+
+// --- CORS (for Shortcuts / external clients) ---
+app.use((req,res,next) => {
+  res.setHeader('Access-Control-Allow-Origin','*');
+  res.setHeader('Access-Control-Allow-Methods','GET,POST,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers','Content-Type, x-admin-key');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
 
-// In-memory stores (simple; good for Render Free demos)
-const tokens = new Map(); // token -> { token, createdAt, queue: [ {id,force,createdAt} ] }
-const sessions = new Map(); // sessionId -> { createdAt, admin: boolean }
+// --- Auth endpoints for magicians (users) ---
+// POST /auth/register { code, username, password, displayName? }
+app.post('/auth/register', (req, res) => {
+  const { code, username, password, displayName } = req.body || {};
+  if (!code || !username || !password) return res.status(400).json({ error: 'missing fields' });
+  const codeU = String(code).toUpperCase();
+  const lic = licensesStore[codeU];
+  if (!lic) return res.status(400).json({ error: 'invalid code' });
+  if (lic.usedBy) return res.status(400).json({ error: 'code already used' });
 
-// Helpers
-function generateToken(len = 6) {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let s = "";
-  const bytes = crypto.randomBytes(len);
-  for (let i=0;i<len;i++) s += alphabet[bytes[i] % alphabet.length];
-  return s;
-}
-function requireAdmin(req, res) {
-  // if ADMIN_KEY env set, require either header x-admin-key or session cookie with admin true
-  const ADMIN_KEY = process.env.ADMIN_KEY;
-  if (!ADMIN_KEY) return true; // dev: open
-  // check header
-  const header = req.header('x-admin-key');
-  if (header && header === ADMIN_KEY) return true;
-  // check session cookie
-  const sid = req.cookies && req.cookies.MAGIC_SESSION;
-  if (!sid) return false;
-  const s = sessions.get(sid);
-  return !!(s && s.admin);
-}
+  const uname = String(username).toLowerCase();
+  if (usersStore[uname]) return res.status(400).json({ error: 'username taken' });
 
-// ---------------- AUTH (magician simple login) ----------------
-// POST /auth/login  { key?: string }  -> sets MAGIG_SESSION cookie (httpOnly)
-app.post('/auth/login', (req, res) => {
-  const ADMIN_KEY = process.env.ADMIN_KEY;
-  const provided = (req.body && req.body.key) ? String(req.body.key) : null;
+  // create user
+  const { salt, hash } = hashPassword(password);
+  usersStore[uname] = { username: uname, displayName: displayName || uname, salt, passwordHash: hash, createdAt: Date.now() };
+  saveJSON(USERS_FILE, usersStore);
 
-  // If ADMIN_KEY is set, require exact match. If not set, any login allowed (dev mode).
-  if (ADMIN_KEY) {
-    if (!provided || provided !== ADMIN_KEY) return res.status(401).json({ error: 'invalid key' });
-  }
+  // mark license used
+  licensesStore[codeU].usedBy = uname;
+  licensesStore[codeU].usedAt = Date.now();
+  saveJSON(LICENSES_FILE, licensesStore);
+
   // create session
-  const sessionId = crypto.randomUUID();
-  const isAdmin = !!ADMIN_KEY; // if ADMIN_KEY exists, the login with key gives admin privileges
-  sessions.set(sessionId, { createdAt: Date.now(), admin: isAdmin });
-  // set cookie (httponly)
-  res.cookie('MAGIC_SESSION', sessionId, { httpOnly: true, sameSite: 'lax' });
-  res.json({ ok:true, admin: isAdmin });
+  const sid = crypto.randomUUID();
+  sessions.set(sid, { username: uname, createdAt: Date.now() });
+  res.cookie('MAGIC_SESSION', sid, { httpOnly: true, sameSite: 'lax' });
+  return res.json({ ok:true, username: uname });
 });
 
-// GET /auth/status  -> checks cookie
-app.get('/auth/status', (req, res) => {
+// POST /auth/login { username, password }
+app.post('/auth/login', (req,res) => {
+  const { username, password } = req.body || {};
+  if (!username || !password) return res.status(400).json({ error:'missing' });
+  const uname = String(username).toLowerCase();
+  const u = usersStore[uname];
+  if (!u) return res.status(401).json({ error:'invalid' });
+  if (!verifyPassword(password, u.salt, u.passwordHash)) return res.status(401).json({ error:'invalid' });
+  const sid = crypto.randomUUID();
+  sessions.set(sid, { username: uname, createdAt: Date.now() });
+  res.cookie('MAGIC_SESSION', sid, { httpOnly: true, sameSite: 'lax' });
+  return res.json({ ok:true, username: uname });
+});
+
+// GET /auth/status
+app.get('/auth/status', (req,res) => {
   const sid = req.cookies && req.cookies.MAGIC_SESSION;
-  if (!sid) return res.json({ loggedIn: false });
+  if (!sid) return res.json({ loggedIn:false });
   const s = sessions.get(sid);
-  if (!s) return res.json({ loggedIn: false });
-  return res.json({ loggedIn: true, admin: !!s.admin });
+  if (!s) return res.json({ loggedIn:false });
+  return res.json({ loggedIn:true, username: s.username });
 });
 
-// POST /auth/logout -> clears cookie
-app.post('/auth/logout', (req, res) => {
+// POST /auth/logout
+app.post('/auth/logout', (req,res) => {
   const sid = req.cookies && req.cookies.MAGIC_SESSION;
   if (sid) sessions.delete(sid);
   res.clearCookie('MAGIC_SESSION');
   res.json({ ok:true });
 });
 
-// ---------------- TOKEN management (admin only) ----------------
-// Create token -> POST /api/token  { token?: "ABC" }
-app.post('/api/token', (req, res) => {
-  if (!requireAdmin(req, res)) return res.status(401).json({ error: 'unauthorized' });
-  let t = (req.body && req.body.token) ? String(req.body.token).toUpperCase() : generateToken(6);
-  while (tokens.has(t)) t = generateToken(6);
-  tokens.set(t, { token: t, createdAt: Date.now(), queue: [] });
-  res.json({ ok:true, token: t });
+// --- admin helpers (protected by ADMIN_KEY env var) ---
+function requireAdminHeader(req) {
+  const ADMIN_KEY = process.env.ADMIN_KEY;
+  if (!ADMIN_KEY) return false;
+  const provided = req.header('x-admin-key');
+  return provided && provided === ADMIN_KEY;
+}
+
+// Admin: create license codes -> POST /api/license { count: number }
+app.post('/api/license', (req,res) => {
+  if (!requireAdminHeader(req)) return res.status(401).json({ error:'unauthorized' });
+  const count = parseInt(req.body && req.body.count || 1, 10);
+  const created = [];
+  for (let i=0;i<count;i++) {
+    let code = genCode(6);
+    while (licensesStore[code]) code = genCode(6);
+    licensesStore[code] = { code, createdAt: Date.now(), usedBy: null, usedAt: null };
+    created.push(code);
+  }
+  saveJSON(LICENSES_FILE, licensesStore);
+  return res.json({ ok:true, created });
 });
 
-// List tokens -> GET /api/tokens
-app.get('/api/tokens', (req, res) => {
-  if (!requireAdmin(req, res)) return res.status(401).json({ error: 'unauthorized' });
-  const out = Array.from(tokens.values()).map(t => ({ token: t.token, queued: t.queue.length, createdAt: t.createdAt }));
-  res.json({ tokens: out });
+// Admin: list license codes -> GET /api/licenses
+app.get('/api/licenses', (req,res) => {
+  if (!requireAdminHeader(req)) return res.status(401).json({ error:'unauthorized' });
+  return res.json({ licenses: Object.values(licensesStore) });
 });
 
-// Delete token -> DELETE /api/token/:token
-app.delete('/api/token/:token', (req, res) => {
-  if (!requireAdmin(req, res)) return res.status(401).json({ error: 'unauthorized' });
+// Admin: list users -> GET /api/users
+app.get('/api/users', (req,res) => {
+  if (!requireAdminHeader(req)) return res.status(401).json({ error:'unauthorized' });
+  return res.json({ users: Object.values(usersStore) });
+});
+
+// --- user-scoped token management (users create their own tokens) ---
+// helper to get current user from cookie
+function getCurrentUser(req) {
+  const sid = req.cookies && req.cookies.MAGIC_SESSION;
+  if (!sid) return null;
+  const s = sessions.get(sid);
+  return s ? s.username : null;
+}
+
+// create token owned by logged-in user -> POST /api/user/token  { token?: "ABC" }
+app.post('/api/user/token', (req,res) => {
+  const user = getCurrentUser(req);
+  if (!user) return res.status(401).json({ error:'login required' });
+
+  let t = req.body && req.body.token ? String(req.body.token).toUpperCase() : genCode(6);
+  while (tokensStore[t]) t = genCode(6);
+
+  tokensStore[t] = { token: t, createdAt: Date.now(), owner: user, queue: [] };
+  saveJSON(TOKENS_FILE, tokensStore);
+  return res.json({ ok:true, token: t });
+});
+
+// list tokens for current user -> GET /api/user/tokens
+app.get('/api/user/tokens', (req,res) => {
+  const user = getCurrentUser(req);
+  if (!user) return res.status(401).json({ error:'login required' });
+  const list = Object.values(tokensStore).filter(x => x.owner === user).map(t => ({ token: t.token, createdAt: t.createdAt, queued: t.queue.length }));
+  return res.json({ tokens: list });
+});
+
+// delete user's token -> DELETE /api/user/token/:token
+app.delete('/api/user/token/:token', (req,res) => {
+  const user = getCurrentUser(req);
+  if (!user) return res.status(401).json({ error:'login required' });
   const token = String(req.params.token || '').toUpperCase();
-  if (!tokens.has(token)) return res.status(404).json({ error: 'not found' });
-  tokens.delete(token);
-  res.json({ ok:true, token });
+  const t = tokensStore[token];
+  if (!t) return res.status(404).json({ error:'not found' });
+  if (t.owner !== user) return res.status(403).json({ error:'forbidden' });
+  delete tokensStore[token];
+  saveJSON(TOKENS_FILE, tokensStore);
+  return res.json({ ok:true });
 });
 
-// ---------------- FORCE endpoints (spectator / api) ----------------
-// Push force -> POST /api/data/:token
-app.post('/api/data/:token', (req, res) => {
+// --- force endpoints (unchanged shape) ---
+// POST /api/data/:token  -> push force (app must be 'stopwatch')
+app.post('/api/data/:token', (req,res) => {
   const token = String(req.params.token || '').toUpperCase();
-  if (!tokens.has(token)) return res.status(404).json({ error: 'token not found' });
+  const bucket = tokensStore[token];
+  if (!bucket) return res.status(404).json({ error:'token not found' });
 
   const payload = req.body || {};
-  // require 'app' to be 'stopwatch' (or payload.force.app)
   const appName = (payload.force && payload.force.app) || payload.app || req.query.app;
   if (!appName || String(appName).toLowerCase() !== 'stopwatch') {
-    return res.status(400).json({ error: "force must target app 'stopwatch' (provide force.app or app='stopwatch')" });
+    return res.status(400).json({ error: "force must target app 'stopwatch'" });
   }
 
   let force = payload.force || null;
   if (!force) {
     const mode = payload.mode;
-    if (!mode) return res.status(400).json({ error: 'missing force or mode' });
+    if (!mode) return res.status(400).json({ error:'missing force or mode' });
     force = { mode };
     if (payload.target !== undefined) force.target = payload.target;
     if (payload.trigger !== undefined) force.trigger = payload.trigger;
@@ -135,51 +231,45 @@ app.post('/api/data/:token', (req, res) => {
 
   const id = crypto.randomUUID();
   const entry = { id, force, createdAt: Date.now() };
-  tokens.get(token).queue.push(entry);
-  res.json({ ok:true, id, queued: tokens.get(token).queue.length });
+  bucket.queue.push(entry);
+  saveJSON(TOKENS_FILE, tokensStore);
+  return res.json({ ok:true, id, queued: bucket.queue.length });
 });
 
-// Poll -> GET /api/data/:token
-app.get('/api/data/:token', (req, res) => {
+// GET /api/data/:token -> poll queue
+app.get('/api/data/:token', (req,res) => {
   const token = String(req.params.token || '').toUpperCase();
-  if (!tokens.has(token)) return res.status(404).json({ error: 'token not found' });
-  res.json({ queue: tokens.get(token).queue });
+  const bucket = tokensStore[token];
+  if (!bucket) return res.status(404).json({ error:'token not found' });
+  return res.json({ queue: bucket.queue });
 });
 
-// Ack -> POST /api/ack/:token  { forceId }
-app.post('/api/ack/:token', (req, res) => {
+// POST /api/ack/:token { forceId }
+app.post('/api/ack/:token', (req,res) => {
   const token = String(req.params.token || '').toUpperCase();
-  if (!tokens.has(token)) return res.status(404).json({ error: 'token not found' });
+  const bucket = tokensStore[token];
+  if (!bucket) return res.status(404).json({ error:'token not found' });
   const forceId = req.body && req.body.forceId;
-  if (!forceId) return res.status(400).json({ error: 'missing forceId' });
-  const bucket = tokens.get(token);
+  if (!forceId) return res.status(400).json({ error:'missing forceId' });
   const idx = bucket.queue.findIndex(q => q.id === forceId);
   if (idx >= 0) bucket.queue.splice(idx, 1);
-  res.json({ ok:true });
+  saveJSON(TOKENS_FILE, tokensStore);
+  return res.json({ ok:true });
 });
 
-// Convenience: POST /api/list/:token  -> send a "list" force (magician can push a sequence)
-app.post('/api/list/:token', (req, res) => {
-  if (!requireAdmin(req, res)) return res.status(401).json({ error: 'unauthorized' });
-  const token = String(req.params.token || '').toUpperCase();
-  if (!tokens.has(token)) return res.status(404).json({ error: 'token not found' });
-  const list = req.body && req.body.list;
-  if (!Array.isArray(list) || list.length === 0) return res.status(400).json({ error: 'missing list array' });
-  const force = { mode: 'list', list: list.map(item => ({ mode: item.mode||'ms', target: item.target, trigger: item.trigger||'stop' })), app: 'stopwatch' };
-  const id = crypto.randomUUID();
-  tokens.get(token).queue.push({ id, force, createdAt: Date.now() });
-  res.json({ ok:true, id });
+// convenience: admin list tokens (all)
+app.get('/api/tokens', (req,res) => {
+  if (!requireAdminHeader(req)) return res.status(401).json({ error:'unauthorized' });
+  return res.json({ tokens: Object.values(tokensStore).map(t => ({ token: t.token, owner: t.owner, queued: t.queue.length })) });
 });
 
-// Serve static UI from /public
+// Serve static frontend
 app.use(express.static(path.join(__dirname, 'public')));
 
-// status
+// health/status
 app.get('/api/status', (req,res) => res.json({ ok:true, uptime: process.uptime() }));
-app.get('/health', (req,res)=> res.send('ok'));
+app.get('/health', (req,res) => res.send('ok'));
 
-// cleanup (no auto-delete of tokens)
-setInterval(()=>{}, 60*1000);
-
+// start
 const port = process.env.PORT || 3000;
-app.listen(port, ()=> console.log(`Server läuft auf Port ${port}`));
+app.listen(port, () => console.log(`Server läuft auf Port ${port}`));
