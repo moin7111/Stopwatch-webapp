@@ -7,8 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Stoppuhr</title>
 <style>
-/* ... (kopiere hier den gesamten CSS-Abschnitt wie vorher) ... */
-/* Für die Antwort hier habe ich denselben CSS-Block wie vorher belassen. */
+/* --- CSS identisch zu deiner bisherigen UI --- */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overscroll-behavior: none; -ms-touch-action: manipulation; touch-action: manipulation; }
 body {
@@ -40,7 +39,6 @@ body {
 .bottom-nav { position: absolute; left: 0; right: 0; bottom: 20px; height: 86px; display:flex; justify-content:space-around; align-items:flex-end; padding: 8px 6px 8px 6px; background: transparent; gap:6px; z-index: 30; }
 .nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; color:#7D7D7D; font-size:11px; font-weight:600; width:72px; } .nav-item.active { color:#F4A30F; } .nav-icon { width:28px; height:24px; display:flex; align-items:center; justify-content:center; }
 .home-indicator { display:none !important; }
-/* Dev connect panel */
 .dev-panel { position: fixed; left: 12px; top: 12px; background: rgba(255,255,255,0.06); color: #fff; padding: 10px; border-radius: 8px; z-index: 200; width: calc(100% - 24px); max-width:480px; display:none; gap:8px; }
 .dev-panel.show { display:flex; flex-direction:column; }
 .dev-panel input { padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.06); background: transparent; color:#fff; }
@@ -78,7 +76,7 @@ body {
     </div>
 
     <div class="bottom-nav" role="navigation" aria-label="Uhr Navigation">
-        <!-- (nav icons unchanged, copy from your original) -->
+        <!-- nav icons unchanged -->
         <div class="nav-item"><div class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18"></path><path d="M12 3 C7.5 7.5, 7.5 16.5, 12 21"></path><path d="M12 3 C16.5 7.5, 16.5 16.5, 12 21"></path><path d="M5.2 7.2c2 1.2 6 1.8 13.6 0"></path><path d="M4 12h16"></path><path d="M5.2 16.8c2-1.2 6-1.8 13.6 0"></path></svg></div><div>Weltuhr</div></div>
 
         <div class="nav-item"><div class="nav-icon"><svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M381.2 64.1c-1.3-.1-2.6-.1-3.9-.1h-.2c-16.2 0-32 5.4-44.6 15.1-1.6 1.3-2.6 3.2-2.7 5.2-.1 2 .8 4 2.3 5.4l89.8 80.5c1.3 1.1 2.9 1.8 4.6 1.8h.4c1.9-.1 3.6-1 4.8-2.4C440.9 159 448 150.8 448 133c.1-36.4-29.1-66.8-66.8-68.9zM64 133c0 17.8 7.1 26 16.3 36.6 1.2 1.4 2.9 2.3 4.8 2.4h.4c1.7 0 3.3-.6 4.6-1.8L180 89.7c1.5-1.4 2.4-3.3 2.3-5.4-.1-2-1-3.9-2.7-5.2C167 69.4 151.2 64 135 64h-.2c-1.3 0-2.6 0-3.9.1-37.7 2.1-67 32.5-66.9 68.9z"/><g><path d="M390 386c26.2-30.7 42-70.5 42-114 0-97.2-78.8-176-176-176S80 174.8 80 272c0 43.5 15.8 83.3 42 114l-34.7 35.5c-6.2 6.3-6 15.5.3 21.6 3.1 3 7.4 4.8 11.4 4.8 4.2 0 8.1-1.9 11.2-5.1l34.6-34.5c30.3 24.7 69 39.6 111.2 39.6s80.9-14.8 111.2-39.6l33.6 34.5c3.1 3.2 7.3 5.1 11.5 5.1 4 0 8.1-1.8 11.2-4.8 6.3-6.2 7.5-15.3 1.3-21.6L390 386zM270 274c0 7.7-6.3 14-14 14h-82c-7.7 0-14-6.3-14-14s6.3-14 14-14h68V158c0-7.7 6.3-14 14-14s14 6.3 14 14v116z"/></g></svg></div><div>Wecker</div></div>
@@ -92,20 +90,21 @@ body {
 
     <!-- Dev connect panel (nur sichtbar bei ?dev=1) -->
     <div class="dev-panel" id="devPanel">
-        <input id="sessionIdInput" placeholder="sessionId (z.B. abc123)" />
-        <input id="tokenInput" placeholder="clientToken" />
+        <input id="tokenInput" placeholder="Token (z.B. CZVOVZ)" />
         <div style="display:flex; gap:8px;"><button id="connectBtn">Verbinden</button><button id="clearBtn" style="background:#FF6B6B">Trennen</button></div>
-        <div style="font-size:13px; opacity:0.8; margin-top:6px;">Wenn verbunden, polled die App /api/config und akzeptiert Forces.</div>
+        <div style="font-size:13px; opacity:0.8; margin-top:6px;">Wenn verbunden, polled die App /api/data/:token und akzeptiert Forces (app=stopwatch).</div>
     </div>
 
 <script>
-    // (Die Stoppuhr-Logik und secretForce wie in deinem vorherigen Code -- vollständig integriert)
-    // Für Lesbarkeit habe ich die Logik unverändert übernommen und nur zwei Dinge ergänzt:
-    // 1) Auto-connect wenn URL parameter sessionId & token gesetzt sind
-    // 2) Statusanzeige im Status-Bar wenn secretForce verbunden ist.
+    // --- Stoppuhr-Logik (wie gehabt) ---
+    let startTime = 0;
+    let elapsedTime = 0;
+    let timerInterval = null;
+    let isRunning = false;
+    let lapCounter = 0;
+    let laps = [];
+    let currentLapStartTime = 0;
 
-    // ----- Stoppuhr-Variblen -----
-    let startTime = 0; let elapsedTime = 0; let timerInterval = null; let isRunning = false; let lapCounter = 0; let laps = []; let currentLapStartTime = 0;
     const timeDisplay = document.getElementById('timeDisplay');
     const leftButton = document.getElementById('leftButton');
     const rightButton = document.getElementById('rightButton');
@@ -206,11 +205,9 @@ body {
                 try { forcedMs = await window.secretForce.applyIfTriggered('stop', realTotal); } catch(e){ console.warn('secretForce error', e); }
             }
             const finalMs = (typeof forcedMs === 'number' && !isNaN(forcedMs)) ? forcedMs : realTotal;
-            // ensure elapsedTime consistent for resume
             elapsedTime = finalMs;
 
             if (laps.length > 0 && laps[0].isCurrent) {
-                // set lap time to what it should be visually (approx)
                 laps[0].time = formatTime(finalMs);
                 laps[0].isCurrent = false;
                 updateLapsDisplay();
@@ -307,7 +304,7 @@ body {
     document.addEventListener('dblclick', function(e){ e.preventDefault(); });
     window.addEventListener('keydown', function(e){ const keysToPrevent = ['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' ']; if (keysToPrevent.includes(e.key)) e.preventDefault(); }, { passive: false });
 
-    /* ---------------- secretForce Module (client-side) ---------------- */
+    /* ---------------- secretForce Module (token-based) ---------------- */
     (function(global){
         const API_BASE = '';
 
@@ -345,7 +342,7 @@ body {
             return null;
         }
 
-        function createClient(sessionId, token, pollIntervalMs){
+        function createClient(token, pollIntervalMs){
             let polling = false;
             let queue = [];
             let pressCounts = { stop:0, lap:0 };
@@ -353,7 +350,7 @@ body {
             async function poll(){
                 if (!polling) return;
                 try{
-                    const url = `${API_BASE}/api/config?sessionId=${encodeURIComponent(sessionId)}&token=${encodeURIComponent(token)}`;
+                    const url = `${API_BASE}/api/data/${encodeURIComponent(token)}`;
                     const r = await fetch(url, { cache: 'no-store' });
                     if (r.ok){
                         const j = await r.json();
@@ -364,7 +361,7 @@ body {
                         }
                     }
                 }catch(e){
-                    // ignore
+                    // ignore network errors silently
                 }finally{
                     setTimeout(poll, pollIntervalMs);
                 }
@@ -409,10 +406,10 @@ body {
 
             async function ackForce(forceId){
                 try{
-                    await fetch(`${API_BASE}/api/ack`, {
+                    await fetch(`${API_BASE}/api/ack/${encodeURIComponent(token)}`, {
                         method: 'POST',
                         headers: { 'Content-Type':'application/json' },
-                        body: JSON.stringify({ sessionId, token, forceId })
+                        body: JSON.stringify({ forceId })
                     });
                 }catch(e){ }
             }
@@ -426,10 +423,10 @@ body {
         const secret = {
             client: null,
             install(opts){
-                if (!opts || !opts.sessionId || !opts.token) throw new Error('missing sessionId or token');
+                if (!opts || !opts.token) throw new Error('missing token');
                 const pollInterval = opts.pollIntervalMs || 400;
-                this.client = createClient(opts.sessionId, opts.token, pollInterval);
-                updateStatus(`connected (session ${opts.sessionId.substring(0,6)})`);
+                this.client = createClient(opts.token, pollInterval);
+                updateStatus(`connected (token ${opts.token.substring(0,6)})`);
             },
             async applyIfTriggered(eventType, realMs){
                 if (!this.client) return null;
@@ -440,17 +437,15 @@ body {
         };
 
         global.secretForce = secret;
-
         function updateStatus(text){ if (statusText) statusText.textContent = text; }
 
     })(window);
 
-    /* ---------------- Dev connect UI logic (nur sichtbar bei ?dev=1) ---------------- */
+    /* Dev panel + autoconnect via ?token=... */
     (function(){
         const params = new URLSearchParams(location.search);
         const dev = params.get('dev');
         const panel = document.getElementById('devPanel');
-        const sessionIdInput = document.getElementById('sessionIdInput');
         const tokenInput = document.getElementById('tokenInput');
         const connectBtn = document.getElementById('connectBtn');
         const clearBtn = document.getElementById('clearBtn');
@@ -458,26 +453,18 @@ body {
         if (dev === '1') panel.classList.add('show');
 
         connectBtn.addEventListener('click', function(){
-            const s = sessionIdInput.value.trim();
             const t = tokenInput.value.trim();
-            if (!s || !t) return alert('Bitte sessionId und token eingeben');
+            if (!t) return alert('Bitte Token eingeben');
             try{
-                window.secretForce.install({ sessionId: s, token: t, pollIntervalMs: 400 });
-                alert('Verbunden. Die App polled nun /api/config.');
+                window.secretForce.install({ token: t, pollIntervalMs: 400 });
+                alert('Verbunden. Die App polled nun /api/data/:token.');
             }catch(e){ alert('Fehler: '+e.message); }
         });
-        clearBtn.addEventListener('click', function(){
-            window.secretForce.disconnect();
-            alert('Getrennt');
-        });
+        clearBtn.addEventListener('click', function(){ window.secretForce.disconnect(); alert('Getrennt'); });
 
-        // Auto-connect wenn sessionId & token in URL vorhanden (praktisch für Zuschauer-Link)
-        const sParam = params.get('sessionId') || params.get('sid') || params.get('s');
         const tParam = params.get('token') || params.get('t');
-        if (sParam && tParam) {
-            try {
-                window.secretForce.install({ sessionId: sParam, token: tParam, pollIntervalMs: 400 });
-            } catch(e) { console.warn('autoconnect failed', e); }
+        if (tParam) {
+            try { window.secretForce.install({ token: tParam, pollIntervalMs: 400 }); } catch(e) { console.warn('autoconnect failed', e); }
         }
     })();
 </script>
