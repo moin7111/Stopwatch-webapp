@@ -1,81 +1,119 @@
 <!doctype html>
 <html lang="de">
-<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Magier Dashboard</title>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Magier Dashboard"/>
+<link rel="apple-touch-icon" href="/icon-192x192.png"/>
+<link rel="manifest" href="/manifest.json"/>
+<title>Magier Dashboard</title>
 <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
   <main style="padding:18px;max-width:900px;margin:28px auto;">
-    <h1>Dein Magier Dashboard</h1>
-    <div style="margin-bottom:12px;">
-      <button id="createTokenBtn">Neuen Token erzeugen</button>
-      <button id="logoutBtn" style="margin-left:12px;">Logout</button>
+    <h1>🎩 Dein Magier Dashboard</h1>
+    <div style="margin-bottom:20px;">
+      <button id="logoutBtn">Logout</button>
     </div>
 
-    <section style="margin-top:18px;">
-      <h2>Deine Tokens</h2>
-      <div id="tokensList">lade...</div>
+    <section style="margin-top:24px;">
+      <h2>📱 Dein Token & API</h2>
+      <div id="tokenInfo" style="background:#2a2a2a;padding:20px;border-radius:8px;margin:16px 0;">
+        <div>Lade Token...</div>
+      </div>
     </section>
 
-    <section style="margin-top:18px;">
-      <h2>Schnelllinks</h2>
-      <p>Wenn du einen Token auswählst, kannst du damit die Zuschauer-URL öffnen:</p>
-      <input id="tokenForOpen" placeholder="Token ...">
-      <button id="openSpectator">Zuschauer öffnen</button>
-      <button id="openAdminStopwatch">Öffne Stoppuhr-Admin</button>
+    <section style="margin-top:24px;">
+      <h2>🔗 Schnellzugriffe</h2>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin:16px 0;">
+        <button id="openSpectator" style="background:#30D058;">🎯 Zuschauer-Stoppuhr öffnen</button>
+        <button id="openAdminStopwatch" style="background:#FF9500;">⚙️ Stoppuhr-Admin öffnen</button>
+      </div>
+    </section>
+
+    <section style="margin-top:24px;">
+      <h2>📋 API Beispiele</h2>
+      <div id="apiExamples" style="background:#2a2a2a;padding:20px;border-radius:8px;font-family:monospace;font-size:14px;line-height:1.6;">
+        Lade API Beispiele...
+      </div>
     </section>
   </main>
 
 <script>
+  let currentToken = '';
+
   async function apiGet(url) {
     const r = await fetch(url, { cache:'no-store' });
     if (!r.ok) throw await r.json().catch(()=>({ error: 'http '+r.status }));
     return r.json();
   }
-  async function apiPost(url, body) {
-    const r = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(body) });
-    if (!r.ok) throw await r.json().catch(()=>({ error: 'http '+r.status }));
-    return r.json();
-  }
-  async function apiDel(url) {
-    const r = await fetch(url, { method:'DELETE' });
-    if (!r.ok) throw await r.json().catch(()=>({ error: 'http '+r.status }));
-    return r.json();
-  }
 
-  async function refreshTokens() {
+  async function loadTokenInfo() {
     try {
-      const j = await apiGet('/api/user/tokens');
-      const cont = document.getElementById('tokensList');
-      cont.innerHTML = '';
-      if (!j.tokens || j.tokens.length === 0) { cont.textContent = 'keine Tokens'; return; }
-      j.tokens.forEach(t => {
-        const el = document.createElement('div');
-        el.style.padding = '8px';
-        el.style.borderBottom = '1px solid rgba(255,255,255,0.06)';
-        el.innerHTML = `<strong>${t.token}</strong> &nbsp; queued: ${t.queued} &nbsp; <button class="btnOpen">Öffnen</button> <button class="btnDel" style="margin-left:8px">Löschen</button>`;
-        el.querySelector('.btnOpen').addEventListener('click', ()=> {
-          window.open(`/spectator.html?token=${encodeURIComponent(t.token)}`, '_blank');
-        });
-        el.querySelector('.btnDel').addEventListener('click', async ()=> {
-          if (!confirm('Token löschen?')) return;
-          await apiDel(`/api/user/token/${encodeURIComponent(t.token)}`);
-          refreshTokens();
-        });
-        cont.appendChild(el);
-      });
+      const data = await apiGet('/api/user/tokens');
+      currentToken = data.token;
+      
+      const tokenInfo = document.getElementById('tokenInfo');
+      tokenInfo.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <strong style="color:#30D058;">Token: ${data.token}</strong>
+          <span style="color:#888;">Queue: ${data.queued}</span>
+        </div>
+        <div style="font-size:13px;color:#888;">
+          Erstellt: ${new Date(data.createdAt).toLocaleString('de-DE')}
+        </div>
+        <div style="margin-top:12px;">
+          <strong>Zuschauer URL:</strong><br>
+          <a href="${data.apiExamples.spectatorUrl}" target="_blank" style="color:#30D058;word-break:break-all;">
+            ${data.apiExamples.spectatorUrl}
+          </a>
+        </div>
+      `;
+
+      // API Examples
+      const apiExamples = document.getElementById('apiExamples');
+      apiExamples.innerHTML = `
+<div style="margin-bottom:20px;">
+  <strong style="color:#30D058;">📤 Force senden (iOS Shortcuts / curl):</strong><br>
+  <div style="background:#1a1a1a;padding:12px;border-radius:6px;margin:8px 0;">
+POST ${data.apiExamples.pushForce.url}<br>
+Content-Type: application/json<br><br>
+{<br>
+&nbsp;&nbsp;"force": {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"mode": "ms",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"target": 15,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"trigger": "stop",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"minDurationMs": 3000,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"app": "stopwatch"<br>
+&nbsp;&nbsp;}<br>
+}
+  </div>
+</div>
+
+<div style="margin-bottom:20px;">
+  <strong style="color:#FF9500;">📥 Queue abfragen:</strong><br>
+  <div style="background:#1a1a1a;padding:12px;border-radius:6px;margin:8px 0;">
+GET ${data.apiExamples.pollQueue.url}
+  </div>
+</div>
+
+<div>
+  <strong style="color:#FF453A;">✅ Force bestätigen:</strong><br>
+  <div style="background:#1a1a1a;padding:12px;border-radius:6px;margin:8px 0;">
+POST ${data.apiExamples.ackForce.url}<br>
+Content-Type: application/json<br><br>
+{"forceId": "FORCE_ID_FROM_QUEUE"}
+  </div>
+</div>
+      `;
+
     } catch (e) {
-      document.getElementById('tokensList').textContent = 'Fehler beim Laden';
+      document.getElementById('tokenInfo').innerHTML = '<div style="color:#FF453A;">Fehler beim Laden der Token-Daten</div>';
       console.error(e);
     }
   }
-
-  document.getElementById('createTokenBtn').addEventListener('click', async ()=>{
-    try {
-      const j = await apiPost('/api/user/token', {});
-      alert('Token erzeugt: ' + j.token);
-      await refreshTokens();
-    } catch (e) { alert('Fehler: ' + (e.error || JSON.stringify(e))); }
-  });
 
   document.getElementById('logoutBtn').addEventListener('click', async ()=>{
     await fetch('/auth/logout', { method:'POST' });
@@ -83,17 +121,16 @@
   });
 
   document.getElementById('openSpectator').addEventListener('click', ()=> {
-    const t = document.getElementById('tokenForOpen').value.trim();
-    if (!t) return alert('Token eingeben');
-    window.open(`/spectator.html?token=${encodeURIComponent(t)}`, '_blank');
-  });
-  document.getElementById('openAdminStopwatch').addEventListener('click', ()=> {
-    const t = document.getElementById('tokenForOpen').value.trim();
-    if (!t) return alert('Token eingeben');
-    window.open(`/magician/stopwatch-admin.html?token=${encodeURIComponent(t)}`, '_blank');
+    if (!currentToken) return alert('Token noch nicht geladen');
+    window.open(`/spectator.html?token=${encodeURIComponent(currentToken)}`, '_blank');
   });
 
-  // init
-  (async ()=> { await refreshTokens(); })();
+  document.getElementById('openAdminStopwatch').addEventListener('click', ()=> {
+    if (!currentToken) return alert('Token noch nicht geladen');
+    window.open(`/magician/stopwatch-admin.html?token=${encodeURIComponent(currentToken)}`, '_blank');
+  });
+
+  // Init
+  (async ()=> { await loadTokenInfo(); })();
 </script>
 </body></html>
