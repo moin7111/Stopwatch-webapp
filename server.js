@@ -1,4 +1,4 @@
-// server.js
+// server.js (ersetzen)
 const express = require("express");
 const path = require("path");
 const crypto = require("crypto");
@@ -6,40 +6,40 @@ const crypto = require("crypto");
 const app = express();
 app.use(express.json());
 
-// --- Simple CORS middleware (ermöglicht iOS Shortcuts / externe Clients) ---
+// --- CORS (erlaubt Shortcuts / externe Clients) ---
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*"); // bei Bedarf einschränken
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-admin-key, x-shortcut-key");
   if (req.method === "OPTIONS") return res.sendStatus(200);
   next();
 });
 
-// In-memory session store (simple; geeignet für Demo / Render Free)
-const sessions = new Map();
+// In-memory stores
+const sessions = new Map();           // sessionId -> { sessionId, clientToken, expiresAt, queue:[] }
+const shortcutBindings = new Map();  // key -> sessionId
 
-// Helper: prüft Admin-Key (ENV ADMIN_KEY)
-// Falls ADMIN_KEY nicht gesetzt ist, erlauben wir Admin-Endpoints in Dev (wie vorher)
+// Helpers
 function checkAdminKeyFromReq(req) {
   const envAdminKey = process.env.ADMIN_KEY;
   if (!envAdminKey) return true;
-  const provided = req.header("x-admin-key") || req.query.k || req.header("x-shortcut-key") || req.query.key;
+  const provided = req.header("x-admin-key") || req.query.k || req.query.key;
   return provided === envAdminKey;
 }
-
-// Helper: prüft Shortcut-Key (ENV SHORTCUT_KEY) oder ADMIN_KEY
+function getProvidedKey(req) {
+  return req.header("x-shortcut-key") || req.query.k || req.query.key;
+}
 function checkShortcutAuth(req) {
   const envShortcutKey = process.env.SHORTCUT_KEY;
   const envAdminKey = process.env.ADMIN_KEY;
-  const provided = req.header("x-shortcut-key") || req.query.k || req.header("x-admin-key") || req.query.key;
+  const provided = getProvidedKey(req);
   if (envAdminKey && provided === envAdminKey) return true;
   if (envShortcutKey && provided === envShortcutKey) return true;
-  // if neither env var set -> permissive dev mode
-  if (!envAdminKey && !envShortcutKey) return true;
+  if (!envAdminKey && !envShortcutKey) return true; // permissive dev mode
   return false;
 }
 
-// Create session (admin)
+// Admin: create session
 app.post("/api/session", (req, res) => {
   if (!checkAdminKeyFromReq(req)) return res.status(401).json({ error: "unauthorized" });
 
@@ -51,118 +51,123 @@ app.post("/api/session", (req, res) => {
 
   const session = { sessionId, clientToken, expiresAt, queue: [] };
   sessions.set(sessionId, session);
-
   return res.json({ sessionId, clientToken, expiresAt });
 });
 
-// Admin: push a force to a session
+// Admin: push force
 app.post("/api/force", (req, res) => {
   if (!checkAdminKeyFromReq(req)) return res.status(401).json({ error: "unauthorized" });
   const { sessionId, force } = req.body || {};
   if (!sessionId || !force) return res.status(400).json({ error: "missing sessionId or force" });
-
   const session = sessions.get(sessionId);
   if (!session) return res.status(404).json({ error: "session not found" });
-
   const id = crypto.randomUUID();
-  const entry = { id, force, createdAt: Date.now() };
-  session.queue.push(entry);
-
+  session.queue.push({ id, force, createdAt: Date.now() });
   return res.json({ ok: true, id });
 });
 
-// NEW: Shortcut endpoint (leichte Integration für iOS Shortcuts)
-// Accepts POST JSON body or GET query params.
-// Auth: either ADMIN_KEY or SHORTCUT_KEY header/query (`x-shortcut-key` or ?k=...).
-// If neither ADMIN_KEY nor SHORTCUT_KEY are set in env -> permissive for dev.
+// Admin: bind a shortcut key to a session (so shortcut doesn't need sessionId)
+app.post("/api/bind", (req, res) => {
+  if (!checkAdminKeyFromReq(req)) return res.status(401).json({ error: "unauthorized" });
+  const { key, sessionId } = req.body || {};
+  if (!key || !sessionId) return res.status(400).json({ error: "missing key or sessionId" });
+  if (!sessions.has(sessionId)) return res.status(404).json({ error: "session not found" });
+  shortcutBindings.set(key, sessionId);
+  return res.json({ ok: true, key, sessionId });
+});
+
+// Shortcut endpoint: accepts POST/GET; sessionId optional.
+// If sessionId not provided, server tries following (in order):
+//  1) find binding: provided key -> bound sessionId
+//  2) if exactly one active session exists -> use that
+//  otherwise -> error (ask to bind)
 app.all("/shortcut", (req, res) => {
-  // Allow both GET and POST (GET supports quick test via browser or Shortcut using GET)
   if (!checkShortcutAuth(req)) return res.status(401).json({ error: "unauthorized" });
 
-  // Input may be in JSON body (POST) or query params
-  const payload = req.method === "POST" ? (req.body || {}) : req.query || {};
-  // Support both shapes: { sessionId, force: {...} } or flat { sessionId, mode, target, trigger, ... }
-  const sessionId = payload.sessionId || payload.sid || payload.s;
-  if (!sessionId) return res.status(400).json({ error: "missing sessionId" });
+  const payload = req.method === "POST" ? (req.body || {}) : (req.query || {});
+  let sessionId = payload.sessionId || payload.sid || payload.s;
+  const providedKey = getProvidedKey(req);
 
-  // Build force object
-  let force = payload.force || null;
-  if (!force) {
-    // attempt to construct from flat params
-    const mode = payload.mode;
-    if (!mode) return res.status(400).json({ error: "missing force.mode or force object" });
-    force = { mode };
-    if (payload.target !== undefined) force.target = payload.target;
-    if (payload.trigger !== undefined) force.trigger = payload.trigger;
-    if (payload.minDurationMs !== undefined) force.minDurationMs = Number(payload.minDurationMs);
-    if (payload.minPressCount !== undefined) force.minPressCount = Number(payload.minPressCount);
-    if (payload.list) {
-      try {
-        force.list = typeof payload.list === "string" ? JSON.parse(payload.list) : payload.list;
-      } catch (e) { force.list = payload.list; }
+  // if no sessionId, try binding
+  if (!sessionId) {
+    if (providedKey && shortcutBindings.has(providedKey)) {
+      sessionId = shortcutBindings.get(providedKey);
+    } else {
+      // fallback: if exactly one session exists, use it
+      const activeSessions = Array.from(sessions.keys());
+      if (activeSessions.length === 1) sessionId = activeSessions[0];
     }
   }
 
-  const session = sessions.get(sessionId);
-  if (!session) return res.status(404).json({ error: "session not found" });
+  if (!sessionId) return res.status(400).json({ error: "missing sessionId and no binding available; bind a key or provide sessionId" });
 
-  const id = crypto.randomUUID();
-  const entry = { id, force, createdAt: Date.now() };
-  session.queue.push(entry);
-
-  return res.json({ ok: true, id, queued: session.queue.length });
+  const force = payload.force || null;
+  if (!force) {
+    // attempt to build from flat params
+    const mode = payload.mode;
+    if (!mode) return res.status(400).json({ error: "missing force.mode or force object" });
+    // construct
+    const f = { mode };
+    if (payload.target !== undefined) f.target = payload.target;
+    if (payload.trigger !== undefined) f.trigger = payload.trigger;
+    if (payload.minDurationMs !== undefined) f.minDurationMs = Number(payload.minDurationMs);
+    if (payload.minPressCount !== undefined) f.minPressCount = Number(payload.minPressCount);
+    if (payload.list) {
+      try { f.list = typeof payload.list === "string" ? JSON.parse(payload.list) : payload.list; } catch (e) { f.list = payload.list; }
+    }
+    // assign
+    const session = sessions.get(sessionId);
+    if (!session) return res.status(404).json({ error: "session not found" });
+    const id = crypto.randomUUID();
+    session.queue.push({ id, force: f, createdAt: Date.now() });
+    return res.json({ ok: true, id, queued: session.queue.length });
+  } else {
+    const session = sessions.get(sessionId);
+    if (!session) return res.status(404).json({ error: "session not found" });
+    const id = crypto.randomUUID();
+    session.queue.push({ id, force, createdAt: Date.now() });
+    return res.json({ ok: true, id, queued: session.queue.length });
+  }
 });
 
-// Client polls config (Spectator client)
+// Client poll config
 app.get("/api/config", (req, res) => {
   const sessionId = req.query.sessionId;
   const token = req.query.token;
   if (!sessionId || !token) return res.status(400).json({ error: "missing sessionId or token" });
-
   const session = sessions.get(sessionId);
   if (!session) return res.status(404).json({ error: "session not found" });
   if (session.clientToken !== token) return res.status(403).json({ error: "invalid token" });
-
-  // only return queue items
   return res.json({ queue: session.queue });
 });
 
-// Client ACK after applying a force -> remove it from queue
+// Client ack
 app.post("/api/ack", (req, res) => {
   const { sessionId, token, forceId } = req.body || {};
   if (!sessionId || !token || !forceId) return res.status(400).json({ error: "missing fields" });
   const session = sessions.get(sessionId);
   if (!session) return res.status(404).json({ error: "session not found" });
   if (session.clientToken !== token) return res.status(403).json({ error: "invalid token" });
-
   const idx = session.queue.findIndex(q => q.id === forceId);
   if (idx >= 0) session.queue.splice(idx, 1);
-
   return res.json({ ok: true });
 });
 
-// Optional: admin can list sessions
+// List sessions
 app.get("/api/sessions", (req, res) => {
   if (!checkAdminKeyFromReq(req)) return res.status(401).json({ error: "unauthorized" });
   const data = [];
-  for (const s of sessions.values()) {
-    data.push({ sessionId: s.sessionId, expiresAt: s.expiresAt, queued: s.queue.length });
-  }
+  for (const s of sessions.values()) data.push({ sessionId: s.sessionId, expiresAt: s.expiresAt, queued: s.queue.length });
   res.json({ sessions: data });
 });
 
-// Static files (index.html etc.)
+// Static files
 app.use(express.static(path.join(__dirname)));
 
-// Example status and health endpoints
-app.get("/api/status", (req, res) => {
-  res.json({ ok: true, uptime: process.uptime() });
-});
-app.get("/health", (req, res) => {
-  res.send("ok");
-});
+app.get("/api/status", (req, res) => res.json({ ok: true, uptime: process.uptime() }));
+app.get("/health", (req, res) => res.send("ok"));
 
-// Cleanup expired sessions regularly
+// Cleanup
 setInterval(() => {
   const now = Date.now();
   for (const [id, session] of sessions.entries()) {
@@ -170,8 +175,5 @@ setInterval(() => {
   }
 }, 60 * 1000);
 
-// PORT from Render or 3000
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server läuft auf Port ${port}`);
-});
+app.listen(port, () => console.log(`Server läuft auf Port ${port}`));
