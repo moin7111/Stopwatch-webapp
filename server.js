@@ -109,6 +109,10 @@ app.post('/auth/register', (req, res) => {
   const sid = crypto.randomUUID();
   sessions.set(sid, { username: uname, createdAt: Date.now() });
   res.cookie('MAGIC_SESSION', sid, { httpOnly: true, sameSite: 'lax' });
+  
+  // Ensure user has a token
+  ensureUserToken(uname);
+  
   return res.json({ ok:true, username: uname });
 });
 
@@ -122,6 +126,10 @@ app.post('/auth/login', (req,res) => {
   const sid = crypto.randomUUID();
   sessions.set(sid, { username: uname, createdAt: Date.now() });
   res.cookie('MAGIC_SESSION', sid, { httpOnly: true, sameSite: 'lax' });
+  
+  // Ensure user has a token
+  ensureUserToken(uname);
+  
   return res.json({ ok:true, username: uname });
 });
 
@@ -172,45 +180,53 @@ app.get('/api/users', requireAdmin, (req, res) => {
 });
 
 // --- User token management (logged in users) ---
-app.post('/api/user/token', requireLogin, (req, res) => {
-  const { token } = req.body || {};
-  let newToken = token ? String(token).toUpperCase() : genCode(6);
-  
-  // ensure unique
-  while (tokensStore[newToken]) {
-    newToken = genCode(6);
+// Auto-create token on registration/login if user doesn't have one
+function ensureUserToken(username) {
+  const userTokens = Object.values(tokensStore).filter(t => t.owner === username);
+  if (userTokens.length === 0) {
+    let newToken;
+    do { newToken = genCode(6); } while (tokensStore[newToken]);
+    
+    tokensStore[newToken] = {
+      token: newToken,
+      createdAt: Date.now(),
+      owner: username,
+      queue: []
+    };
+    saveJSON(TOKENS_FILE, tokensStore);
+    return newToken;
   }
-  
-  tokensStore[newToken] = {
-    token: newToken,
-    createdAt: Date.now(),
-    owner: req.user.username,
-    queue: []
-  };
-  saveJSON(TOKENS_FILE, tokensStore);
-  res.json({ ok: true, token: newToken });
-});
+  return userTokens[0].token;
+}
 
 app.get('/api/user/tokens', requireLogin, (req, res) => {
-  const userTokens = Object.values(tokensStore)
-    .filter(t => t.owner === req.user.username)
-    .map(t => ({
-      token: t.token,
-      createdAt: t.createdAt,
-      queued: t.queue.length
-    }));
-  res.json({ tokens: userTokens });
-});
-
-app.delete('/api/user/token/:token', requireLogin, (req, res) => {
-  const token = req.params.token;
-  const tokenData = tokensStore[token];
-  if (!tokenData) return res.status(404).json({ error: 'token not found' });
-  if (tokenData.owner !== req.user.username) return res.status(403).json({ error: 'not your token' });
+  const userToken = ensureUserToken(req.user.username);
+  const tokenData = tokensStore[userToken];
   
-  delete tokensStore[token];
-  saveJSON(TOKENS_FILE, tokensStore);
-  res.json({ ok: true });
+  res.json({ 
+    token: userToken,
+    createdAt: tokenData.createdAt,
+    queued: tokenData.queue.length,
+    apiExamples: {
+      spectatorUrl: `${req.protocol}://${req.get('host')}/spectator.html?token=${userToken}`,
+      pushForce: {
+        url: `${req.protocol}://${req.get('host')}/api/data/${userToken}`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{"force":{"mode":"ms","target":15,"trigger":"stop","minDurationMs":3000,"app":"stopwatch"}}'
+      },
+      pollQueue: {
+        url: `${req.protocol}://${req.get('host')}/api/data/${userToken}`,
+        method: 'GET'
+      },
+      ackForce: {
+        url: `${req.protocol}://${req.get('host')}/api/ack/${userToken}`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{"forceId":"FORCE_ID_FROM_QUEUE"}'
+      }
+    }
+  });
 });
 
 // --- Force / Queue endpoints (public, require valid token) ---
