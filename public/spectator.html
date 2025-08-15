@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Stoppuhr (Zuschauer)</title>
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div id="app">
+    <div class="time-display" id="timeDisplay">00:00,00</div>
+    <div class="controls">
+      <button id="leftButton" class="control-button left left-idle" disabled>Runde</button>
+      <button id="rightButton" class="control-button right right-start">Start</button>
+    </div>
+    <div class="laps-container" id="lapsContainer"></div>
+
+    <!-- Dev panel: token connect (only with ?dev=1). Use ?token=... to auto connect -->
+    <div class="dev-panel" id="devPanel" style="display:none;">
+      <input id="tokenInput" placeholder="Token (z.B. CZVOVZ)">
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button id="connectBtn">Verbinden</button>
+        <button id="clearBtn" style="background:#FF6B6B">Trennen</button>
+      </div>
+    </div>
+  </div>
+
+<script src="/js/shared.js"></script>
+<script src="/js/stopwatch.js"></script>
+<script>
+  // initialize stopwatch with secretForce client that uses token-based polling
+  (function(){
+    const params = new URLSearchParams(location.search);
+    const t = params.get('token');
+    const dev = params.get('dev');
+    if (dev === '1') document.getElementById('devPanel').style.display = 'block';
+    // auto-connect if token present
+    if (t) {
+      // secretForce.install expects { token }
+      try { secretForce.install({ token: t, pollIntervalMs: 400 }); } catch(e) { console.warn(e); }
+    }
+    document.getElementById('connectBtn').addEventListener('click', ()=> {
+      const val = document.getElementById('tokenInput').value.trim();
+      if (!val) return alert('Bitte Token eingeben');
+      secretForce.install({ token: val, pollIntervalMs: 400 });
+      alert('Verbunden (Dev)');
+    });
+    document.getElementById('clearBtn').addEventListener('click', ()=> { secretForce.disconnect(); alert('Getrennt'); });
+  })();
+</script>
+</body>
+</html>
