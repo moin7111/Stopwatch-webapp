@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="de">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Magier Dashboard</title>
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <main style="padding:18px;max-width:900px;margin:28px auto;">
+    <h1>Magier Dashboard</h1>
+    <div style="margin-bottom:12px;">
+      <button id="createBtn">Neuen Token erzeugen</button>
+      <button id="logoutBtn" style="margin-left:12px;">Logout</button>
+    </div>
+
+    <section style="margin-top:18px;">
+      <h2>Tokens</h2>
+      <div id="tokensList">lade...</div>
+    </section>
+
+    <section style="margin-top:18px;">
+      <h2>Aktionen</h2>
+      <p>Öffne die Stoppuhr Admin für einen Token:</p>
+      <input id="tokenForAdmin" placeholder="Token ...">
+      <button id="openAdminBtn">Öffnen (Stoppuhr Admin)</button>
+    </section>
+  </main>
+
+<script src="/js/shared.js"></script>
+<script src="/js/magician.js"></script>
+<script>
+  (async ()=> {
+    await Magician.init();
+    document.getElementById('createBtn').addEventListener('click', ()=>Magician.createToken());
+    document.getElementById('logoutBtn').addEventListener('click', ()=>Magician.logout());
+    document.getElementById('openAdminBtn').addEventListener('click', ()=> {
+      const t = document.getElementById('tokenForAdmin').value.trim();
+      if (!t) return alert('Token eingeben');
+      window.open(`/magician/stopwatch-admin.html?token=${encodeURIComponent(t)}`, '_blank');
+    });
+  })();
+</script>
+</body></html>
