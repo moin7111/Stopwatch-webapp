@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>IMPERIA System</title>
+    <meta http-equiv="refresh" content="0; url=/imperia/control/index.html">
+    <link rel="canonical" href="/imperia/control/index.html">
     <style>
         * {
             margin: 0;
@@ -42,47 +44,18 @@
             margin-bottom: 48px;
         }
         
-        .system-card {
-            background: #111;
-            border: 1px solid #333;
-            border-radius: 16px;
-            padding: 32px;
-            margin-bottom: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            color: #fff;
-            display: block;
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
         }
         
-        .system-card:hover {
-            background: #1a1a1a;
-            border-color: #666;
-            transform: translateY(-2px);
-        }
-        
-        .system-card h2 {
-            font-size: 28px;
-            font-weight: 400;
-            margin-bottom: 12px;
-        }
-        
-        .system-card p {
-            font-size: 16px;
-            font-weight: 300;
-            opacity: 0.8;
-            line-height: 1.5;
-        }
-        
-        .divider {
-            height: 1px;
-            background: #333;
-            margin: 32px 0;
-        }
-        
-        .icon {
-            font-size: 48px;
-            margin-bottom: 16px;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -90,24 +63,15 @@
     <div class="container">
         <div class="logo">IMPERIA</div>
         <div class="subtitle">Professional Magic System</div>
-        
-        <a href="/imperia/" class="system-card">
-            <div class="icon">🎩</div>
-            <h2>IMPERIA Control System</h2>
-            <p>Login, Dashboard & Tempra<br>Vollständige Kontrolle über Ihre Show</p>
-        </a>
-        
-        <a href="/imperia-modul/" class="system-card">
-            <div class="icon">⏱️</div>
-            <h2>IMPERIA Tempral</h2>
-            <p>Tempral - Präzisions-Stoppuhr<br>Spezialisiertes Timing-Modul</p>
-        </a>
-        
-        <div class="divider"></div>
-        
+        <div class="spinner"></div>
         <p style="font-size: 14px; opacity: 0.6;">
-            Wählen Sie das gewünschte System
+            Weiterleitung...
         </p>
     </div>
+    
+    <script>
+        // Sofortige Weiterleitung
+        window.location.href = '/imperia/control/index.html';
+    </script>
 </body>
 </html>
