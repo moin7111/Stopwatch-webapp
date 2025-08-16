@@ -363,28 +363,28 @@
     <!-- Manual Input UI -->
     <div class="hidden-ui" id="manualInputUI">
         <div class="hidden-ui-header">
-            <h2>Manuelle Eingabe</h2>
-            <button class="close-btn" onclick="hideManualInput()">Schließen</button>
+            <h2>Schnell-Force</h2>
+            <button class="close-btn" onclick="hideManualInput()">Abbrechen</button>
         </div>
         
         <div class="input-group">
-            <label>Wert eingeben:</label>
-            <input type="number" id="manualInputValue" placeholder="z.B. 42">
+            <label>Wert eingeben (Enter für nächsten):</label>
+            <input type="number" id="manualInputValue" placeholder="z.B. 42" autofocus>
         </div>
-
-        <button class="action-btn secondary" onclick="addToSequence()">Zur Sequenz hinzufügen</button>
 
         <div class="sequence-display" id="sequenceDisplay">
             <p style="opacity: 0.6; text-align: center;">Keine Werte in der Sequenz</p>
         </div>
 
-        <div class="force-type-buttons">
-            <button class="force-type-btn active" data-type="ms">MS</button>
-            <button class="force-type-btn" data-type="s">Summe</button>
-            <button class="force-type-btn" data-type="ft">FT</button>
-        </div>
+        <p style="text-align: center; margin: 20px 0; opacity: 0.7;">
+            Wähle den Force-Typ und starte die Sequenz:
+        </p>
 
-        <button class="action-btn" onclick="startManualForce()">Force starten</button>
+        <div class="force-type-buttons">
+            <button class="force-type-btn" onclick="startManualForce('ms')">MS-Force</button>
+            <button class="force-type-btn" onclick="startManualForce('s')">S-Force</button>
+            <button class="force-type-btn" onclick="startManualForce('ft')">FT-Force</button>
+        </div>
     </div>
 
     <!-- Presets Selection UI -->
@@ -467,14 +467,7 @@
                 }
             });
 
-            // Force type buttons
-            document.querySelectorAll('.force-type-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    document.querySelectorAll('.force-type-btn').forEach(b => b.classList.remove('active'));
-                    e.target.classList.add('active');
-                    selectedForceType = e.target.dataset.type;
-                });
-            });
+
         }
 
         // Triple Click Handler
@@ -536,8 +529,13 @@
                 // Check for forces
                 const forcedTime = checkForceConditions('stop', elapsedTime);
                 if (forcedTime !== null) {
+                    // Calculate the difference for lap time adjustment
+                    const oldElapsed = elapsedTime;
                     elapsedTime = forcedTime;
-                    currentLapTime = forcedTime - (elapsedTime - currentLapTime);
+                    // Adjust current lap time proportionally
+                    if (laps.length === 0 && currentLapTime > 0) {
+                        currentLapTime = forcedTime;
+                    }
                     updateDisplay(elapsedTime);
                     updateCurrentLap();
                 }
@@ -656,15 +654,8 @@
         }
 
         // Force Functions
-        function checkForceConditions(trigger, currentTime) {
-            // Check manual sequence
-            if (manualSequence.length > 0) {
-                const force = manualSequence.shift();
-                updateSequenceDisplay();
-                return applyForce(force.type, force.value, currentTime);
-            }
-            
-            // Check active forces
+        function checkForceConditions(trigger, currentTime) {            
+            // Check active forces (includes manual forces)
             for (let i = 0; i < activeForces.length; i++) {
                 const force = activeForces[i];
                 
@@ -748,22 +739,28 @@
             document.getElementById('manualInputValue').value = '';
             manualSequence = [];
             updateSequenceDisplay();
+            // Focus on input field
+            setTimeout(() => {
+                document.getElementById('manualInputValue').focus();
+            }, 100);
+            
+            // Add enter key listener
+            const input = document.getElementById('manualInputValue');
+            input.onkeypress = function(e) {
+                if (e.key === 'Enter') {
+                    const value = parseInt(input.value);
+                    if (!isNaN(value)) {
+                        manualSequence.push(value);
+                        input.value = '';
+                        updateSequenceDisplay();
+                    }
+                }
+            };
         }
 
         function hideManualInput() {
             document.getElementById('manualInputUI').classList.remove('active');
-        }
-
-        function addToSequence() {
-            const value = parseInt(document.getElementById('manualInputValue').value);
-            if (!isNaN(value)) {
-                manualSequence.push({
-                    type: selectedForceType,
-                    value: value
-                });
-                document.getElementById('manualInputValue').value = '';
-                updateSequenceDisplay();
-            }
+            manualSequence = [];
         }
 
         function updateSequenceDisplay() {
@@ -772,12 +769,16 @@
             if (manualSequence.length === 0) {
                 display.innerHTML = '<p style="opacity: 0.6; text-align: center;">Keine Werte in der Sequenz</p>';
             } else {
-                display.innerHTML = manualSequence.map((item, index) => `
-                    <div class="sequence-item">
-                        <span>${item.type.toUpperCase()}: ${item.value}</span>
-                        <button class="remove-sequence-btn" onclick="removeFromSequence(${index})">✕</button>
-                    </div>
-                `).join('');
+                display.innerHTML = '<table style="width: 100%;">' + 
+                    manualSequence.map((value, index) => `
+                        <tr class="sequence-item">
+                            <td style="padding: 8px;">${index + 1}.</td>
+                            <td style="padding: 8px;">${value}</td>
+                            <td style="padding: 8px; text-align: right;">
+                                <button class="remove-sequence-btn" onclick="removeFromSequence(${index})">✕</button>
+                            </td>
+                        </tr>
+                    `).join('') + '</table>';
             }
         }
 
@@ -786,10 +787,20 @@
             updateSequenceDisplay();
         }
 
-        function startManualForce() {
+        function startManualForce(forceType) {
             if (manualSequence.length > 0) {
+                // Convert sequence to force objects
+                activeForces = manualSequence.map(value => ({
+                    type: forceType,
+                    value: value,
+                    trigger: 'both',
+                    conditions: null
+                }));
+                
                 hideManualInput();
-                showNotification('Manuelle Force-Sequenz aktiviert');
+                showNotification(`${manualSequence.length} ${forceType.toUpperCase()}-Forces aktiviert`);
+            } else {
+                showNotification('Bitte erst Werte eingeben', 'error');
             }
         }
 
