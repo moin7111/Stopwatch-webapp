@@ -7,6 +7,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#000000" />
+    <meta name="apple-mobile-web-app-title" content="MainTick" />
+    <meta name="application-name" content="MainTick" />
+    <meta name="msapplication-TileColor" content="#000000" />
+    <meta name="msapplication-TileImage" content="/icon-192x192.png" />
     <title>MainTick - Stoppuhr</title>
     
     <!-- PWA Manifest -->
@@ -14,7 +18,14 @@
     
     <!-- Icons -->
     <link rel="apple-touch-icon" href="/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512x512.png" />
     <link rel="icon" type="image/png" href="/icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png" />
+    
+    <!-- iOS Splash Screen -->
+    <link rel="apple-touch-startup-image" href="/icon-512x512.png">
     
     <!-- Styles -->
     <link rel="stylesheet" href="/css/stopwatch-ui.css">
@@ -235,8 +246,12 @@
             
             // Service Worker Registration
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(function(registration) {
                     console.log('Service Worker registered with scope:', registration.scope);
+                    // Check if a new service worker is available
+                    registration.addEventListener('updatefound', function() {
+                        console.log('Service Worker update found');
+                    });
                 }).catch(function(err) {
                     console.log('Service Worker registration failed:', err);
                 });
