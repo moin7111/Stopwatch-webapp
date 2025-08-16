@@ -1,7 +1,8 @@
-// sw.js - Service Worker für Stopwatch Magic PWA
-const CACHE_NAME = 'stopwatch-magic-v5';
+// sw.js - Service Worker für IMPERIA Magic System PWA
+const CACHE_NAME = 'imperia-magic-v6';
 const urlsToCache = [
   '/',
+  '/license.html',
   '/modultick.html',
   '/maintick/login.html',
   '/maintick/dashboard.html',

@@ -2,10 +2,20 @@
 <html lang="de">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Stopwatch Magic - Weiterleitung...</title>
-    <meta http-equiv="refresh" content="0; url=/maintick/login.html">
-    <link rel="canonical" href="/maintick/login.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>IMPERIA Magic System</title>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="IMPERIA">
+    <link rel="apple-touch-icon" href="/icon-192x192.png">
+    <link rel="icon" type="image/png" href="/icon-192x192.png">
+    <meta name="theme-color" content="#000000">
+    
+    <meta http-equiv="refresh" content="0; url=/license.html">
+    <link rel="canonical" href="/license.html">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -48,18 +58,27 @@
 </head>
 <body>
     <div class="spinner"></div>
-    <div class="message">🎩 Stopwatch Magic</div>
+    <div class="message">🎩 IMPERIA Magic System</div>
     <div style="font-size: 14px; opacity: 0.8; margin-bottom: 20px;">
-        Weiterleitung zum Login...
+        Weiterleitung zur App...
     </div>
-    <a href="/maintick/login.html" class="link">
+    <a href="/license.html" class="link">
         Klicken Sie hier, falls die Weiterleitung nicht funktioniert
     </a>
     
     <script>
+        // Register service worker if supported
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => console.log('Service Worker registered'))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
+        
         // Zusätzliche JavaScript-Weiterleitung für maximale Kompatibilität
         setTimeout(() => {
-            window.location.href = '/maintick/login.html';
+            window.location.href = '/license.html';
         }, 100);
     </script>
 </body>
