@@ -125,12 +125,12 @@ app.use(express.static('public'));
 
 // 🔥 FIX: Hauptroute für PWA  
 app.get('/', (req, res) => {
-    res.redirect(301, '/magician/login.html');
+    res.redirect(301, '/maintick/login.html');
 });
 
 // Alternative route for PWA
 app.get('/app', (req, res) => {
-    res.redirect(301, '/magician/login.html');
+    res.redirect(301, '/maintick/login.html');
 });
 
 // === ENHANCED AUTHENTICATION ROUTES ===
@@ -603,6 +603,277 @@ app.post('/api/webapp/:appType/settings', requireDB, async (req, res) => {
     }
 });
 
+// === PRESETS API ===
+
+// Get user's presets (authenticated)
+app.get('/api/presets', requireDB, async (req, res) => {
+    try {
+        const sessionId = req.cookies.MAGIC_SESSION;
+        const session = getSession(sessionId);
+        
+        if (!session) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const presets = await db.getPresets(session.userId);
+        res.json(presets);
+
+    } catch (error) {
+        console.error('Get presets error:', error);
+        res.status(500).json({ error: 'Failed to get presets' });
+    }
+});
+
+// Get presets by token (for ModulTick)
+app.get('/api/presets/:token', requireDB, async (req, res) => {
+    try {
+        const { token } = req.params;
+        
+        // Get user ID from token
+        const tokenData = await db.getTokenByValue(token);
+        if (!tokenData || !tokenData.is_active) {
+            return res.status(404).json({ error: 'Invalid token' });
+        }
+
+        const user = await db.getUserByUsername(tokenData.owner_username);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const presets = await db.getPresets(user.id);
+        res.json(presets);
+
+    } catch (error) {
+        console.error('Get presets by token error:', error);
+        res.status(500).json({ error: 'Failed to get presets' });
+    }
+});
+
+// Create preset
+app.post('/api/presets', requireDB, async (req, res) => {
+    try {
+        const sessionId = req.cookies.MAGIC_SESSION;
+        const session = getSession(sessionId);
+        
+        if (!session) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const { name, description, forceType, forceSequence, conditions, trigger } = req.body;
+        
+        if (!name || !forceType || !forceSequence || forceSequence.length === 0) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        // Add trigger to conditions if provided
+        const fullConditions = conditions ? { ...conditions, trigger } : { trigger };
+
+        const presetId = await db.createPreset(
+            session.userId,
+            name,
+            description || '',
+            forceType,
+            forceSequence,
+            fullConditions
+        );
+
+        // Log action
+        await db.logAction(session.userId, 'preset_created', { presetId, name }, getClientInfo(req).ip);
+
+        res.json({ ok: true, presetId });
+
+    } catch (error) {
+        console.error('Create preset error:', error);
+        res.status(500).json({ error: 'Failed to create preset' });
+    }
+});
+
+// Update preset
+app.put('/api/presets/:id', requireDB, async (req, res) => {
+    try {
+        const sessionId = req.cookies.MAGIC_SESSION;
+        const session = getSession(sessionId);
+        
+        if (!session) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const { id } = req.params;
+        const updates = req.body;
+
+        await db.updatePreset(id, updates);
+
+        // Log action
+        await db.logAction(session.userId, 'preset_updated', { presetId: id, updates }, getClientInfo(req).ip);
+
+        res.json({ ok: true });
+
+    } catch (error) {
+        console.error('Update preset error:', error);
+        res.status(500).json({ error: 'Failed to update preset' });
+    }
+});
+
+// Delete preset
+app.delete('/api/presets/:id', requireDB, async (req, res) => {
+    try {
+        const sessionId = req.cookies.MAGIC_SESSION;
+        const session = getSession(sessionId);
+        
+        if (!session) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const { id } = req.params;
+
+        await db.deletePreset(id);
+
+        // Log action
+        await db.logAction(session.userId, 'preset_deleted', { presetId: id }, getClientInfo(req).ip);
+
+        res.json({ ok: true });
+
+    } catch (error) {
+        console.error('Delete preset error:', error);
+        res.status(500).json({ error: 'Failed to delete preset' });
+    }
+});
+
+// === ENHANCED FORCE API ===
+
+// Create force with new types and conditions
+app.post('/api/data/:token', requireDB, async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { mode, target, app, trigger, minDurationMs, conditions, force_type, value, preset_name } = req.body;
+        
+        // Get token data
+        const tokenData = await db.getTokenByValue(token);
+        if (!tokenData || !tokenData.is_active) {
+            return res.status(404).json({ error: 'Invalid token' });
+        }
+
+        // Determine force type and value
+        const finalForceType = force_type || mode || 'ms';
+        const finalValue = value || target;
+        
+        if (!finalValue && finalValue !== 0) {
+            return res.status(400).json({ error: 'Force value required' });
+        }
+
+        // If preset name provided, load preset
+        let presetId = null;
+        if (preset_name) {
+            const user = await db.getUserByUsername(tokenData.owner_username);
+            const preset = await db.getPresetByName(user.id, preset_name);
+            if (preset) {
+                presetId = preset.id;
+                // Use preset values if not overridden
+                if (!force_type && !mode) {
+                    finalForceType = preset.force_type;
+                }
+                if (!conditions) {
+                    conditions = preset.conditions;
+                }
+            }
+        }
+
+        // Create force with enhanced data
+        const forceId = generateUUID();
+        const forceData = {
+            forceId,
+            mode: finalForceType,
+            force_type: finalForceType,
+            target: finalValue,
+            value: finalValue,
+            app: app || 'stopwatch',
+            trigger: trigger || conditions?.trigger || 'both',
+            minDurationMs: minDurationMs || 0,
+            conditions,
+            timestamp: Date.now()
+        };
+
+        await db.createEnhancedForce(
+            tokenData.id,
+            forceId,
+            forceData,
+            finalForceType,
+            conditions,
+            presetId
+        );
+
+        // Log action
+        await db.logAction(null, 'force_created', { token, forceId, forceType: finalForceType }, getClientInfo(req).ip);
+
+        res.json({ ok: true, forceId });
+
+    } catch (error) {
+        console.error('Create force error:', error);
+        res.status(500).json({ error: 'Failed to create force' });
+    }
+});
+
+// === MANUAL INPUT HISTORY API ===
+
+app.post('/api/manual-input/:token', requireDB, async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { forceType, forceValues } = req.body;
+        
+        // Get token data
+        const tokenData = await db.getTokenByValue(token);
+        if (!tokenData || !tokenData.is_active) {
+            return res.status(404).json({ error: 'Invalid token' });
+        }
+
+        const user = await db.getUserByUsername(tokenData.owner_username);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const historyId = await db.createManualInputHistory(
+            user.id,
+            tokenData.id,
+            forceType,
+            forceValues
+        );
+
+        res.json({ ok: true, historyId });
+
+    } catch (error) {
+        console.error('Create manual input history error:', error);
+        res.status(500).json({ error: 'Failed to save manual input' });
+    }
+});
+
+// === TICK CONNECTIONS API ===
+
+app.post('/api/tick-connection', requireDB, async (req, res) => {
+    try {
+        const { mainTickToken, modulTickToken } = req.body;
+        
+        if (!mainTickToken || !modulTickToken) {
+            return res.status(400).json({ error: 'Both tokens required' });
+        }
+
+        // Get token data
+        const mainToken = await db.getTokenByValue(mainTickToken);
+        const modulToken = await db.getTokenByValue(modulTickToken);
+        
+        if (!mainToken || !modulToken) {
+            return res.status(404).json({ error: 'Invalid token(s)' });
+        }
+
+        const connectionId = await db.createTickConnection(mainToken.id, modulToken.id);
+
+        res.json({ ok: true, connectionId });
+
+    } catch (error) {
+        console.error('Create tick connection error:', error);
+        res.status(500).json({ error: 'Failed to create connection' });
+    }
+});
+
 // === HEALTH & STATUS ===
 
 app.get('/health', (req, res) => {
@@ -646,7 +917,7 @@ initializeDatabase().then(() => {
         }
         console.log(`🗄️ Database: SQLite (${db.dbPath})`);
         console.log(`🔐 Admin protection: ${process.env.ADMIN_KEY ? 'ENABLED' : 'DISABLED (dev mode)'}`);
-        console.log(`📱 PWA Login: ${process.env.NODE_ENV === 'production' ? 'https://stopwatch-webapp-1.onrender.com/magician/login.html' : `http://localhost:${PORT}/magician/login.html`}`);
+        console.log(`📱 PWA Login: ${process.env.NODE_ENV === 'production' ? 'https://stopwatch-webapp-1.onrender.com/maintick/login.html' : `http://localhost:${PORT}/maintick/login.html`}`);
     });
 }).catch(error => {
     console.error('❌ Failed to start server:', error);
