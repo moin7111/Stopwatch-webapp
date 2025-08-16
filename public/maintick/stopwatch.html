@@ -1,1131 +1,197 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>MainTick - Professional Stopwatch</title>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="/icon-192x192.png">
-    <link rel="manifest" href="/manifest.json">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
-            background: #000;
-            color: #fff;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-        }
-
-        /* Main Display */
-        .display-container {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            position: relative;
-        }
-
-        .time-display {
-            font-size: clamp(60px, 15vw, 120px);
-            font-weight: 200;
-            font-variant-numeric: tabular-nums;
-            letter-spacing: -0.02em;
-            text-align: center;
-            min-width: 300px;
-        }
-
-        .milliseconds {
-            font-size: 0.7em;
-            opacity: 0.9;
-        }
-
-        /* Laps Container */
-        .laps-container {
-            flex: 1;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            padding: 0 30px;
-            margin-bottom: 20px;
-        }
-
-        .lap-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 15px 0;
-            border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
-            font-size: 18px;
-            font-weight: 300;
-        }
-
-        .lap-number {
-            opacity: 0.6;
-        }
-
-        .lap-time {
-            font-variant-numeric: tabular-nums;
-        }
-
-        /* Controls */
-        .controls {
-            display: flex;
-            justify-content: space-around;
-            padding: 20px 30px 40px;
-            gap: 20px;
-        }
-
-        .control-btn {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            border: 2px solid;
-            background: transparent;
-            color: inherit;
-            font-size: 16px;
-            font-weight: 400;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .control-btn:active {
-            transform: scale(0.95);
-        }
-
-        /* Button States */
-        .btn-start {
-            border-color: #30d158;
-            color: #30d158;
-        }
-
-        .btn-start:active {
-            background: rgba(48, 209, 88, 0.1);
-        }
-
-        .btn-stop {
-            border-color: #ff3b30;
-            color: #ff3b30;
-        }
-
-        .btn-stop:active {
-            background: rgba(255, 59, 48, 0.1);
-        }
-
-        .btn-lap {
-            border-color: #fff;
-            color: #fff;
-        }
-
-        .btn-lap:active {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .btn-reset {
-            border-color: #8e8e93;
-            color: #8e8e93;
-        }
-
-        .btn-reset:active {
-            background: rgba(142, 142, 147, 0.1);
-        }
-
-        /* Hidden UI Elements */
-        .hidden-ui {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 1000;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .hidden-ui.active {
-            display: block;
-        }
-
-        .hidden-ui-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .hidden-ui h2 {
-            font-size: 24px;
-            font-weight: 600;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            color: #007aff;
-            font-size: 18px;
-            cursor: pointer;
-            padding: 10px;
-        }
-
-        /* Input Fields */
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            opacity: 0.8;
-        }
-
-        .input-group input,
-        .input-group select {
-            width: 100%;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 16px;
-        }
-
-        .input-group input:focus,
-        .input-group select:focus {
-            outline: none;
-            border-color: #007aff;
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        /* Force Type Buttons */
-        .force-type-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .force-type-btn {
-            flex: 1;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .force-type-btn.active {
-            background: #007aff;
-            border-color: #007aff;
-        }
-
-        /* Sequence Display */
-        .sequence-display {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .sequence-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .sequence-item:last-child {
-            border-bottom: none;
-        }
-
-        .remove-sequence-btn {
-            background: none;
-            border: none;
-            color: #ff3b30;
-            cursor: pointer;
-            padding: 5px;
-        }
-
-        /* Action Buttons */
-        .action-btn {
-            width: 100%;
-            padding: 15px;
-            background: #007aff;
-            border: none;
-            border-radius: 8px;
-            color: #fff;
-            font-size: 18px;
-            font-weight: 500;
-            cursor: pointer;
-            margin-bottom: 10px;
-            transition: all 0.2s;
-        }
-
-        .action-btn:active {
-            transform: scale(0.98);
-            background: #0051d5;
-        }
-
-        .action-btn.secondary {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        /* Presets List */
-        .presets-list {
-            margin-top: 30px;
-        }
-
-        .preset-item {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .preset-item:active {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .preset-name {
-            font-size: 18px;
-            font-weight: 500;
-            margin-bottom: 5px;
-        }
-
-        .preset-info {
-            font-size: 14px;
-            opacity: 0.7;
-        }
-
-        /* Notification */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 122, 255, 0.9);
-            color: #fff;
-            padding: 15px 20px;
-            border-radius: 8px;
-            transform: translateX(400px);
-            transition: transform 0.3s ease;
-            z-index: 2000;
-        }
-
-        .notification.show {
-            transform: translateX(0);
-        }
-
-        /* Loading Indicator */
-        .loading {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px 30px;
-            border-radius: 8px;
-            display: none;
-        }
-
-        .loading.show {
-            display: block;
-        }
-    </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>MainTick - Stoppuhr</title>
+    <link rel="stylesheet" href="/css/stopwatch-ui.css">
 </head>
 <body>
-    <!-- Main Display -->
-    <div class="display-container">
-        <div class="time-display" id="timeDisplay">
-            <span id="minutes">00</span>:<span id="seconds">00</span><span class="milliseconds">,<span id="milliseconds">00</span></span>
-        </div>
+    <div class="status-bar">
+        <div id="statusText" style="height:20px;">&nbsp;</div>
     </div>
 
-    <!-- Laps -->
-    <div class="laps-container" id="lapsContainer"></div>
+    <div class="stopwatch-container">
+        <div class="time-display" id="timeDisplay">00:00,00</div>
 
-    <!-- Controls -->
-    <div class="controls">
-        <button class="control-btn btn-reset" id="lapResetBtn">Löschen</button>
-        <button class="control-btn btn-start" id="startStopBtn">Start</button>
-    </div>
+        <div class="controls" aria-hidden="false">
+            <button id="leftButton" class="control-button left left-idle" disabled>Runde</button>
+            <button id="rightButton" class="control-button right right-start">Start</button>
 
-    <!-- Manual Input UI -->
-    <div class="hidden-ui" id="manualInputUI">
-        <div class="hidden-ui-header">
-            <h2>Schnell-Force</h2>
-            <button class="close-btn" onclick="hideManualInput()">Abbrechen</button>
-        </div>
-        
-        <div class="input-group">
-            <label>Wert eingeben (Enter für nächsten):</label>
-            <input type="number" id="manualInputValue" placeholder="z.B. 42" autofocus>
-        </div>
-
-        <div class="sequence-display" id="sequenceDisplay">
-            <p style="opacity: 0.6; text-align: center;">Keine Werte in der Sequenz</p>
-        </div>
-
-        <p style="text-align: center; margin: 20px 0; opacity: 0.7;">
-            Wähle den Force-Typ und starte die Sequenz:
-        </p>
-
-        <div class="force-type-buttons">
-            <button class="force-type-btn" onclick="startManualForce('ms')">MS-Force</button>
-            <button class="force-type-btn" onclick="startManualForce('s')">S-Force</button>
-            <button class="force-type-btn" onclick="startManualForce('ft')">FT-Force</button>
-        </div>
-    </div>
-
-    <!-- Presets UI -->
-    <div class="hidden-ui" id="presetsUI">
-        <div class="hidden-ui-header">
-            <h2>Voreinstellungen</h2>
-            <button class="close-btn" onclick="hidePresets()">Schließen</button>
-        </div>
-
-        <button class="action-btn secondary" onclick="createNewPreset()">Neue Voreinstellung erstellen</button>
-
-        <div class="presets-list" id="presetsList"></div>
-    </div>
-
-    <!-- Create Preset UI -->
-    <div class="hidden-ui" id="createPresetUI">
-        <div class="hidden-ui-header">
-            <h2>Neue Voreinstellung</h2>
-            <button class="close-btn" onclick="hideCreatePreset()">Abbrechen</button>
-        </div>
-
-        <div class="input-group">
-            <label>Name:</label>
-            <input type="text" id="presetName" placeholder="z.B. Lotterie-Vorhersage">
-        </div>
-
-        <div class="input-group">
-            <label>Beschreibung:</label>
-            <input type="text" id="presetDescription" placeholder="Optional">
-        </div>
-
-        <div class="input-group">
-            <label>Force-Typ:</label>
-            <div class="force-type-buttons" id="presetForceType">
-                <button class="force-type-btn active" data-type="ms">MS</button>
-                <button class="force-type-btn" data-type="s">Summe</button>
-                <button class="force-type-btn" data-type="ft">FT</button>
+            <div class="dots" aria-hidden="true">
+                <div class="dot active"></div>
+                <div class="dot"></div>
             </div>
         </div>
 
-        <div class="input-group">
-            <label>Werte (Enter für nächsten):</label>
-            <input type="number" id="presetValueInput" placeholder="Wert eingeben">
-            <div class="sequence-display" id="presetSequenceDisplay" style="margin-top: 10px;">
-                <p style="opacity: 0.6; text-align: center;">Keine Werte eingegeben</p>
-            </div>
-        </div>
-
-        <h3 style="margin-top: 30px; margin-bottom: 15px;">Bedingungen (Auslöseverzögerung)</h3>
-
-        <div class="input-group">
-            <label>Force auslösen nach:</label>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <input type="number" id="presetDelayValue" placeholder="Anzahl" style="flex: 1;" min="0">
-                <select id="presetDelayType" style="flex: 2;">
-                    <option value="none">Sofort (keine Verzögerung)</option>
-                    <option value="seconds">Sekunden</option>
-                    <option value="stops">mal Stoppen</option>
-                    <option value="laps">Runden</option>
-                    <option value="resets">mal Löschen</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="input-group">
-            <label>Auslöser (wann wird Force angewendet):</label>
-            <select id="presetTrigger">
-                <option value="both">Egal (Stop oder Runde)</option>
-                <option value="stop">Nur bei Stop</option>
-                <option value="lap">Nur bei Runde</option>
-            </select>
-        </div>
-
-        <button class="action-btn" onclick="savePreset()">Voreinstellung speichern</button>
+        <div class="separator-line" aria-hidden="true"></div>
+        <div class="laps-container" id="lapsContainer"></div>
     </div>
 
-    <!-- Notification -->
-    <div class="notification" id="notification"></div>
+    <div class="bottom-nav" role="navigation" aria-label="Uhr Navigation">
+        <div class="nav-item">
+            <div class="nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 3v18"></path>
+                    <path d="M12 3 C7.5 7.5, 7.5 16.5, 12 21"></path>
+                    <path d="M12 3 C16.5 7.5, 16.5 16.5, 12 21"></path>
+                    <path d="M5.2 7.2c2 1.2 6 1.8 13.6 0"></path>
+                    <path d="M4 12h16"></path>
+                    <path d="M5.2 16.8c2-1.2 6-1.8 13.6 0"></path>
+                </svg>
+            </div>
+            <div>Weltuhr</div>
+        </div>
 
-    <!-- Loading -->
-    <div class="loading" id="loading">Wird geladen...</div>
+        <div class="nav-item" id="alarmNavItem">
+            <div class="nav-icon">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M381.2 64.1c-1.3-.1-2.6-.1-3.9-.1h-.2c-16.2 0-32 5.4-44.6 15.1-1.6 1.3-2.6 3.2-2.7 5.2-.1 2 .8 4 2.3 5.4l89.8 80.5c1.3 1.1 2.9 1.8 4.6 1.8h.4c1.9-.1 3.6-1 4.8-2.4C440.9 159 448 150.8 448 133c.1-36.4-29.1-66.8-66.8-68.9zM64 133c0 17.8 7.1 26 16.3 36.6 1.2 1.4 2.9 2.3 4.8 2.4h.4c1.7 0 3.3-.6 4.6-1.8L180 89.7c1.5-1.4 2.4-3.3 2.3-5.4-.1-2-1-3.9-2.7-5.2C167 69.4 151.2 64 135 64h-.2c-1.3 0-2.6 0-3.9.1-37.7 2.1-67 32.5-66.9 68.9z"/>
+                    <g>
+                        <path d="M390 386c26.2-30.7 42-70.5 42-114 0-97.2-78.8-176-176-176S80 174.8 80 272c0 43.5 15.8 83.3 42 114l-34.7 35.5c-6.2 6.3-6 15.5.3 21.6 3.1 3 7.4 4.8 11.4 4.8 4.2 0 8.1-1.9 11.2-5.1l34.6-34.5c30.3 24.7 69 39.6 111.2 39.6s80.9-14.8 111.2-39.6l33.6 34.5c3.1 3.2 7.3 5.1 11.5 5.1 4 0 8.1-1.8 11.2-4.8 6.3-6.2 7.5-15.3 1.3-21.6L390 386zM270 274c0 7.7-6.3 14-14 14h-82c-7.7 0-14-6.3-14-14s6.3-14 14-14h68V158c0-7.7 6.3-14 14-14s14 6.3 14 14v116z"/>
+                    </g>
+                </svg>
+            </div>
+            <div>Wecker</div>
+        </div>
 
+        <div class="nav-item active">
+            <div class="nav-icon">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M415.9 143.7c3.1 3.1 8.2 3.1 11.3 0l11.3-11.3c3.1-3.1 3.1-8.2 0-11.3L413 95.6c-3.1-3.1-8.2-3.1-11.3 0l-11.3 11.3c-3.1 3.1-3.1 8.2 0 11.3l25.5 25.5zM84.8 143.7c3.1 3.1 8.2 3.1 11.3 0l25.5-25.5c3.1-3.1 3.1-8.2 0-11.3l-11.3-11.3c-3.1-3.1-8.2-3.1-11.3 0L73.5 121c-3.1 3.1-3.1 8.2 0 11.3l11.3 11.4z"/>
+                    <path d="M280 81.5V64c0-8.8-7.2-16-16-16h-16c-8.8 0-16 7.2-16 16v17.5C137.3 93.3 64 174.1 64 272c0 106 86 192 192 192s192-86 192-192c0-97.9-73.3-178.7-168-190.5zm-10 219.3V320c0 7.7-6.3 14-14 14s-14-6.3-14-14v-19.2c-10.7-5.2-18-16.1-18-28.8s7.3-23.6 18-28.8V144c0-7.7 6.3-14 14-14s14 6.3 14 14v99.2c10.7 5.2 18 16.1 18 28.8s-7.3 23.6-18 28.8z"/>
+                </svg>
+            </div>
+            <div>Stoppuhr</div>
+        </div>
+
+        <div class="nav-item">
+            <div class="nav-icon">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M256 456c-110.3 0-200-89.7-200-200 0-54.8 21.7-105.9 61.2-144 6.4-6.2 16.6-6 22.7.4 6.2 6.4 6 16.6-.4 22.7-33.1 32-51.3 74.9-51.3 120.9 0 92.5 75.3 167.8 167.8 167.8S423.8 348.5 423.8 256c0-87.1-66.7-159-151.8-167.1v62.6c0 8.9-7.2 16.1-16.1 16.1s-16.1-7.2-16.1-16.1V72.1c0-8.9 7.2-16.1 16.1-16.1 110.3 0 200 89.7 200 200S366.3 456 256 456z"/>
+                    <path d="M175.9 161.9l99.5 71.5c13.5 9.7 16.7 28.5 7 42s-28.5 16.7-42 7c-2.8-2-5.2-4.4-7-7l-71.5-99.5c-3.2-4.5-2.2-10.8 2.3-14 3.6-2.6 8.3-2.4 11.7 0z"/>
+                </svg>
+            </div>
+            <div>Timer</div>
+        </div>
+    </div>
+
+    <div class="home-indicator" aria-hidden="true"></div>
+
+    <!-- Dev connect panel -->
+    <div class="dev-panel" id="devPanel">
+        <input id="tokenInput" placeholder="Token (z.B. CZVOVZ)" />
+        <div style="display:flex; gap:8px;">
+            <button id="connectBtn">Verbinden</button>
+            <button id="clearBtn" style="background:#FF6B6B">Trennen</button>
+        </div>
+        <div style="font-size:13px; opacity:0.8; margin-top:6px;">MainTick - Professionelle Stoppuhr-Steuerung</div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/stopwatch-core.js"></script>
+    <script src="/js/manual-input.js"></script>
+    <script src="/js/stopwatch-api.js"></script>
+    <script src="/js/preset-manager.js"></script>
     <script>
-        // Global Variables
-        let startTime = 0;
-        let elapsedTime = 0;
-        let timerInterval = null;
-        let isRunning = false;
-        let laps = [];
-        let lapStartTime = 0;
-        let currentLapTime = 0;
+        // Initialisierung
+        const stopwatch = new StopwatchCore();
+        let api = null;
+
+        // UI-Elemente initialisieren
+        stopwatch.initUI({
+            timeDisplay: document.getElementById('timeDisplay'),
+            leftButton: document.getElementById('leftButton'),
+            rightButton: document.getElementById('rightButton'),
+            lapsContainer: document.getElementById('lapsContainer'),
+            statusText: document.getElementById('statusText')
+        });
+
+        // Triple-Click auf Wecker für Presets (nur MainTick)
+        let alarmClickCount = 0;
+        let alarmClickTimer = null;
+        document.getElementById('alarmNavItem').addEventListener('click', () => {
+            alarmClickCount++;
+            if (alarmClickCount === 3) {
+                if (window.PresetManager) {
+                    window.PresetManager.open(stopwatch, api);
+                }
+                alarmClickCount = 0;
+            }
+            clearTimeout(alarmClickTimer);
+            alarmClickTimer = setTimeout(() => alarmClickCount = 0, 500);
+        });
+
+        // Dev Panel
+        const params = new URLSearchParams(location.search);
+        const dev = params.get('dev');
+        const panel = document.getElementById('devPanel');
+        const tokenInput = document.getElementById('tokenInput');
+        const connectBtn = document.getElementById('connectBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        if (dev === '1') panel.classList.add('show');
+
+        connectBtn.addEventListener('click', function() {
+            const token = tokenInput.value.trim();
+            if (!token) return alert('Bitte Token eingeben');
+            
+            api = new StopwatchAPI(token, 'maintick');
+            api.startPolling(stopwatch);
+            stopwatch.updateStatus(`MainTick verbunden (${token.substring(0,6)}...)`);
+        });
+
+        clearBtn.addEventListener('click', function() {
+            if (api) {
+                api.stopPolling();
+                api = null;
+            }
+            stopwatch.updateStatus('Getrennt');
+        });
+
+        // Auto-connect via URL parameter
+        const tokenParam = params.get('token') || params.get('t');
+        if (tokenParam) {
+            api = new StopwatchAPI(tokenParam, 'maintick');
+            api.startPolling(stopwatch);
+            stopwatch.updateStatus(`MainTick verbunden (${tokenParam.substring(0,6)}...)`);
+        }
+
+        // Fullscreen & Anti-Scroll
+        function tryEnterFullscreen() {
+            const el = document.documentElement;
+            if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) return;
+            const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+            if (fn) { try { fn.call(el); } catch (err) { } }
+        }
         
-        // Force Variables
-        let activeForces = [];
-        let manualSequence = [];
-        let selectedForceType = 'ms';
-        let presets = [];
+        const enterOnce = () => { 
+            tryEnterFullscreen(); 
+            document.removeEventListener('click', enterOnce); 
+            document.removeEventListener('touchstart', enterOnce); 
+        };
         
-        // Tracking Variables
-        let stopCount = 0;
-        let lapCount = 0;
-        let resetCount = 0;
-        let sessionStartTime = Date.now();
+        document.addEventListener('click', enterOnce, { once: true });
+        document.addEventListener('touchstart', enterOnce, { once: true });
+        document.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
         
-        // Triple Click Detection
-        let clickCount = 0;
-        let clickTimer = null;
-
-        // DOM Elements
-        const timeDisplay = document.getElementById('timeDisplay');
-        const minutesEl = document.getElementById('minutes');
-        const secondsEl = document.getElementById('seconds');
-        const millisecondsEl = document.getElementById('milliseconds');
-        const startStopBtn = document.getElementById('startStopBtn');
-        const lapResetBtn = document.getElementById('lapResetBtn');
-        const lapsContainer = document.getElementById('lapsContainer');
-
-        // Initialize
-        async function init() {
-            updateDisplay(0);
-            await loadPresets();
-            setupEventListeners();
-            
-            // Check for API forces
-            if (window.token) {
-                setInterval(checkForces, 400);
-            }
-        }
-
-        // Event Listeners
-        function setupEventListeners() {
-            startStopBtn.addEventListener('click', handleStartStop);
-            lapResetBtn.addEventListener('click', handleLapReset);
-            
-            // Triple click on display
-            timeDisplay.addEventListener('click', handleTripleClick);
-            
-            // Triple click on lap/reset button (for presets)
-            lapResetBtn.addEventListener('click', (e) => {
-                if (e.detail === 3) {
-                    showPresets();
-                }
-            });
-
-            // Force type buttons in preset UI
-            document.querySelectorAll('#presetForceType .force-type-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    document.querySelectorAll('#presetForceType .force-type-btn').forEach(b => b.classList.remove('active'));
-                    e.target.classList.add('active');
-                });
-            });
-        }
-
-        // Triple Click Handler
-        function handleTripleClick() {
-            clickCount++;
-            
-            if (clickCount === 3) {
-                showManualInput();
-                clickCount = 0;
-                clearTimeout(clickTimer);
-            } else {
-                clearTimeout(clickTimer);
-                clickTimer = setTimeout(() => {
-                    clickCount = 0;
-                }, 500);
-            }
-        }
-
-        // Stopwatch Functions
-        function handleStartStop() {
-            if (isRunning) {
-                stop();
-            } else {
-                start();
-            }
-        }
-
-        function handleLapReset() {
-            if (isRunning) {
-                lap();
-            } else {
-                reset();
-            }
-        }
-
-        function start() {
-            if (!isRunning) {
-                startTime = Date.now() - elapsedTime;
-                lapStartTime = Date.now() - currentLapTime;
-                timerInterval = setInterval(updateTimer, 10);
-                isRunning = true;
-                
-                startStopBtn.textContent = 'Stop';
-                startStopBtn.classList.remove('btn-start');
-                startStopBtn.classList.add('btn-stop');
-                
-                lapResetBtn.textContent = 'Runde';
-                lapResetBtn.classList.remove('btn-reset');
-                lapResetBtn.classList.add('btn-lap');
-            }
-        }
-
-        function stop() {
-            if (isRunning) {
-                clearInterval(timerInterval);
-                isRunning = false;
-                stopCount++;
-                
-                // Check for forces
-                const forcedTime = checkForceConditions('stop', elapsedTime);
-                if (forcedTime !== null) {
-                    // Calculate the difference for lap time adjustment
-                    const oldElapsed = elapsedTime;
-                    elapsedTime = forcedTime;
-                    // Adjust current lap time proportionally
-                    if (laps.length === 0 && currentLapTime > 0) {
-                        currentLapTime = forcedTime;
-                    }
-                    updateDisplay(elapsedTime);
-                    updateCurrentLap();
-                }
-                
-                startStopBtn.textContent = 'Weiter';
-                startStopBtn.classList.add('btn-start');
-                startStopBtn.classList.remove('btn-stop');
-                
-                lapResetBtn.textContent = 'Löschen';
-                lapResetBtn.classList.add('btn-reset');
-                lapResetBtn.classList.remove('btn-lap');
-            }
-        }
-
-        function lap() {
-            if (isRunning) {
-                lapCount++;
-                
-                // Check for forces on the lap time
-                const forcedTime = checkForceConditions('lap', currentLapTime);
-                const displayTime = forcedTime !== null ? forcedTime : currentLapTime;
-                
-                laps.unshift({
-                    number: laps.length + 1,
-                    time: displayTime
-                });
-                
-                currentLapTime = 0;
-                lapStartTime = Date.now();
-                updateLapsDisplay();
-            }
-        }
-
-        function reset() {
-            clearInterval(timerInterval);
-            isRunning = false;
-            elapsedTime = 0;
-            currentLapTime = 0;
-            laps = [];
-            resetCount++;
-            
-            updateDisplay(0);
-            updateLapsDisplay();
-            
-            startStopBtn.textContent = 'Start';
-            startStopBtn.classList.add('btn-start');
-            startStopBtn.classList.remove('btn-stop');
-            
-            lapResetBtn.textContent = 'Löschen';
-            lapResetBtn.classList.add('btn-reset');
-            lapResetBtn.classList.remove('btn-lap');
-        }
-
-        function updateTimer() {
-            elapsedTime = Date.now() - startTime;
-            currentLapTime = Date.now() - lapStartTime;
-            updateDisplay(elapsedTime);
-            updateCurrentLap();
-        }
-
-        function updateDisplay(time) {
-            const totalSeconds = Math.floor(time / 1000);
-            const minutes = Math.floor(totalSeconds / 60);
-            const seconds = totalSeconds % 60;
-            const milliseconds = Math.floor((time % 1000) / 10);
-            
-            minutesEl.textContent = String(minutes).padStart(2, '0');
-            secondsEl.textContent = String(seconds).padStart(2, '0');
-            millisecondsEl.textContent = String(milliseconds).padStart(2, '0');
-        }
-
-        function updateCurrentLap() {
-            if (isRunning && laps.length === 0) {
-                // Update first lap in display
-                const lapItem = document.querySelector('.lap-item.current');
-                if (lapItem) {
-                    const time = formatTime(currentLapTime);
-                    lapItem.querySelector('.lap-time').textContent = time;
-                }
-            }
-        }
-
-        function updateLapsDisplay() {
-            lapsContainer.innerHTML = '';
-            
-            // Add current lap if running
-            if (isRunning || laps.length > 0) {
-                const currentLapEl = document.createElement('div');
-                currentLapEl.className = 'lap-item current';
-                currentLapEl.innerHTML = `
-                    <span class="lap-number">Runde ${laps.length + 1}</span>
-                    <span class="lap-time">${formatTime(currentLapTime)}</span>
-                `;
-                lapsContainer.appendChild(currentLapEl);
-            }
-            
-            // Add completed laps
-            laps.forEach(lap => {
-                const lapEl = document.createElement('div');
-                lapEl.className = 'lap-item';
-                lapEl.innerHTML = `
-                    <span class="lap-number">Runde ${lap.number}</span>
-                    <span class="lap-time">${formatTime(lap.time)}</span>
-                `;
-                lapsContainer.appendChild(lapEl);
-            });
-        }
-
-        function formatTime(time) {
-            const totalSeconds = Math.floor(time / 1000);
-            const minutes = Math.floor(totalSeconds / 60);
-            const seconds = totalSeconds % 60;
-            const milliseconds = Math.floor((time % 1000) / 10);
-            
-            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')},${String(milliseconds).padStart(2, '0')}`;
-        }
-
-        // Force Functions
-        function checkForceConditions(trigger, currentTime) {            
-            // Check active forces (includes manual forces)
-            for (let i = 0; i < activeForces.length; i++) {
-                const force = activeForces[i];
-                
-                // Check trigger
-                if (force.trigger !== 'both' && force.trigger !== trigger) {
-                    continue;
-                }
-                
-                // Check conditions
-                if (force.conditions && !checkConditions(force.conditions)) {
-                    continue;
-                }
-                
-                // Apply force
-                activeForces.splice(i, 1);
-                return applyForce(force.type, force.value, currentTime);
-            }
-            
-            return null;
-        }
-
-        function checkConditions(conditions) {
-            if (!conditions || conditions.type === 'none') return true;
-            
-            const elapsed = Date.now() - sessionStartTime;
-            
-            switch (conditions.type) {
-                case 'seconds':
-                    return elapsed >= conditions.value * 1000;
-                case 'stops':
-                    return stopCount >= conditions.value;
-                case 'laps':
-                    return lapCount >= conditions.value;
-                case 'resets':
-                    return resetCount >= conditions.value;
-                default:
-                    return true;
-            }
-        }
-
-        function applyForce(type, value, currentTime) {
-            const totalSeconds = Math.floor(currentTime / 1000);
-            const minutes = Math.floor(totalSeconds / 60);
-            const seconds = totalSeconds % 60;
-            
-            switch (type) {
-                case 'ms':
-                    // MS-Force: Set specific milliseconds
-                    return (minutes * 60 + seconds) * 1000 + (value * 10);
-                    
-                case 's':
-                    // S-Force (Sum): Calculate sum and set as milliseconds
-                    const sum = calculateTimeSum(minutes, seconds);
-                    if (sum <= 99 && sum == value) {
-                        return (minutes * 60 + seconds) * 1000 + (value * 10);
-                    }
-                    return null;
-                    
-                case 'ft':
-                    // FT-Force: Set full time
-                    const ftMinutes = Math.floor(value / 100);
-                    const ftSeconds = value % 100;
-                    if (ftSeconds < 60) {
-                        return (ftMinutes * 60 + ftSeconds) * 1000;
-                    }
-                    return null;
-                    
-                default:
-                    return null;
-            }
-        }
-
-        function calculateTimeSum(minutes, seconds) {
-            const digits = String(minutes).padStart(2, '0') + String(seconds).padStart(2, '0');
-            return digits.split('').reduce((sum, digit) => sum + parseInt(digit), 0);
-        }
-
-        // Manual Input Functions
-        function showManualInput() {
-            document.getElementById('manualInputUI').classList.add('active');
-            document.getElementById('manualInputValue').value = '';
-            manualSequence = [];
-            updateSequenceDisplay();
-            // Focus on input field
-            setTimeout(() => {
-                document.getElementById('manualInputValue').focus();
-            }, 100);
-            
-            // Add enter key listener
-            const input = document.getElementById('manualInputValue');
-            input.onkeypress = function(e) {
-                if (e.key === 'Enter') {
-                    const value = parseInt(input.value);
-                    if (!isNaN(value)) {
-                        manualSequence.push(value);
-                        input.value = '';
-                        updateSequenceDisplay();
-                    }
-                }
-            };
-        }
-
-        function hideManualInput() {
-            document.getElementById('manualInputUI').classList.remove('active');
-            manualSequence = [];
-        }
-
-        function updateSequenceDisplay() {
-            const display = document.getElementById('sequenceDisplay');
-            
-            if (manualSequence.length === 0) {
-                display.innerHTML = '<p style="opacity: 0.6; text-align: center;">Keine Werte in der Sequenz</p>';
-            } else {
-                display.innerHTML = '<table style="width: 100%;">' + 
-                    manualSequence.map((value, index) => `
-                        <tr class="sequence-item">
-                            <td style="padding: 8px;">${index + 1}.</td>
-                            <td style="padding: 8px;">${value}</td>
-                            <td style="padding: 8px; text-align: right;">
-                                <button class="remove-sequence-btn" onclick="removeFromSequence(${index})">✕</button>
-                            </td>
-                        </tr>
-                    `).join('') + '</table>';
-            }
-        }
-
-        function removeFromSequence(index) {
-            manualSequence.splice(index, 1);
-            updateSequenceDisplay();
-        }
-
-        function startManualForce(forceType) {
-            if (manualSequence.length > 0) {
-                // Convert sequence to force objects
-                activeForces = manualSequence.map(value => ({
-                    type: forceType,
-                    value: value,
-                    trigger: 'both',
-                    conditions: null
-                }));
-                
-                hideManualInput();
-                showNotification(`${manualSequence.length} ${forceType.toUpperCase()}-Forces aktiviert`);
-            } else {
-                showNotification('Bitte erst Werte eingeben', 'error');
-            }
-        }
-
-        // Preset Functions
-        function showPresets() {
-            document.getElementById('presetsUI').classList.add('active');
-            displayPresets();
-        }
-
-        function hidePresets() {
-            document.getElementById('presetsUI').classList.remove('active');
-        }
-
-        function createNewPreset() {
-            hidePresets();
-            document.getElementById('createPresetUI').classList.add('active');
-            
-            // Reset form
-            document.getElementById('presetName').value = '';
-            document.getElementById('presetDescription').value = '';
-            document.getElementById('presetDelayValue').value = '';
-            document.getElementById('presetDelayType').value = 'none';
-            document.getElementById('presetTrigger').value = 'both';
-            
-            // Reset sequence
-            window.presetSequence = [];
-            updatePresetSequenceDisplay();
-            
-            // Setup enter key listener for preset values
-            const input = document.getElementById('presetValueInput');
-            input.value = '';
-            input.onkeypress = function(e) {
-                if (e.key === 'Enter') {
-                    const value = parseInt(input.value);
-                    if (!isNaN(value)) {
-                        window.presetSequence.push(value);
-                        input.value = '';
-                        updatePresetSequenceDisplay();
-                    }
-                }
-            };
-            
-            setTimeout(() => {
-                document.getElementById('presetName').focus();
-            }, 100);
-        }
-
-        function hideCreatePreset() {
-            document.getElementById('createPresetUI').classList.remove('active');
-            window.presetSequence = [];
-        }
-
-        function updatePresetSequenceDisplay() {
-            const display = document.getElementById('presetSequenceDisplay');
-            
-            if (!window.presetSequence || window.presetSequence.length === 0) {
-                display.innerHTML = '<p style="opacity: 0.6; text-align: center;">Keine Werte eingegeben</p>';
-            } else {
-                display.innerHTML = '<table style="width: 100%;">' + 
-                    window.presetSequence.map((value, index) => `
-                        <tr class="sequence-item">
-                            <td style="padding: 8px;">${index + 1}.</td>
-                            <td style="padding: 8px;">${value}</td>
-                            <td style="padding: 8px; text-align: right;">
-                                <button class="remove-sequence-btn" onclick="removeFromPresetSequence(${index})">✕</button>
-                            </td>
-                        </tr>
-                    `).join('') + '</table>';
-            }
-        }
-
-        function removeFromPresetSequence(index) {
-            window.presetSequence.splice(index, 1);
-            updatePresetSequenceDisplay();
-        }
-
-        async function savePreset() {
-            const name = document.getElementById('presetName').value;
-            const description = document.getElementById('presetDescription').value;
-            const forceType = document.querySelector('#presetForceType .force-type-btn.active').dataset.type;
-            const trigger = document.getElementById('presetTrigger').value;
-            const delayType = document.getElementById('presetDelayType').value;
-            const delayValue = parseInt(document.getElementById('presetDelayValue').value) || 0;
-            
-            if (!name || !window.presetSequence || window.presetSequence.length === 0) {
-                showNotification('Bitte Name und mindestens einen Wert eingeben', 'error');
-                return;
-            }
-            
-            const conditions = delayType !== 'none' && delayValue > 0 ? {
-                type: delayType,
-                value: delayValue
-            } : null;
-            
-            try {
-                showLoading();
-                
-                const response = await fetch('/api/presets', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        name,
-                        description,
-                        forceType,
-                        forceSequence: window.presetSequence,
-                        conditions,
-                        trigger
-                    })
-                });
-                
-                if (response.ok) {
-                    hideCreatePreset();
-                    await loadPresets();
-                    showNotification('Voreinstellung gespeichert');
-                    showPresets(); // Show presets list again
-                } else {
-                    throw new Error('Fehler beim Speichern');
-                }
-            } catch (error) {
-                showNotification('Fehler beim Speichern der Voreinstellung', 'error');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        async function loadPresets() {
-            try {
-                const response = await fetch('/api/presets', {
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    presets = await response.json();
-                }
-            } catch (error) {
-                console.error('Error loading presets:', error);
-            }
-        }
-
-        function displayPresets() {
-            const list = document.getElementById('presetsList');
-            
-            if (presets.length === 0) {
-                list.innerHTML = '<p style="opacity: 0.6; text-align: center;">Keine Voreinstellungen vorhanden</p>';
-            } else {
-                list.innerHTML = presets.map(preset => `
-                    <div class="preset-item" onclick="activatePreset('${preset.name}')">
-                        <div class="preset-name">${preset.name}</div>
-                        <div class="preset-info">
-                            ${preset.force_type.toUpperCase()} - ${preset.force_sequence.length} Werte
-                            ${preset.conditions ? ` - Bedingung: ${preset.conditions.value} ${preset.conditions.type}` : ''}
-                        </div>
-                    </div>
-                `).join('');
-            }
-        }
-
-        async function activatePreset(name) {
-            const preset = presets.find(p => p.name === name);
-            if (preset) {
-                // Convert preset to active forces
-                preset.force_sequence.forEach(value => {
-                    activeForces.push({
-                        type: preset.force_type,
-                        value: value,
-                        trigger: preset.trigger || 'both',
-                        conditions: preset.conditions
-                    });
-                });
-                
-                hidePresets();
-                showNotification(`Voreinstellung "${name}" aktiviert`);
-            }
-        }
-
-        // API Force Checking
-        async function checkForces() {
-            if (!window.token) return;
-            
-            try {
-                const response = await fetch(`/api/data/${window.token}`);
-                if (response.ok) {
-                    const forces = await response.json();
-                    
-                    for (const force of forces) {
-                        if (force.app === 'stopwatch' || force.app === 'maintick') {
-                            activeForces.push({
-                                id: force.forceId,
-                                type: force.mode || force.force_type || 'ms',
-                                value: force.target || force.value,
-                                trigger: force.trigger || 'both',
-                                conditions: force.conditions
-                            });
-                            
-                            // Acknowledge force
-                            await fetch(`/api/ack/${window.token}`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({ forceId: force.forceId })
-                            });
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('Error checking forces:', error);
-            }
-        }
-
-        // Helper Functions
-        function showNotification(message, type = 'success') {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.style.background = type === 'error' ? 'rgba(255, 59, 48, 0.9)' : 'rgba(0, 122, 255, 0.9)';
-            notification.classList.add('show');
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
-        }
-
-        function showLoading() {
-            document.getElementById('loading').classList.add('show');
-        }
-
-        function hideLoading() {
-            document.getElementById('loading').classList.remove('show');
-        }
-
-        // Get token from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        window.token = urlParams.get('token');
-
-        // Initialize
-        init();
+        let lastTouch = 0;
+        document.addEventListener('touchend', function(e) { 
+            const now = Date.now(); 
+            if (now - lastTouch <= 300) e.preventDefault(); 
+            lastTouch = now; 
+        }, { passive: false });
+        
+        document.addEventListener('gesturestart', function(e) { e.preventDefault && e.preventDefault(); });
+        document.addEventListener('dblclick', function(e) { e.preventDefault(); });
+        
+        window.addEventListener('keydown', function(e) { 
+            const keysToPrevent = ['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' ']; 
+            if (keysToPrevent.includes(e.key)) e.preventDefault(); 
+        }, { passive: false });
     </script>
 </body>
 </html>
