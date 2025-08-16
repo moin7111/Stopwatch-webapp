@@ -1,8 +1,8 @@
 {
-  "name": "Stopwatch Magic",
-  "short_name": "Stopwatch",  
-  "description": "Magische Stoppuhr für Bühnenzauber",
-  "start_url": "/maintick/login.html?pwa=true",
+  "name": "IMPERIA Magic System",
+  "short_name": "IMPERIA",  
+  "description": "Professionelles Zauber-System für Bühnenkünstler",
+  "start_url": "/control/index.html?pwa=true",
   "display": "fullscreen",
   "orientation": "portrait",
   "theme_color": "#000000",
@@ -23,5 +23,5 @@
   ],
   "categories": ["entertainment", "utilities"],
   "lang": "de",
-  "version": "2.1.0"
+  "version": "0.3.0"
 }
