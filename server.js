@@ -639,9 +639,14 @@ const PORT = process.env.PORT || 3000;
 initializeDatabase().then(() => {
     app.listen(PORT, () => {
         console.log(`🚀 Server running on port ${PORT}`);
-        console.log(`🌐 URL: http://localhost:${PORT}`);
+        if (process.env.NODE_ENV === 'production') {
+            console.log(`🌐 Production URL: https://stopwatch-webapp-1.onrender.com`);
+        } else {
+            console.log(`🌐 Local URL: http://localhost:${PORT}`);
+        }
         console.log(`🗄️ Database: SQLite (${db.dbPath})`);
         console.log(`🔐 Admin protection: ${process.env.ADMIN_KEY ? 'ENABLED' : 'DISABLED (dev mode)'}`);
+        console.log(`📱 PWA Login: ${process.env.NODE_ENV === 'production' ? 'https://stopwatch-webapp-1.onrender.com/magician/login.html' : `http://localhost:${PORT}/magician/login.html`}`);
     });
 }).catch(error => {
     console.error('❌ Failed to start server:', error);
