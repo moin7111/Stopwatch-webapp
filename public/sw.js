@@ -1,5 +1,5 @@
 // sw.js - Service Worker für Stopwatch Magic PWA
-const CACHE_NAME = 'stopwatch-magic-v4';
+const CACHE_NAME = 'stopwatch-magic-v5';
 const urlsToCache = [
   '/',
   '/modultick.html',
