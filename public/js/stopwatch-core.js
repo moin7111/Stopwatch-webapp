@@ -475,10 +475,13 @@ class StopwatchCore {
      * Öffnet Manual Input Dialog
      */
     openManualInput() {
-        if (window.ManualInput) {
+        if (window.ManualInput && window.ManualInput.instance) {
             // Finde API-Instanz aus dem globalen Scope
             const api = window.api || null;
             window.ManualInput.open(this, api);
+        } else {
+            console.error('ManualInput not found');
+            this.updateStatus('Manual Input nicht verfügbar');
         }
     }
 
