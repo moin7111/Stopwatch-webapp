@@ -1,8 +1,8 @@
-// sw.js - Service Worker für IMPERIA Modul System PWA
+// sw.js - Service Worker für IMPERIA Tempral System PWA
 const CACHE_NAME = 'imperia-modul-v1';
 const urlsToCache = [
   '/imperia-modul/',
-  '/imperia-modul/modultick.html',
+  '/imperia-modul/tempral.html',
   '/imperia-modul/manifest.json',
   '/imperia-modul/icon-192x192.png',
   '/imperia-modul/icon-512x512.png'

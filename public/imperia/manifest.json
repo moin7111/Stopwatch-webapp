@@ -1,7 +1,7 @@
 {
   "name": "IMPERIA Control System",
   "short_name": "IMPERIA Control",
-  "description": "IMPERIA Control System - Login, Dashboard & MainTick",
+  "description": "IMPERIA Control System - Login, Dashboard & Tempra",
   "start_url": "/imperia/control/index.html?source=pwa",
   "display": "standalone",
   "background_color": "#000000",

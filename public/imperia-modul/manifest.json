@@ -1,8 +1,8 @@
 {
-  "name": "IMPERIA Modul",
-  "short_name": "IMPERIA Modul",
-  "description": "IMPERIA Modul System - ModulTick",
-  "start_url": "/imperia-modul/modultick.html?source=pwa",
+  "name": "IMPERIA Tempral",
+  "short_name": "Tempral",
+  "description": "IMPERIA Modul System - Tempral",
+  "start_url": "/imperia-modul/tempral.html?source=pwa",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",

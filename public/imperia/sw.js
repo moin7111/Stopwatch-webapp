@@ -5,7 +5,7 @@ const urlsToCache = [
   '/imperia/control/index.html',
   '/imperia/control/login.html',
   '/imperia/control/menu.html',
-  '/imperia/maintick/index.html',
+  '/imperia/tempra/index.html',
   '/imperia/manifest.json',
   '/imperia/icon-192x192.png',
   '/imperia/icon-512x512.png'
