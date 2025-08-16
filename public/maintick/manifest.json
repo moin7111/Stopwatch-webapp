@@ -1,8 +1,8 @@
 {
-  "name": "IMPERIA Magic System",
-  "short_name": "IMPERIA",  
-  "description": "Professionelles Zauber-System für Bühnenkünstler",
-  "start_url": "/control/index.html?pwa=true",
+  "name": "MainTick - IMPERIA",
+  "short_name": "MainTick",  
+  "description": "Professionelle Zauber-Stoppuhr für Bühnenkünstler",
+  "start_url": "/maintick/stopwatch.html?pwa=true",
   "display": "fullscreen",
   "orientation": "portrait",
   "theme_color": "#000000",
