@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="Magier Dashboard"/>
+<meta name="apple-mobile-web-app-title" content="MainTick Dashboard"/>
 <link rel="apple-touch-icon" href="/icon-192x192.png"/>
 <link rel="manifest" href="/manifest.json"/>
-<title>Magier Dashboard</title>
+<title>MainTick Dashboard</title>
 <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
   <main style="padding:18px;max-width:900px;margin:28px auto;">
-    <h1>🎩 Dein Magier Dashboard</h1>
+    <h1>🎩 Dein MainTick Dashboard</h1>
     <div style="margin-bottom:20px;">
       <button id="logoutBtn">Logout</button>
     </div>
@@ -28,8 +28,8 @@
     <section style="margin-top:24px;">
       <h2>🔗 Schnellzugriffe</h2>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin:16px 0;">
-        <button id="openSpectator" style="background:#30D058;">🎯 Zuschauer-Stoppuhr öffnen</button>
-        <button id="openAdminStopwatch" style="background:#FF9500;">⚙️ Stoppuhr-Admin öffnen</button>
+        <button id="openModulTick" style="background:#30D058;">🎯 ModulTick öffnen</button>
+        <button id="openMainTickStopwatch" style="background:#FF9500;">⏱️ MainTick Stoppuhr öffnen</button>
       </div>
     </section>
 
@@ -117,17 +117,17 @@ Content-Type: application/json<br><br>
 
   document.getElementById('logoutBtn').addEventListener('click', async ()=>{
     await fetch('/auth/logout', { method:'POST' });
-    location.href = '/magician/login.html';
+    location.href = '/maintick/login.html';
   });
 
-  document.getElementById('openSpectator').addEventListener('click', ()=> {
+  document.getElementById('openModulTick').addEventListener('click', ()=> {
     if (!currentToken) return alert('Token noch nicht geladen');
-    window.open(`/spectator.html?token=${encodeURIComponent(currentToken)}`, '_blank');
+    window.open(`/modultick.html?token=${encodeURIComponent(currentToken)}`, '_blank');
   });
 
-  document.getElementById('openAdminStopwatch').addEventListener('click', ()=> {
+  document.getElementById('openMainTickStopwatch').addEventListener('click', ()=> {
     if (!currentToken) return alert('Token noch nicht geladen');
-    window.open(`/magician/stopwatch-admin.html?token=${encodeURIComponent(currentToken)}`, '_blank');
+    window.open(`/maintick/stopwatch.html?token=${encodeURIComponent(currentToken)}`, '_blank');
   });
 
   // Init

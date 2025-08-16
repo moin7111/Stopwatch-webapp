@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="Stopwatch Magic"/>
+<meta name="apple-mobile-web-app-title" content="MainTick"/>
 <link rel="apple-touch-icon" href="/icon-192x192.png"/>
 <link rel="manifest" href="/manifest.json"/>
-<title>Magier Login</title>
+<title>MainTick Login</title>
 <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
   <main style="padding:18px;max-width:720px;margin:40px auto;">
-    <h1>🎩 Magier Login / Registrierung</h1>
+    <h1>🎩 MainTick Login / Registrierung</h1>
 
     <section style="margin-top:12px;">
       <h3>Neu registrieren (mit Lizenz-Code)</h3>
@@ -52,7 +52,7 @@
     if (!code || !username || !password) return alert('Bitte Code, Benutzername und Passwort ausfüllen');
     try {
       await postJSON('/auth/register', { code, username, password, displayName });
-      location.href = '/magician/dashboard.html';
+      location.href = '/maintick/dashboard.html';
     } catch (e) { alert('Registrierung fehlgeschlagen: ' + (e.error||JSON.stringify(e))); }
   });
 
@@ -62,7 +62,7 @@
     if (!username || !password) return alert('Benutzername und Passwort erforderlich');
     try {
       await postJSON('/auth/login', { username, password });
-      location.href = '/magician/dashboard.html';
+      location.href = '/maintick/dashboard.html';
     } catch (e) { alert('Login fehlgeschlagen: ' + (e.error||JSON.stringify(e))); }
   });
 </script>
