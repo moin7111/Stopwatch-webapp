@@ -125,7 +125,7 @@ app.use(express.static('public'));
 
 // 🔥 FIX: Hauptroute für PWA
 app.get('/', (req, res) => {
-    res.redirect('/spectator.html');
+    res.redirect('/magician/login.html');
 });
 
 // === ENHANCED AUTHENTICATION ROUTES ===
