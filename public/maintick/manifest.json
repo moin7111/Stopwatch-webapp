@@ -1,9 +1,9 @@
 {
   "name": "IMPERIA Magic System",
   "short_name": "IMPERIA",  
-  "description": "Professionelle Stoppuhr für Zauberer",
-  "start_url": "/maintick/stopwatch.html",
-  "display": "standalone",
+  "description": "Professionelles Zauber-System für Bühnenkünstler",
+  "start_url": "/control/index.html?pwa=true",
+  "display": "fullscreen",
   "orientation": "portrait",
   "theme_color": "#000000",
   "background_color": "#000000",
