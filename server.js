@@ -1,354 +1,637 @@
-// server.js
+// server.js - Updated for SQL Database
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
 const cookieParser = require('cookie-parser');
-const fs = require('fs');
+const Database = require('./database/db');
 
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-// --- file-backed simple stores (users, licenses, tokens) ---
-const DATA_DIR = path.join(__dirname, 'data');
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
+// Initialize database
+const db = new Database();
+let dbInitialized = false;
 
-const USERS_FILE = path.join(DATA_DIR, 'users.json');
-const LICENSES_FILE = path.join(DATA_DIR, 'licenses.json');
-const TOKENS_FILE = path.join(DATA_DIR, 'tokens.json');
-
-function loadJSON(file, def) {
-  try {
-    if (!fs.existsSync(file)) { fs.writeFileSync(file, JSON.stringify(def, null, 2)); return def; }
-    const txt = fs.readFileSync(file, 'utf8');
-    return JSON.parse(txt || 'null') || def;
-  } catch (e) { console.error('loadJSON error', file, e); return def; }
-}
-function saveJSON(file, obj) {
-  try { fs.writeFileSync(file, JSON.stringify(obj, null, 2)); } catch (e) { console.error('saveJSON error', file, e); }
+// Initialize database on startup
+async function initializeDatabase() {
+    try {
+        await db.init();
+        dbInitialized = true;
+        console.log('🗄️ Database initialized successfully');
+    } catch (error) {
+        console.error('❌ Failed to initialize database:', error);
+        process.exit(1);
+    }
 }
 
-const usersStore = loadJSON(USERS_FILE, {});
-const licensesStore = loadJSON(LICENSES_FILE, {});
-const tokensStore = loadJSON(TOKENS_FILE, {});
-
-// helper crypto password hash (scrypt)
-function hashPassword(password, salt = null) {
-  salt = salt || crypto.randomBytes(12).toString('hex');
-  const derived = crypto.scryptSync(String(password), salt, 64).toString('hex');
-  return { salt, hash: derived };
+// Middleware to ensure database is initialized
+function requireDB(req, res, next) {
+    if (!dbInitialized) {
+        return res.status(503).json({ error: 'Database not initialized' });
+    }
+    next();
 }
+
+// Helper function to get client info
+function getClientInfo(req) {
+    return {
+        ip: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('User-Agent')
+    };
+}
+
+// Helper function to verify password
 function verifyPassword(password, salt, hash) {
-  const derived = crypto.scryptSync(String(password), salt, 64).toString('hex');
-  return crypto.timingSafeEqual(Buffer.from(derived, 'hex'), Buffer.from(hash, 'hex'));
-}
-function genCode(len = 6) {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const r = crypto.randomBytes(len);
-  let out = "";
-  for (let i = 0; i < len; i++) out += alphabet[r[i] % alphabet.length];
-  return out;
+    const derived = crypto.scryptSync(String(password), salt, 64).toString('hex');
+    return crypto.timingSafeEqual(Buffer.from(derived, 'hex'), Buffer.from(hash, 'hex'));
 }
 
-// in-memory session store: sessionId -> { username, createdAt }
+// Helper function to generate UUID
+function generateUUID() {
+    return crypto.randomUUID();
+}
+
+// In-memory sessions (enhanced)
 const sessions = new Map();
 
-// --- CORS (for Shortcuts / external clients) ---
-app.use((req,res,next) => {
-  res.setHeader('Access-Control-Allow-Origin','*');
-  res.setHeader('Access-Control-Allow-Methods','GET,POST,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers','Content-Type, x-admin-key');
-  if (req.method === 'OPTIONS') return res.sendStatus(200);
-  next();
-});
-
-// --- Middleware: require admin key ---
-function requireAdmin(req, res, next) {
-  const adminKey = process.env.ADMIN_KEY;
-  if (!adminKey) {
-    console.warn('ADMIN_KEY not set - admin endpoints are open!');
-    return next(); // dev mode, allow
-  }
-  const provided = req.headers['x-admin-key'];
-  if (provided !== adminKey) {
-    return res.status(403).json({ error: 'forbidden' });
-  }
-  next();
-}
-
-// --- Middleware: require login ---
-function requireLogin(req, res, next) {
-  const sid = req.cookies && req.cookies.MAGIC_SESSION;
-  if (!sid) return res.status(401).json({ error: 'not logged in' });
-  const s = sessions.get(sid);
-  if (!s) return res.status(401).json({ error: 'invalid session' });
-  req.user = s;
-  next();
-}
-
-// --- Auth endpoints for magicians (users) ---
-app.post('/auth/register', (req, res) => {
-  const { code, username, password, displayName } = req.body || {};
-  if (!code || !username || !password) return res.status(400).json({ error: 'missing fields' });
-  const codeU = String(code).toUpperCase();
-  const lic = licensesStore[codeU];
-  if (!lic) return res.status(400).json({ error: 'invalid code' });
-  if (lic.usedBy) return res.status(400).json({ error: 'code already used' });
-
-  const uname = String(username).toLowerCase();
-  if (usersStore[uname]) return res.status(400).json({ error: 'username taken' });
-
-  const { salt, hash } = hashPassword(password);
-  usersStore[uname] = { username: uname, displayName: displayName || uname, salt, passwordHash: hash, createdAt: Date.now() };
-  saveJSON(USERS_FILE, usersStore);
-
-  licensesStore[codeU].usedBy = uname;
-  licensesStore[codeU].usedAt = Date.now();
-  saveJSON(LICENSES_FILE, licensesStore);
-
-  const sid = crypto.randomUUID();
-  sessions.set(sid, { username: uname, createdAt: Date.now() });
-  res.cookie('MAGIC_SESSION', sid, { httpOnly: true, sameSite: 'lax' });
-  
-  // Ensure user has a token
-  ensureUserToken(uname);
-  
-  return res.json({ ok:true, username: uname });
-});
-
-app.post('/auth/login', (req,res) => {
-  const { username, password } = req.body || {};
-  if (!username || !password) return res.status(400).json({ error:'missing' });
-  const uname = String(username).toLowerCase();
-  const u = usersStore[uname];
-  if (!u) return res.status(401).json({ error:'invalid' });
-  if (!verifyPassword(password, u.salt, u.passwordHash)) return res.status(401).json({ error:'invalid' });
-  const sid = crypto.randomUUID();
-  sessions.set(sid, { username: uname, createdAt: Date.now() });
-  res.cookie('MAGIC_SESSION', sid, { httpOnly: true, sameSite: 'lax' });
-  
-  // Ensure user has a token
-  ensureUserToken(uname);
-  
-  return res.json({ ok:true, username: uname });
-});
-
-app.get('/auth/status', (req,res) => {
-  const sid = req.cookies && req.cookies.MAGIC_SESSION;
-  if (!sid) return res.json({ loggedIn:false });
-  const s = sessions.get(sid);
-  if (!s) return res.json({ loggedIn:false });
-  return res.json({ loggedIn:true, username: s.username });
-});
-
-app.post('/auth/logout', (req,res) => {
-  const sid = req.cookies && req.cookies.MAGIC_SESSION;
-  if (sid) sessions.delete(sid);
-  res.clearCookie('MAGIC_SESSION');
-  res.json({ ok:true });
-});
-
-// --- License management (Admin) ---
-app.post('/api/license', requireAdmin, (req, res) => {
-  const { count } = req.body || {};
-  const n = parseInt(count, 10) || 1;
-  if (n < 1 || n > 100) return res.status(400).json({ error: 'count must be 1-100' });
-  
-  const created = [];
-  for (let i = 0; i < n; i++) {
-    let code;
-    do { code = genCode(6); } while (licensesStore[code]);
-    licensesStore[code] = { code, createdAt: Date.now(), usedBy: null, usedAt: null };
-    created.push(code);
-  }
-  saveJSON(LICENSES_FILE, licensesStore);
-  res.json({ ok: true, created });
-});
-
-app.get('/api/licenses', requireAdmin, (req, res) => {
-  const list = Object.values(licensesStore);
-  res.json({ licenses: list });
-});
-
-app.get('/api/users', requireAdmin, (req, res) => {
-  const list = Object.values(usersStore).map(u => ({
-    username: u.username,
-    displayName: u.displayName,
-    createdAt: u.createdAt
-  }));
-  res.json({ users: list });
-});
-
-// --- User token management (logged in users) ---
-// Auto-create token on registration/login if user doesn't have one
-function ensureUserToken(username) {
-  const userTokens = Object.values(tokensStore).filter(t => t.owner === username);
-  if (userTokens.length === 0) {
-    let newToken;
-    do { newToken = genCode(6); } while (tokensStore[newToken]);
+function createSession(userId, clientInfo) {
+    const sessionId = generateUUID();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
     
-    tokensStore[newToken] = {
-      token: newToken,
-      createdAt: Date.now(),
-      owner: username,
-      queue: []
-    };
-    saveJSON(TOKENS_FILE, tokensStore);
-    return newToken;
-  }
-  return userTokens[0].token;
+    sessions.set(sessionId, {
+        userId,
+        createdAt: new Date(),
+        expiresAt,
+        lastActivity: new Date(),
+        ...clientInfo
+    });
+    
+    // Store in database for persistence
+    db.createSession(userId, sessionId, expiresAt.toISOString(), clientInfo.ip, clientInfo.userAgent)
+        .catch(err => console.error('Failed to store session in DB:', err));
+    
+    return sessionId;
 }
 
-app.get('/api/user/tokens', requireLogin, (req, res) => {
-  const userToken = ensureUserToken(req.user.username);
-  const tokenData = tokensStore[userToken];
-  
-  res.json({ 
-    token: userToken,
-    createdAt: tokenData.createdAt,
-    queued: tokenData.queue.length,
-    apiExamples: {
-      spectatorUrl: `${req.protocol}://${req.get('host')}/spectator.html?token=${userToken}`,
-      pushForce: {
-        url: `${req.protocol}://${req.get('host')}/api/data/${userToken}`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{"force":{"mode":"ms","target":15,"trigger":"stop","minDurationMs":3000,"app":"stopwatch"}}'
-      },
-      pollQueue: {
-        url: `${req.protocol}://${req.get('host')}/api/data/${userToken}`,
-        method: 'GET'
-      },
-      ackForce: {
-        url: `${req.protocol}://${req.get('host')}/api/ack/${userToken}`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{"forceId":"FORCE_ID_FROM_QUEUE"}'
-      }
+function getSession(sessionId) {
+    const session = sessions.get(sessionId);
+    if (!session) return null;
+    
+    if (session.expiresAt < new Date()) {
+        sessions.delete(sessionId);
+        return null;
     }
-  });
+    
+    // Update last activity
+    session.lastActivity = new Date();
+    db.updateSessionActivity(sessionId).catch(err => console.error('Failed to update session activity:', err));
+    
+    return session;
+}
+
+function deleteSession(sessionId) {
+    sessions.delete(sessionId);
+    db.invalidateSession(sessionId).catch(err => console.error('Failed to invalidate session in DB:', err));
+}
+
+// Enhanced admin key check
+function requireAdminKey(req, res, next) {
+    const adminKey = process.env.ADMIN_KEY;
+    if (!adminKey) {
+        console.warn('⚠️ No ADMIN_KEY set - admin endpoints are unprotected!');
+        return next();
+    }
+    
+    const providedKey = req.headers['x-admin-key'];
+    if (providedKey !== adminKey) {
+        return res.status(401).json({ error: 'Invalid admin key' });
+    }
+    next();
+}
+
+// CORS and basic middleware
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, x-admin-key');
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
 });
 
-// --- Force / Queue endpoints (public, require valid token) ---
-app.post('/api/data/:token', (req, res) => {
-  const token = req.params.token;
-  const tokenData = tokensStore[token];
-  if (!tokenData) return res.status(404).json({ error: 'token not found' });
+app.use(express.static('public'));
 
-  const body = req.body || {};
-  let force;
-  
-  // Handle both formats: { force: {...} } and flat { mode, target, ... }
-  if (body.force) {
-    force = body.force;
-  } else {
-    force = { ...body };
-  }
-  
-  // Validate app field
-  if (!force.app || force.app !== 'stopwatch') {
-    return res.status(400).json({ error: 'app must be "stopwatch"' });
-  }
+// === ENHANCED AUTHENTICATION ROUTES ===
 
-  const forceId = crypto.randomUUID();
-  const entry = {
-    id: forceId,
-    force,
-    createdAt: Date.now()
-  };
-  
-  tokenData.queue.push(entry);
-  saveJSON(TOKENS_FILE, tokensStore);
-  
-  res.json({ ok: true, id: forceId, queued: tokenData.queue.length });
+app.post('/auth/register', requireDB, async (req, res) => {
+    try {
+        const { code, username, password, displayName } = req.body;
+        const clientInfo = getClientInfo(req);
+
+        // Validate input
+        if (!code || !username || !password) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        // Check if user already exists
+        const existingUser = await db.getUserByUsername(username);
+        if (existingUser) {
+            return res.status(400).json({ error: 'Username already exists' });
+        }
+
+        // Validate license code
+        const license = await db.getLicenseByCode(code);
+        if (!license) {
+            return res.status(400).json({ error: 'Invalid license code' });
+        }
+        if (license.is_used) {
+            return res.status(400).json({ error: 'License code already used' });
+        }
+
+        // Create user
+        const userId = await db.createUser({
+            username,
+            displayName: displayName || username,
+            email: null, // for future use
+            password
+        });
+
+        // Mark license as used
+        await db.useLicense(code, userId);
+
+        // Create token for user
+        const token = await db.createToken(userId);
+
+        // Create session
+        const sessionId = createSession(userId, clientInfo);
+        res.cookie('MAGIC_SESSION', sessionId, { 
+            httpOnly: true, 
+            maxAge: 24 * 60 * 60 * 1000,
+            sameSite: 'strict'
+        });
+
+        // Log registration
+        await db.logAction(userId, 'user_registered', {
+            username,
+            license_code: code,
+            token
+        }, clientInfo.ip, clientInfo.userAgent);
+
+        res.json({ ok: true, username });
+
+    } catch (error) {
+        console.error('Registration error:', error);
+        res.status(500).json({ error: 'Registration failed' });
+    }
 });
 
-app.get('/api/data/:token', (req, res) => {
-  const token = req.params.token;
-  const tokenData = tokensStore[token];
-  if (!tokenData) return res.status(404).json({ error: 'token not found' });
-  
-  res.json({ queue: tokenData.queue });
+app.post('/auth/login', requireDB, async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const clientInfo = getClientInfo(req);
+
+        if (!username || !password) {
+            return res.status(400).json({ error: 'Username and password required' });
+        }
+
+        // Get user
+        const user = await db.getUserByUsername(username);
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        // Verify password
+        if (!verifyPassword(password, user.salt, user.password_hash)) {
+            await db.logAction(user.id, 'login_failed', { reason: 'invalid_password' }, clientInfo.ip, clientInfo.userAgent);
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        // Update last login
+        await db.updateUserLastLogin(user.id);
+
+        // Ensure user has a token
+        let tokens = await db.getTokensByUserId(user.id);
+        if (tokens.length === 0) {
+            await db.createToken(user.id);
+        }
+
+        // Create session
+        const sessionId = createSession(user.id, clientInfo);
+        res.cookie('MAGIC_SESSION', sessionId, { 
+            httpOnly: true, 
+            maxAge: 24 * 60 * 60 * 1000,
+            sameSite: 'strict'
+        });
+
+        // Log login
+        await db.logAction(user.id, 'login_success', null, clientInfo.ip, clientInfo.userAgent);
+
+        res.json({ ok: true, username: user.username });
+
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ error: 'Login failed' });
+    }
 });
 
-app.post('/api/ack/:token', (req, res) => {
-  const token = req.params.token;
-  const { forceId } = req.body || {};
-  const tokenData = tokensStore[token];
-  if (!tokenData) return res.status(404).json({ error: 'token not found' });
-  
-  const initialLength = tokenData.queue.length;
-  tokenData.queue = tokenData.queue.filter(entry => entry.id !== forceId);
-  
-  if (tokenData.queue.length < initialLength) {
-    saveJSON(TOKENS_FILE, tokensStore);
-  }
-  
-  res.json({ ok: true });
+app.get('/auth/status', requireDB, async (req, res) => {
+    try {
+        const sessionId = req.cookies.MAGIC_SESSION;
+        if (!sessionId) {
+            return res.json({ loggedIn: false });
+        }
+
+        const session = getSession(sessionId);
+        if (!session) {
+            res.clearCookie('MAGIC_SESSION');
+            return res.json({ loggedIn: false });
+        }
+
+        const user = await db.getUserById(session.userId);
+        if (!user) {
+            deleteSession(sessionId);
+            res.clearCookie('MAGIC_SESSION');
+            return res.json({ loggedIn: false });
+        }
+
+        res.json({ 
+            loggedIn: true, 
+            username: user.username,
+            displayName: user.display_name,
+            isAdmin: !!user.is_admin
+        });
+
+    } catch (error) {
+        console.error('Auth status error:', error);
+        res.json({ loggedIn: false });
+    }
 });
 
-// --- Convenience admin endpoint for sending lists ---
-app.post('/api/list/:token', requireAdmin, (req, res) => {
-  const token = req.params.token;
-  const { list } = req.body || {};
-  const tokenData = tokensStore[token];
-  if (!tokenData) return res.status(404).json({ error: 'token not found' });
-  
-  if (!Array.isArray(list)) return res.status(400).json({ error: 'list must be array' });
-  
-  const forceId = crypto.randomUUID();
-  const entry = {
-    id: forceId,
-    force: {
-      mode: 'list',
-      list: list.slice(), // copy array
-      app: 'stopwatch'
-    },
-    createdAt: Date.now()
-  };
-  
-  tokenData.queue.push(entry);
-  saveJSON(TOKENS_FILE, tokensStore);
-  
-  res.json({ ok: true, id: forceId });
+app.post('/auth/logout', requireDB, async (req, res) => {
+    try {
+        const sessionId = req.cookies.MAGIC_SESSION;
+        if (sessionId) {
+            const session = getSession(sessionId);
+            if (session) {
+                await db.logAction(session.userId, 'logout', null, getClientInfo(req).ip);
+            }
+            deleteSession(sessionId);
+        }
+        res.clearCookie('MAGIC_SESSION');
+        res.json({ ok: true });
+    } catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({ error: 'Logout failed' });
+    }
 });
 
-// --- Admin global token list ---
-app.get('/api/tokens', requireAdmin, (req, res) => {
-  const tokens = Object.values(tokensStore).map(t => ({
-    token: t.token,
-    owner: t.owner,
-    queued: t.queue.length
-  }));
-  res.json({ tokens });
+// === LICENSE MANAGEMENT (ADMIN) ===
+
+app.post('/api/license', requireDB, requireAdminKey, async (req, res) => {
+    try {
+        const { count = 1 } = req.body;
+        
+        if (count < 1 || count > 100) {
+            return res.status(400).json({ error: 'Count must be between 1 and 100' });
+        }
+
+        const licenses = await db.createLicenses(count);
+        
+        // Log admin action
+        const clientInfo = getClientInfo(req);
+        await db.logAction(null, 'licenses_created', { count, licenses }, clientInfo.ip, clientInfo.userAgent);
+
+        res.json({ ok: true, created: licenses });
+
+    } catch (error) {
+        console.error('License creation error:', error);
+        res.status(500).json({ error: 'Failed to create licenses' });
+    }
 });
 
-// --- Health endpoints ---
+app.get('/api/licenses', requireDB, requireAdminKey, async (req, res) => {
+    try {
+        const licenses = await db.getAllLicenses();
+        res.json({ licenses });
+    } catch (error) {
+        console.error('Get licenses error:', error);
+        res.status(500).json({ error: 'Failed to get licenses' });
+    }
+});
+
+app.get('/api/users', requireDB, requireAdminKey, async (req, res) => {
+    try {
+        const users = await db.getAllUsers();
+        res.json({ users });
+    } catch (error) {
+        console.error('Get users error:', error);
+        res.status(500).json({ error: 'Failed to get users' });
+    }
+});
+
+// === TOKEN MANAGEMENT ===
+
+app.get('/api/user/tokens', requireDB, async (req, res) => {
+    try {
+        const sessionId = req.cookies.MAGIC_SESSION;
+        const session = getSession(sessionId);
+        
+        if (!session) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const user = await db.getUserById(session.userId);
+        if (!user) {
+            return res.status(401).json({ error: 'User not found' });
+        }
+
+        // Get user's tokens
+        const tokens = await db.getTokensByUserId(user.id);
+        
+        if (tokens.length === 0) {
+            // Create token if none exists
+            const newToken = await db.createToken(user.id);
+            tokens.push({ token: newToken, created_at: new Date().toISOString() });
+        }
+
+        const token = tokens[0]; // Use first token
+        
+        // Get queue count
+        const queue = await db.getForceQueue(token.token);
+        
+        // Generate API examples
+        const host = req.get('host') || 'localhost:3000';
+        const protocol = req.secure ? 'https' : 'http';
+        const baseUrl = `${protocol}://${host}`;
+
+        const apiExamples = {
+            spectatorUrl: `${baseUrl}/spectator.html?token=${token.token}`,
+            pushForce: {
+                url: `${baseUrl}/api/data/${token.token}`,
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    force: {
+                        mode: 'ms',
+                        target: 15,
+                        trigger: 'stop',
+                        minDurationMs: 3000,
+                        app: 'stopwatch'
+                    }
+                })
+            },
+            pollQueue: {
+                url: `${baseUrl}/api/data/${token.token}`,
+                method: 'GET'
+            },
+            ackForce: {
+                url: `${baseUrl}/api/ack/${token.token}`,
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{"forceId":"FORCE_ID_FROM_QUEUE"}'
+            }
+        };
+
+        res.json({
+            token: token.token,
+            createdAt: new Date(token.created_at).getTime(),
+            queued: queue.length,
+            apiExamples
+        });
+
+    } catch (error) {
+        console.error('Get user tokens error:', error);
+        res.status(500).json({ error: 'Failed to get tokens' });
+    }
+});
+
+// === FORCE QUEUE MANAGEMENT ===
+
+app.post('/api/data/:token', requireDB, async (req, res) => {
+    try {
+        const { token } = req.params;
+        const forceData = req.body.force || req.body; // Support both formats
+        
+        if (!forceData.mode || !forceData.trigger) {
+            return res.status(400).json({ error: 'Invalid force data' });
+        }
+
+        const forceId = generateUUID();
+        const queueCount = await db.addForceToQueue(token, forceId, forceData);
+
+        // Log force creation
+        const tokenData = await db.getTokenByValue(token);
+        if (tokenData) {
+            await db.logAction(tokenData.user_id, 'force_created', {
+                token,
+                forceId,
+                forceData
+            }, getClientInfo(req).ip);
+        }
+
+        res.json({ ok: true, id: forceId, queued: queueCount });
+
+    } catch (error) {
+        console.error('Add force error:', error);
+        if (error.message === 'Invalid token') {
+            return res.status(404).json({ error: 'Token not found' });
+        }
+        res.status(500).json({ error: 'Failed to add force' });
+    }
+});
+
+app.get('/api/data/:token', requireDB, async (req, res) => {
+    try {
+        const { token } = req.params;
+        const queue = await db.getForceQueue(token);
+        res.json({ queue });
+    } catch (error) {
+        console.error('Get queue error:', error);
+        res.status(500).json({ error: 'Failed to get queue' });
+    }
+});
+
+app.post('/api/ack/:token', requireDB, async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { forceId } = req.body;
+        
+        if (!forceId) {
+            return res.status(400).json({ error: 'Force ID required' });
+        }
+
+        const acknowledged = await db.acknowledgeForce(token, forceId);
+        
+        if (acknowledged) {
+            // Log acknowledgment
+            const tokenData = await db.getTokenByValue(token);
+            if (tokenData) {
+                await db.logAction(tokenData.user_id, 'force_acknowledged', {
+                    token,
+                    forceId
+                }, getClientInfo(req).ip);
+            }
+            res.json({ ok: true });
+        } else {
+            res.status(404).json({ error: 'Force not found' });
+        }
+
+    } catch (error) {
+        console.error('Acknowledge force error:', error);
+        res.status(500).json({ error: 'Failed to acknowledge force' });
+    }
+});
+
+// === ADMIN ENDPOINTS ===
+
+app.get('/api/tokens', requireDB, requireAdminKey, async (req, res) => {
+    try {
+        const tokens = await db.getAllTokens();
+        res.json({ tokens });
+    } catch (error) {
+        console.error('Get all tokens error:', error);
+        res.status(500).json({ error: 'Failed to get tokens' });
+    }
+});
+
+// === USER SETTINGS API ===
+
+app.get('/api/user/settings', requireDB, async (req, res) => {
+    try {
+        const sessionId = req.cookies.MAGIC_SESSION;
+        const session = getSession(sessionId);
+        
+        if (!session) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const settings = await db.getUserSettings(session.userId);
+        res.json({ settings });
+
+    } catch (error) {
+        console.error('Get user settings error:', error);
+        res.status(500).json({ error: 'Failed to get settings' });
+    }
+});
+
+app.post('/api/user/settings', requireDB, async (req, res) => {
+    try {
+        const sessionId = req.cookies.MAGIC_SESSION;
+        const session = getSession(sessionId);
+        
+        if (!session) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const { key, value } = req.body;
+        if (!key) {
+            return res.status(400).json({ error: 'Setting key required' });
+        }
+
+        await db.setUserSetting(session.userId, key, typeof value === 'object' ? JSON.stringify(value) : value);
+        
+        // Log setting change
+        await db.logAction(session.userId, 'setting_changed', { key, value }, getClientInfo(req).ip);
+        
+        res.json({ ok: true });
+
+    } catch (error) {
+        console.error('Set user setting error:', error);
+        res.status(500).json({ error: 'Failed to set setting' });
+    }
+});
+
+// === WEBAPP SETTINGS API ===
+
+app.get('/api/webapp/:appType/settings', requireDB, async (req, res) => {
+    try {
+        const sessionId = req.cookies.MAGIC_SESSION;
+        const session = getSession(sessionId);
+        
+        if (!session) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const { appType } = req.params;
+        const settings = await db.getWebappSettings(session.userId, appType);
+        res.json({ settings });
+
+    } catch (error) {
+        console.error('Get webapp settings error:', error);
+        res.status(500).json({ error: 'Failed to get webapp settings' });
+    }
+});
+
+app.post('/api/webapp/:appType/settings', requireDB, async (req, res) => {
+    try {
+        const sessionId = req.cookies.MAGIC_SESSION;
+        const session = getSession(sessionId);
+        
+        if (!session) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const { appType } = req.params;
+        const { key, value } = req.body;
+        
+        if (!key) {
+            return res.status(400).json({ error: 'Setting key required' });
+        }
+
+        await db.setWebappSetting(session.userId, appType, key, typeof value === 'object' ? JSON.stringify(value) : value);
+        
+        // Log setting change
+        await db.logAction(session.userId, 'webapp_setting_changed', { appType, key, value }, getClientInfo(req).ip);
+        
+        res.json({ ok: true });
+
+    } catch (error) {
+        console.error('Set webapp setting error:', error);
+        res.status(500).json({ error: 'Failed to set webapp setting' });
+    }
+});
+
+// === HEALTH & STATUS ===
+
 app.get('/health', (req, res) => {
-  res.send('ok');
+    res.send('ok');
 });
 
-app.get('/api/status', (req, res) => {
-  res.json({ ok: true, uptime: process.uptime() });
+app.get('/api/status', requireDB, (req, res) => {
+    res.json({ 
+        ok: true, 
+        uptime: process.uptime(),
+        database: dbInitialized ? 'connected' : 'disconnected',
+        timestamp: new Date().toISOString()
+    });
 });
 
-// --- Serve static files from "public" folder ---
-app.use(express.static(path.join(__dirname, 'public')));
+// === GRACEFUL SHUTDOWN ===
 
-// --- Root redirect ---
-app.get('/', (req, res) => {
-  res.redirect('/magician/login.html');
+process.on('SIGINT', () => {
+    console.log('\n🔄 Shutting down gracefully...');
+    db.close();
+    process.exit(0);
 });
 
-// --- 404 fallback ---
-app.use((req, res) => {
-  console.log('404:', req.url);
-  res.status(404).send('Seite nicht gefunden');
+process.on('SIGTERM', () => {
+    console.log('\n🔄 Shutting down gracefully...');
+    db.close();
+    process.exit(0);
 });
 
-// --- start server ---
+// === START SERVER ===
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server läuft auf Port ${PORT}`);
-  console.log('Static files served from:', path.join(__dirname, 'public'));
+
+initializeDatabase().then(() => {
+    app.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+        console.log(`🌐 URL: http://localhost:${PORT}`);
+        console.log(`🗄️ Database: SQLite (${db.dbPath})`);
+        console.log(`🔐 Admin protection: ${process.env.ADMIN_KEY ? 'ENABLED' : 'DISABLED (dev mode)'}`);
+    });
+}).catch(error => {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
 });
