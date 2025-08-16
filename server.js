@@ -125,7 +125,7 @@ app.use(express.static('public'));
 
 // 🔥 FIX: Hauptroute für PWA
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.redirect('/spectator.html');
 });
 
 // === ENHANCED AUTHENTICATION ROUTES ===
