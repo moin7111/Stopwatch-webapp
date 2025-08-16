@@ -2,7 +2,7 @@
 const CACHE_NAME = 'imperia-v4';
 const urlsToCache = [
   '/',
-  '/control/index.html',
+  '/index.html',
   '/manifest.json',
   '/icon-192x192.png',
   '/icon-512x512.png'

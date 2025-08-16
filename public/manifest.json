@@ -2,7 +2,7 @@
   "name": "IMPERIA Magic System",
   "short_name": "IMPERIA",
   "description": "Professional Magic Performance Timer",
-  "start_url": "/control/index.html?source=pwa",
+  "start_url": "/index.html?source=pwa",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
