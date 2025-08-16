@@ -192,28 +192,9 @@ body {
                 <input type="number" id="forceValue" placeholder="z.B. 15" value="15">
             </div>
             
-            <div class="form-group">
-                <label for="forceTrigger">Anwenden bei:</label>
-                <select id="forceTrigger">
-                    <option value="stop">Stopp</option>
-                    <option value="lap">Runde</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="forceDelay">Timing:</label>
-                <select id="forceDelay">
-                    <option value="immediately">Sofort</option>
-                    <option value="seconds">Nach X Sekunden</option>
-                    <option value="minutes">Nach X Minuten</option>
-                    <option value="stops">Nach X Stopps</option>
-                    <option value="laps">Nach X Runden</option>
-                </select>
-            </div>
-            
-            <div class="form-group" id="delayValueGroup" style="display:none;">
-                <label for="delayValue">Anzahl/Dauer:</label>
-                <input type="number" id="delayValue" placeholder="z.B. 3" value="1">
+            <!-- 🔥 VEREINFACHT: Keine Timing-Optionen mehr -->
+            <div style="font-size: 14px; color: #888; margin: 15px 0; text-align: center;">
+                ⚡ Force wird beim nächsten Button-Klick sofort angewendet
             </div>
             
             <div class="button-group">
@@ -534,13 +515,10 @@ body {
         }
     });
 
-    // Apply force button
+    // Apply force button - 🔥 VEREINFACHT
     document.getElementById('applyForce').addEventListener('click', function() {
         const mode = document.getElementById('forceMode').value;
         const value = parseInt(document.getElementById('forceValue').value) || 0;
-        const trigger = document.getElementById('forceTrigger').value;
-        const timing = document.getElementById('forceDelay').value;
-        const timingValue = parseInt(document.getElementById('delayValue').value) || 1;
 
         if (value <= 0) {
             alert('Bitte gültigen Wert eingeben');
@@ -549,23 +527,13 @@ body {
 
         const force = {
             mode: mode,
-            value: value,
-            trigger: trigger,
-            timing: timing,
-            timingValue: timing === 'immediately' ? 0 : timingValue
+            value: value
         };
 
         localForces.push(force);
-        
-        let timingText = '';
-        if (timing === 'immediately') timingText = 'sofort';
-        else if (timing === 'seconds') timingText = `nach ${timingValue}s`;
-        else if (timing === 'minutes') timingText = `nach ${timingValue}min`;
-        else if (timing === 'stops') timingText = `nach ${timingValue} Stopps`;
-        else if (timing === 'laps') timingText = `nach ${timingValue} Runden`;
-
-        statusText.textContent = `⚡ Force bereit: ${mode} ${value} (${trigger}, ${timingText})`;
+        statusText.textContent = `⚡ Force bereit: ${mode} ${value} (sofort beim nächsten Klick)`;
         forceMenu.classList.remove('show');
+        updateForceDisplay();
     });
 
     // Cancel button
