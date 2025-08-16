@@ -123,6 +123,11 @@ app.use((req, res, next) => {
 
 app.use(express.static('public'));
 
+// 🔥 FIX: Hauptroute für PWA
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // === ENHANCED AUTHENTICATION ROUTES ===
 
 app.post('/auth/register', requireDB, async (req, res) => {
