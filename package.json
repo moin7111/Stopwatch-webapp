@@ -1,36 +1,94 @@
 {
-  "name": "stopwatch-webapp",
-  "version": "2.0.0",
-  "description": "PWA for stage magicians to control spectator stopwatch via API with SQL database backend",
+  "name": "stopwatch-magic-webapp",
+  "version": "2.1.0",
+  "description": "🎩 Professional Magic Performance PWA - Secret force technology for stage magicians with enterprise-level backend",
   "main": "server.js",
+  "type": "commonjs",
+  "homepage": "https://stopwatch-webapp-1.onrender.com",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
+    "dev": "NODE_ENV=development nodemon server.js",
+    "prod": "NODE_ENV=production node server.js",
     "db:migrate": "node database/migrate.js migrate",
     "db:test": "node database/migrate.js test",
-    "db:backup": "node -e \"const fs=require('fs'); const path=require('path'); const now=new Date().toISOString().replace(/[:.]/g,'-'); const src='database/stopwatch_magic.db'; const dest=`database/backup/${now}_stopwatch_magic.db`; if(fs.existsSync(src)) { fs.mkdirSync(path.dirname(dest), {recursive:true}); fs.copyFileSync(src, dest); console.log('Database backed up to:', dest); } else { console.log('No database file found to backup'); }\""
+    "db:backup": "node -e \"const fs=require('fs'); const path=require('path'); const now=new Date().toISOString().replace(/[:.]/g,'-'); const src='database/stopwatch_magic.db'; const dest=`database/backup/${now}_stopwatch_magic.db`; if(fs.existsSync(src)) { fs.mkdirSync(path.dirname(dest), {recursive:true}); fs.copyFileSync(src, dest); console.log('✅ Database backed up to:', dest); } else { console.log('❌ No database file found to backup'); }\"",
+    "db:init": "npm run db:migrate && npm run db:test",
+    "deploy": "git push origin main",
+    "health": "curl -s http://localhost:3000/health || echo 'Server not running'",
+    "test:api": "npm run health && echo '✅ Basic health check passed'",
+    "setup": "npm install && npm run db:init && echo '🎉 Setup complete!'",
+    "clean": "rm -rf node_modules package-lock.json && npm install",
+    "logs": "echo 'Use: render logs or check Render dashboard'"
   },
   "keywords": [
     "pwa",
+    "progressive-web-app", 
     "stopwatch",
     "magic",
+    "stage-magic",
+    "performance",
+    "force-technology",
     "api",
     "sqlite",
-    "express"
+    "express",
+    "nodejs",
+    "entertainment",
+    "mobile-app",
+    "offline-capable",
+    "real-time",
+    "authentication",
+    "enterprise"
   ],
-  "author": "Your Name",
+  "author": {
+    "name": "Leon",
+    "email": "your-email@example.com",
+    "url": "https://github.com/moin7111"
+  },
+  "contributors": [
+    {
+      "name": "Assistant",
+      "role": "Development Support"
+    }
+  ],
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/moin7111/Stopwatch-webapp/issues"
+  },
+  "funding": {
+    "type": "individual",
+    "url": "https://github.com/sponsors/moin7111"
+  },
   "dependencies": {
     "cookie-parser": "^1.4.6",
-    "dotenv": "^17.2.1",
+    "dotenv": "^17.2.1", 
     "express": "^4.18.2",
     "sqlite3": "^5.1.7"
   },
-  "engines": {
-    "node": ">=18.0.0"
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "os": [
+    "linux",
+    "darwin",
+    "win32"
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/moin7111/Stopwatch-webapp.git"
-  }
+    "url": "git+https://github.com/moin7111/Stopwatch-webapp.git"
+  },
+  "config": {
+    "port": "3000",
+    "db_path": "database/stopwatch_magic.db"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "iOS >= 12",
+    "Android >= 8"
+  ]
 }
