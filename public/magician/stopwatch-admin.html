@@ -257,7 +257,7 @@ body {
 
     // --- Magician-specific force system ---
     let localForces = [];
-    let eventCounts = { stop: 0, lap: 0 };
+    // 🔥 VEREINFACHT: Keine eventCounts mehr nötig
 
     function formatTime(milliseconds) {
         const totalSeconds = Math.floor(milliseconds / 1000);
@@ -324,49 +324,39 @@ body {
 
     // --- Force System für Magier (lokal, keine API) ---
     function applyLocalForce(eventType, realMs) {
-        if (!eventCounts[eventType]) eventCounts[eventType] = 0;
-        eventCounts[eventType]++;
-
-        for (let i = 0; i < localForces.length; i++) {
-            const force = localForces[i];
-            
-            // Check trigger
-            if (force.trigger !== eventType) continue;
-            
-            // Check timing conditions
-            if (force.timing === 'seconds' && realMs < force.timingValue * 1000) continue;
-            if (force.timing === 'minutes' && realMs < force.timingValue * 60 * 1000) continue;
-            if (force.timing === 'stops' && eventCounts.stop < force.timingValue) continue;
-            if (force.timing === 'laps' && eventCounts.lap < force.timingValue) continue;
-            
-            // Apply force
-            let result = null;
-            if (force.mode === 'ms') {
-                const baseSec = Math.floor(realMs / 1000);
-                result = baseSec * 1000 + force.value * 10;
-                while (result < realMs) result += 1000;
-            } else if (force.mode === 'total') {
-                // Find nearest time with target digit sum
-                const targetSum = force.value;
-                const step = 10;
-                for (let offset = 0; offset < 5000; offset += step) {
-                    const candidate = realMs + offset;
-                    const candidateStr = formatTime(candidate);
-                    const digitSum = candidateStr.replace(/[^0-9]/g, '').split('').reduce((a,c) => a + parseInt(c,10), 0);
-                    if (digitSum === targetSum) {
-                        result = candidate;
-                        break;
-                    }
+        // 🔥 VEREINFACHT: Erste Force wird sofort angewendet!
+        
+        if (localForces.length === 0) return realMs;
+        
+        const force = localForces[0]; // Erste Force nehmen
+        
+        let result = null;
+        if (force.mode === 'ms') {
+            const baseSec = Math.floor(realMs / 1000);
+            result = baseSec * 1000 + force.value * 10;
+            while (result < realMs) result += 1000;
+        } else if (force.mode === 'total') {
+            // Find nearest time with target digit sum
+            const targetSum = force.value;
+            const step = 10;
+            for (let offset = 0; offset < 5000; offset += step) {
+                const candidate = realMs + offset;
+                const candidateStr = formatTime(candidate);
+                const digitSum = candidateStr.replace(/[^0-9]/g, '').split('').reduce((a,c) => a + parseInt(c,10), 0);
+                if (digitSum === targetSum) {
+                    result = candidate;
+                    break;
                 }
             }
-            
-            if (result !== null) {
-                // Remove used force and show feedback
-                localForces.splice(i, 1);
-                statusText.textContent = `🎯 Force angewendet: ${force.mode} ${force.value}`;
-                setTimeout(() => statusText.textContent = '🎩 ZAUBER MODUS', 2000);
-                return result;
-            }
+        }
+        
+        if (result !== null) {
+            // Remove used force and show feedback
+            localForces.splice(0, 1);
+            statusText.textContent = `🎯 Force angewendet: ${force.mode} ${force.value}`;
+            setTimeout(() => statusText.textContent = '🎩 ZAUBER MODUS', 2000);
+            updateForceDisplay();
+            return result;
         }
         
         return realMs;
@@ -425,7 +415,7 @@ body {
         lapCounter = 0;
         laps = [];
         currentLapStartTime = 0;
-        eventCounts = { stop: 0, lap: 0 };
+        // 🔥 VEREINFACHT: Keine eventCounts mehr
         clearInterval(timerInterval);
         timeDisplay.textContent = '00:00,00';
 

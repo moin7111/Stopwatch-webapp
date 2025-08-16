@@ -414,8 +414,8 @@ app.post('/api/data/:token', requireDB, async (req, res) => {
         const { token } = req.params;
         const forceData = req.body.force || req.body; // Support both formats
         
-        if (!forceData.mode || !forceData.trigger) {
-            return res.status(400).json({ error: 'Invalid force data' });
+        if (!forceData.mode) {
+            return res.status(400).json({ error: 'Invalid force data - mode required' });
         }
 
         const forceId = generateUUID();

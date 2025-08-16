@@ -385,7 +385,7 @@ body {
         function createClient(token, pollIntervalMs){
             let polling = false;
             let queue = [];
-            let pressCounts = { stop:0, lap:0 };
+            // 🔥 VEREINFACHT: Keine pressCounts mehr nötig
 
             async function poll(){
                 if (!polling) return;
@@ -411,16 +411,12 @@ body {
             poll();
 
             async function applyIfTriggered(eventType, realMs){
-                if (!pressCounts[eventType]) pressCounts[eventType] = 0;
-                pressCounts[eventType]++;
-
+                // 🔥 VEREINFACHT: Keine Bedingungen mehr, sofort anwenden!
+                
                 if (queue.length === 0) return null;
 
                 const entry = queue[0];
                 const f = entry.force || {};
-                if (f.trigger && f.trigger !== eventType) return null;
-                if (f.minDurationMs && realMs < Number(f.minDurationMs)) return null;
-                if (f.minPressCount && pressCounts[eventType] < Number(f.minPressCount)) return null;
 
                 if (f.mode === 'list' && Array.isArray(f.list) && f.list.length>0){
                     const sub = f.list.shift();
@@ -454,7 +450,7 @@ body {
                 }catch(e){ }
             }
 
-            function resetCounters(){ pressCounts = { stop:0, lap:0 }; }
+            function resetCounters(){ /* Keine Counter mehr */ }
             function disconnect(){ polling = false; }
 
             return { applyIfTriggered, resetCounters, disconnect };
