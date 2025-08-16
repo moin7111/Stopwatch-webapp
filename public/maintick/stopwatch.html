@@ -108,39 +108,50 @@
     <script src="/js/stopwatch-api.js"></script>
     <script src="/js/preset-manager.js"></script>
     <script>
-        // Initialisierung
-        const stopwatch = new StopwatchCore();
-        let api = null;
-        window.api = null; // Global API reference
+        // Warte bis DOM geladen ist
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, checking dependencies...');
+            console.log('StopwatchCore:', typeof window.StopwatchCore);
+            console.log('ManualInput:', typeof window.ManualInput);
+            console.log('PresetManager:', typeof window.PresetManager);
+            console.log('StopwatchAPI:', typeof window.StopwatchAPI);
+            
+            // Initialisierung
+            const stopwatch = new StopwatchCore();
+            let api = null;
+            window.api = null; // Global API reference
 
-        // UI-Elemente initialisieren
-        stopwatch.initUI({
-            timeDisplay: document.getElementById('timeDisplay'),
-            leftButton: document.getElementById('leftButton'),
-            rightButton: document.getElementById('rightButton'),
-            lapsContainer: document.getElementById('lapsContainer'),
-            statusText: document.getElementById('statusText')
-        });
+            // UI-Elemente initialisieren
+            stopwatch.initUI({
+                timeDisplay: document.getElementById('timeDisplay'),
+                leftButton: document.getElementById('leftButton'),
+                rightButton: document.getElementById('rightButton'),
+                lapsContainer: document.getElementById('lapsContainer'),
+                statusText: document.getElementById('statusText')
+            });
 
-        // Triple-Click auf Wecker für Presets (nur MainTick)
-        let alarmClickCount = 0;
-        let alarmClickTimer = null;
-        document.getElementById('alarmNavItem').addEventListener('click', () => {
-            alarmClickCount++;
-            if (alarmClickCount === 3) {
-                if (window.PresetManager) {
-                    window.PresetManager.open(stopwatch, api);
+            // Triple-Click auf Wecker für Presets (nur MainTick)
+            let alarmClickCount = 0;
+            let alarmClickTimer = null;
+                        document.getElementById('alarmNavItem').addEventListener('click', () => {
+                alarmClickCount++;
+                if (alarmClickCount === 3) {
+                    if (window.PresetManager && window.PresetManager.instance) {
+                        window.PresetManager.open(stopwatch, api);
+                    } else {
+                        console.error('PresetManager not found');
+                        stopwatch.updateStatus('Preset Manager nicht verfügbar');
+                    }
+                    alarmClickCount = 0;
                 }
-                alarmClickCount = 0;
-            }
-            clearTimeout(alarmClickTimer);
-            alarmClickTimer = setTimeout(() => alarmClickCount = 0, 500);
-        });
+                clearTimeout(alarmClickTimer);
+                alarmClickTimer = setTimeout(() => alarmClickCount = 0, 500);
+            });
 
-        // Triple-Click auf Weltuhr für Routinen-Bereich
-        let worldClockClickCount = 0;
-        let worldClockClickTimer = null;
-        document.getElementById('worldClockNavItem').addEventListener('click', () => {
+            // Triple-Click auf Weltuhr für Routinen-Bereich
+            let worldClockClickCount = 0;
+            let worldClockClickTimer = null;
+            document.getElementById('worldClockNavItem').addEventListener('click', () => {
             worldClockClickCount++;
             if (worldClockClickCount === 3) {
                 // Zurück zum Routinen-Bereich
@@ -149,87 +160,88 @@
             }
             clearTimeout(worldClockClickTimer);
             worldClockClickTimer = setTimeout(() => worldClockClickCount = 0, 500);
-        });
+            });
 
-        // Dev Panel
-        const params = new URLSearchParams(location.search);
-        const dev = params.get('dev');
-        const panel = document.getElementById('devPanel');
-        const tokenInput = document.getElementById('tokenInput');
-        const connectBtn = document.getElementById('connectBtn');
-        const clearBtn = document.getElementById('clearBtn');
+            // Dev Panel
+            const params = new URLSearchParams(location.search);
+            const dev = params.get('dev');
+            const panel = document.getElementById('devPanel');
+            const tokenInput = document.getElementById('tokenInput');
+            const connectBtn = document.getElementById('connectBtn');
+            const clearBtn = document.getElementById('clearBtn');
 
-        if (dev === '1') panel.classList.add('show');
+            if (dev === '1') panel.classList.add('show');
 
-        connectBtn.addEventListener('click', function() {
+            connectBtn.addEventListener('click', function() {
             const token = tokenInput.value.trim();
             if (!token) return alert('Bitte Token eingeben');
             
             api = new StopwatchAPI(token, 'maintick');
-            window.api = api; // Update global reference
-            api.startPolling(stopwatch);
-            stopwatch.updateStatus(`MainTick verbunden (${token.substring(0,6)}...)`);
-        });
+                window.api = api; // Update global reference
+                api.startPolling(stopwatch);
+                stopwatch.updateStatus(`MainTick verbunden (${token.substring(0,6)}...)`);
+            });
 
-        clearBtn.addEventListener('click', function() {
+            clearBtn.addEventListener('click', function() {
             if (api) {
                 api.stopPolling();
                 api = null;
                 window.api = null; // Clear global reference
-            }
-            stopwatch.updateStatus('Getrennt');
-        });
+                }
+                stopwatch.updateStatus('Getrennt');
+            });
 
-        // Auto-connect via URL parameter
-        const tokenParam = params.get('token') || params.get('t');
-        if (tokenParam) {
+            // Auto-connect via URL parameter
+            const tokenParam = params.get('token') || params.get('t');
+            if (tokenParam) {
             api = new StopwatchAPI(tokenParam, 'maintick');
-            window.api = api; // Update global reference
-            api.startPolling(stopwatch);
-            stopwatch.updateStatus(`MainTick verbunden (${tokenParam.substring(0,6)}...)`);
-        }
+                window.api = api; // Update global reference
+                api.startPolling(stopwatch);
+                stopwatch.updateStatus(`MainTick verbunden (${tokenParam.substring(0,6)}...)`);
+            }
 
-        // Fullscreen & Anti-Scroll
-        function tryEnterFullscreen() {
+            // Fullscreen & Anti-Scroll
+            function tryEnterFullscreen() {
             const el = document.documentElement;
             if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) return;
-            const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-            if (fn) { try { fn.call(el); } catch (err) { } }
-        }
-        
-        const enterOnce = () => { 
-            tryEnterFullscreen(); 
-            document.removeEventListener('click', enterOnce); 
-            document.removeEventListener('touchstart', enterOnce); 
-        };
-        
-        document.addEventListener('click', enterOnce, { once: true });
-        document.addEventListener('touchstart', enterOnce, { once: true });
-        document.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
-        
-        let lastTouch = 0;
-        document.addEventListener('touchend', function(e) { 
-            const now = Date.now(); 
-            if (now - lastTouch <= 300) e.preventDefault(); 
-            lastTouch = now; 
-        }, { passive: false });
-        
-        document.addEventListener('gesturestart', function(e) { e.preventDefault && e.preventDefault(); });
-        document.addEventListener('dblclick', function(e) { e.preventDefault(); });
-        
-        window.addEventListener('keydown', function(e) { 
-            const keysToPrevent = ['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' ']; 
-            if (keysToPrevent.includes(e.key)) e.preventDefault(); 
-        }, { passive: false });
-        
-        // Service Worker Registration
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').then(function(registration) {
-                console.log('Service Worker registered with scope:', registration.scope);
-            }).catch(function(err) {
-                console.log('Service Worker registration failed:', err);
-            });
-        }
+                const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+                if (fn) { try { fn.call(el); } catch (err) { } }
+            }
+            
+            const enterOnce = () => { 
+                tryEnterFullscreen(); 
+                document.removeEventListener('click', enterOnce); 
+                document.removeEventListener('touchstart', enterOnce); 
+            };
+            
+            document.addEventListener('click', enterOnce, { once: true });
+            document.addEventListener('touchstart', enterOnce, { once: true });
+            document.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
+            
+            let lastTouch = 0;
+            document.addEventListener('touchend', function(e) { 
+                const now = Date.now(); 
+                if (now - lastTouch <= 300) e.preventDefault(); 
+                lastTouch = now; 
+            }, { passive: false });
+            
+            document.addEventListener('gesturestart', function(e) { e.preventDefault && e.preventDefault(); });
+            document.addEventListener('dblclick', function(e) { e.preventDefault(); });
+            
+            window.addEventListener('keydown', function(e) { 
+                const keysToPrevent = ['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' ']; 
+                if (keysToPrevent.includes(e.key)) e.preventDefault(); 
+            }, { passive: false });
+            
+            // Service Worker Registration
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                }).catch(function(err) {
+                    console.log('Service Worker registration failed:', err);
+                });
+            }
+        }); // Ende DOMContentLoaded
     </script>
 </body>
 </html>

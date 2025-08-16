@@ -108,29 +108,31 @@
     <script src="/js/stopwatch-api.js"></script>
     <script src="/js/preset-manager.js"></script>
     <script>
-        // Initialisierung
-        const stopwatch = new StopwatchCore();
-        let api = null;
-        window.api = null; // Global API reference
+        // Warte bis DOM geladen ist
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialisierung
+            const stopwatch = new StopwatchCore();
+            let api = null;
+            window.api = null; // Global API reference
 
-        // UI-Elemente initialisieren
-        stopwatch.initUI({
-            timeDisplay: document.getElementById('timeDisplay'),
-            leftButton: document.getElementById('leftButton'),
-            rightButton: document.getElementById('rightButton'),
-            lapsContainer: document.getElementById('lapsContainer'),
-            statusText: document.getElementById('statusText')
-        });
+            // UI-Elemente initialisieren
+            stopwatch.initUI({
+                timeDisplay: document.getElementById('timeDisplay'),
+                leftButton: document.getElementById('leftButton'),
+                rightButton: document.getElementById('rightButton'),
+                lapsContainer: document.getElementById('lapsContainer'),
+                statusText: document.getElementById('statusText')
+            });
 
-        // Preset Selection für ModulTick
-        const presetSelectModal = document.getElementById('presetSelectModal');
-        const presetSelectList = document.getElementById('presetSelectList');
-        const closePresetSelectBtn = document.getElementById('closePresetSelectBtn');
+            // Preset Selection für ModulTick
+            const presetSelectModal = document.getElementById('presetSelectModal');
+            const presetSelectList = document.getElementById('presetSelectList');
+            const closePresetSelectBtn = document.getElementById('closePresetSelectBtn');
 
-        // Triple-Click auf Wecker für Preset-Auswahl (nur ModulTick)
-        let alarmClickCount = 0;
-        let alarmClickTimer = null;
-        document.getElementById('alarmNavItem').addEventListener('click', async () => {
+            // Triple-Click auf Wecker für Preset-Auswahl (nur ModulTick)
+            let alarmClickCount = 0;
+            let alarmClickTimer = null;
+            document.getElementById('alarmNavItem').addEventListener('click', async () => {
             alarmClickCount++;
             if (alarmClickCount === 3) {
                 if (api) {
@@ -168,13 +170,13 @@
             }
         }
 
-        // Preset aktivieren
-        async function activatePreset(presetName) {
-            if (api) {
-                await api.loadPreset(presetName, stopwatch);
-                presetSelectModal.classList.remove('show');
+            // Preset aktivieren
+            window.activatePreset = async function(presetName) {
+                if (api) {
+                    await api.loadPreset(presetName, stopwatch);
+                    presetSelectModal.classList.remove('show');
+                }
             }
-        }
 
         // Dev Panel
         const params = new URLSearchParams(location.search);
@@ -246,6 +248,7 @@
             const keysToPrevent = ['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' ']; 
             if (keysToPrevent.includes(e.key)) e.preventDefault(); 
         }, { passive: false });
+        }); // Ende DOMContentLoaded
     </script>
 </body>
 </html>
