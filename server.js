@@ -231,8 +231,9 @@ app.post('/auth/login', requireDB, async (req, res) => {
         const sessionId = createSession(user.id, clientInfo);
         res.cookie('MAGIC_SESSION', sessionId, { 
             httpOnly: true, 
-            maxAge: 24 * 60 * 60 * 1000,
-            sameSite: 'strict'
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production'
         });
 
         // Log login
@@ -294,6 +295,39 @@ app.post('/auth/logout', requireDB, async (req, res) => {
     } catch (error) {
         console.error('Logout error:', error);
         res.status(500).json({ error: 'Logout failed' });
+    }
+});
+
+// === LICENSE VERIFICATION ===
+
+app.post('/auth/verify-license', requireDB, async (req, res) => {
+    try {
+        const { code } = req.body;
+        
+        if (!code) {
+            return res.status(400).json({ error: 'Lizenz-Code erforderlich' });
+        }
+        
+        // Check if license exists and is not used
+        const license = await db.getLicenseByCode(code);
+        
+        if (!license) {
+            return res.status(404).json({ error: 'Ungültiger Lizenz-Code' });
+        }
+        
+        if (license.is_used) {
+            return res.status(400).json({ error: 'Lizenz-Code wurde bereits verwendet' });
+        }
+        
+        // License is valid
+        res.json({ 
+            ok: true, 
+            message: 'Lizenz-Code ist gültig' 
+        });
+        
+    } catch (error) {
+        console.error('License verification error:', error);
+        res.status(500).json({ error: 'Fehler bei der Lizenz-Verifizierung' });
     }
 });
 
@@ -1101,11 +1135,15 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/api/status', requireDB, (req, res) => {
+    const sessionId = req.cookies.MAGIC_SESSION;
+    const session = sessionId ? getSession(sessionId) : null;
+    
     res.json({ 
         ok: true, 
         uptime: process.uptime(),
         database: dbInitialized ? 'connected' : 'disconnected',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        authenticated: !!session
     });
 });
 

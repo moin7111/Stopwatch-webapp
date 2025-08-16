@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+    <title>Imperia - Routinen</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 40px;
+        }
+        
+        .back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+        }
+        
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .section-icon {
+            font-size: 24px;
+        }
+        
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        
+        .app-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .app-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .app-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        
+        .app-card:hover::before {
+            opacity: 1;
+        }
+        
+        .app-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            filter: grayscale(0.2);
+        }
+        
+        .app-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .app-status {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        
+        .status-active {
+            color: #30d158;
+        }
+        
+        .status-inactive {
+            color: #8e8e93;
+        }
+        
+        .coming-soon {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .coming-soon:hover {
+            transform: none;
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: none;
+        }
+        
+        .info-box {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .info-icon {
+            display: inline-block;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/control/menu.html" class="back-btn">← Zurück</a>
+        <h1>Routinen</h1>
+        <div style="width: 80px;"></div>
+    </div>
+    
+    <div class="content">
+        <div class="section">
+            <div class="section-title">
+                <span class="section-icon">⏱️</span>
+                <span>Zeit-basierte Effekte</span>
+            </div>
+            
+            <div class="app-grid">
+                <a href="/maintick/stopwatch.html" class="app-card" id="mainTickCard">
+                    <div class="app-icon">⏱️</div>
+                    <div class="app-name">MainTick</div>
+                    <div class="app-status status-active">Verfügbar</div>
+                </a>
+                
+                <div class="app-card coming-soon">
+                    <div class="app-icon">⏲️</div>
+                    <div class="app-name">Timer Force</div>
+                    <div class="app-status status-inactive">Bald verfügbar</div>
+                </div>
+                
+                <div class="app-card coming-soon">
+                    <div class="app-icon">⏰</div>
+                    <div class="app-name">Alarm Predict</div>
+                    <div class="app-status status-inactive">Bald verfügbar</div>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <span class="info-icon">ℹ️</span>
+                <strong>MainTick</strong> ist deine professionelle Stoppuhr mit Force-Funktionen. 
+                Perfekt für Zeit-Vorhersagen und kontrollierte Stoppuhr-Effekte.
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">
+                <span class="section-icon">🔢</span>
+                <span>Zahlen & Berechnungen</span>
+            </div>
+            
+            <div class="app-grid">
+                <div class="app-card coming-soon">
+                    <div class="app-icon">🧮</div>
+                    <div class="app-name">Calculator Force</div>
+                    <div class="app-status status-inactive">In Entwicklung</div>
+                </div>
+                
+                <div class="app-card coming-soon">
+                    <div class="app-icon">📊</div>
+                    <div class="app-name">Number Predict</div>
+                    <div class="app-status status-inactive">In Entwicklung</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">
+                <span class="section-icon">🌐</span>
+                <span>Web & Browser</span>
+            </div>
+            
+            <div class="app-grid">
+                <div class="app-card coming-soon">
+                    <div class="app-icon">🌐</div>
+                    <div class="app-name">Fake Browser</div>
+                    <div class="app-status status-inactive">Geplant</div>
+                </div>
+                
+                <div class="app-card coming-soon">
+                    <div class="app-icon">🔍</div>
+                    <div class="app-name">Search Predict</div>
+                    <div class="app-status status-inactive">Geplant</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Get user token for MainTick
+        async function getMainTickUrl() {
+            try {
+                const response = await fetch('/api/tokens', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.tokens && data.tokens.length > 0) {
+                        const token = data.tokens[0].value;
+                        return `/maintick/stopwatch.html?token=${token}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error getting token:', error);
+            }
+            
+            return '/maintick/stopwatch.html';
+        }
+        
+        // Update MainTick link with token
+        document.addEventListener('DOMContentLoaded', async () => {
+            const mainTickCard = document.getElementById('mainTickCard');
+            const url = await getMainTickUrl();
+            mainTickCard.href = url;
+        });
+        
+        // Add touch feedback
+        document.querySelectorAll('.app-card:not(.coming-soon)').forEach(card => {
+            card.addEventListener('touchstart', () => {
+                card.style.transform = 'scale(0.95)';
+            });
+            
+            card.addEventListener('touchend', () => {
+                setTimeout(() => {
+                    card.style.transform = '';
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>
