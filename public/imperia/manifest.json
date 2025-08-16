@@ -1,0 +1,28 @@
+{
+  "name": "IMPERIA Control System V4",
+  "short_name": "IMPERIA Control",
+  "description": "IMPERIA Control System V4 - Login, Dashboard & Tempra",
+  "version": "4.0.0",
+  "start_url": "/imperia/control/index.html?source=pwa",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "categories": ["entertainment", "utilities"],
+  "icons": [
+    {
+      "src": "/imperia/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/imperia/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "scope": "/imperia/",
+  "prefer_related_applications": false
+}

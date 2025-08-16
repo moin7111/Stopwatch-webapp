@@ -7,20 +7,20 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#000000" />
-    <meta name="apple-mobile-web-app-title" content="ModulTick" />
-    <meta name="application-name" content="ModulTick" />
-    <title>ModulTick - Stoppuhr</title>
+    <meta name="apple-mobile-web-app-title" content="Tempral" />
+    <meta name="application-name" content="Tempral" />
+    <title>Tempral - Stoppuhr</title>
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="manifest" href="/imperia-modul/manifest.json" />
     
     <!-- Icons -->
-    <link rel="apple-touch-icon" href="/icon-192x192.png" />
-    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192x192.png" />
-    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512x512.png" />
-    <link rel="icon" type="image/png" href="/icon-192x192.png" />
+    <link rel="apple-touch-icon" href="/imperia-modul/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/imperia-modul/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/imperia-modul/icon-512x512.png" />
+    <link rel="icon" type="image/png" href="/imperia-modul/icon-192x192.png" />
     
-    <link rel="stylesheet" href="/css/stopwatch-ui.css">
+    <link rel="stylesheet" href="/imperia-modul/css/stopwatch-ui.css">
 </head>
 <body>
     <div class="status-bar">
@@ -265,7 +265,7 @@
             
             // Service Worker Registration
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(function(registration) {
+                navigator.serviceWorker.register('/imperia-modul/sw.js', { scope: '/imperia-modul/' }).then(function(registration) {
                     console.log('Service Worker registered with scope:', registration.scope);
                 }).catch(function(err) {
                     console.log('Service Worker registration failed:', err);

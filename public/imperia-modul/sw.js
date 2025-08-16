@@ -1,11 +1,11 @@
-// sw.js - Service Worker für IMPERIA Magic System PWA
-const CACHE_NAME = 'imperia-v4';
+// sw.js - Service Worker für IMPERIA Tempral System PWA
+const CACHE_NAME = 'imperia-tempral-v4';
 const urlsToCache = [
-  '/',
-  '/control/index.html',
-  '/manifest.json',
-  '/icon-192x192.png',
-  '/icon-512x512.png'
+  '/imperia-modul/',
+  '/imperia-modul/tempral.html',
+  '/imperia-modul/manifest.json',
+  '/imperia-modul/icon-192x192.png',
+  '/imperia-modul/icon-512x512.png'
 ];
 
 // Install Service Worker
@@ -47,7 +47,10 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
+          // Delete all old caches (v1, v2, v3, and old modul caches)
+          if (cacheName !== CACHE_NAME && 
+              (cacheName.includes('imperia-modul-v') || 
+               cacheName.includes('imperia-tempral-v'))) {
             console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -58,4 +61,11 @@ self.addEventListener('activate', event => {
       return self.clients.claim();
     })
   );
+});
+
+// Notify clients about the update
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
