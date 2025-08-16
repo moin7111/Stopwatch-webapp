@@ -2,7 +2,9 @@
   "name": "stopwatch-webapp",
   "version": "1.0.0",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "db:test": "node -e \"console.log('Testing JSON data stores...'); const fs = require('fs'); const path = require('path'); const dataDir = path.join(__dirname, 'data'); if (fs.existsSync(dataDir)) { console.log('✅ Data directory exists'); const files = fs.readdirSync(dataDir); files.forEach(f => console.log('📄 ' + f)); } else { console.log('❌ Data directory missing'); }\"",
+    "db:migrate": "node -e \"console.log('JSON migration not needed - using file-based storage'); console.log('Data files are automatically created on first run');\""
   },
   "dependencies": {
     "express": "^4.18.2",
