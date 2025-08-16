@@ -5,7 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#000000" />
     <title>MainTick - Stoppuhr</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/maintick/manifest.json" />
+    
+    <!-- Icons -->
+    <link rel="apple-touch-icon" href="/icon-192x192.png" />
+    <link rel="icon" type="image/png" href="/icon-192x192.png" />
+    
+    <!-- Styles -->
     <link rel="stylesheet" href="/css/stopwatch-ui.css">
 </head>
 <body>
@@ -192,6 +203,15 @@
             const keysToPrevent = ['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' ']; 
             if (keysToPrevent.includes(e.key)) e.preventDefault(); 
         }, { passive: false });
+        
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                console.log('Service Worker registered with scope:', registration.scope);
+            }).catch(function(err) {
+                console.log('Service Worker registration failed:', err);
+            });
+        }
     </script>
 </body>
 </html>

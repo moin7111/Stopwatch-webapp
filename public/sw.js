@@ -1,15 +1,23 @@
 // sw.js - Service Worker für Stopwatch Magic PWA
-const CACHE_NAME = 'stopwatch-magic-v2';
+const CACHE_NAME = 'stopwatch-magic-v3';
 const urlsToCache = [
   '/',
   '/modultick.html',
   '/maintick/login.html',
   '/maintick/dashboard.html',
   '/maintick/stopwatch.html',
+  '/maintick/manifest.json',
   '/js/stopwatch.js',
+  '/js/stopwatch-core.js',
+  '/js/stopwatch-api.js',
+  '/js/manual-input.js',
+  '/js/preset-manager.js',
   '/js/shared.js',
   '/js/magician.js',
   '/css/styles.css',
+  '/css/stopwatch-ui.css',
+  '/icon-192x192.png',
+  '/icon-512x512.png',
   '/manifest.json'
 ];
 
