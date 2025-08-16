@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+    <meta name="apple-mobile-web-app-title" content="Imperia"/>
+    <link rel="apple-touch-icon" href="/icon-192x192.png"/>
+    <title>Imperia - Main Menu</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 40px 0 60px;
+        }
+        
+        .logo {
+            font-size: 64px;
+            font-weight: 200;
+            letter-spacing: -2px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glow 3s ease-in-out infinite;
+        }
+        
+        @keyframes glow {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            opacity: 0.7;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        .menu-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 600px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        .menu-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: #fff;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .menu-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(102, 126, 234, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+        
+        .menu-item:hover::before {
+            left: 100%;
+        }
+        
+        .menu-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+        
+        .menu-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .menu-description {
+            font-size: 14px;
+            opacity: 0.7;
+            line-height: 1.5;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px 0;
+            opacity: 0.5;
+            font-size: 12px;
+        }
+        
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 69, 58, 0.2);
+            border-color: rgba(255, 69, 58, 0.5);
+        }
+        
+        /* Gradient animation for icons */
+        .gradient-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body>
+    <a href="#" class="logout-btn" id="logoutBtn">Logout</a>
+    
+    <div class="header">
+        <h1 class="logo">IMPERIA</h1>
+        <p class="subtitle">Magic Control System</p>
+    </div>
+    
+    <div class="menu-container">
+        <a href="/control/routines.html" class="menu-item">
+            <div class="menu-icon gradient-icon">🎭</div>
+            <div class="menu-title">Routinen</div>
+            <div class="menu-description">Verwalte deine magischen Routinen und Effekte. Steuere MainTick, ModulTick und weitere Module.</div>
+        </a>
+        
+        <a href="/control/instructions.html" class="menu-item">
+            <div class="menu-icon gradient-icon">📖</div>
+            <div class="menu-title">Anleitungen</div>
+            <div class="menu-description">Lerne wie du Imperia optimal nutzt. Schritt-für-Schritt Anleitungen und Tipps.</div>
+        </a>
+        
+        <a href="/control/settings.html" class="menu-item">
+            <div class="menu-icon gradient-icon">⚙️</div>
+            <div class="menu-title">Einstellungen</div>
+            <div class="menu-description">API-Konfiguration, Tokens verwalten, Benutzerdaten und App-URLs.</div>
+        </a>
+    </div>
+    
+    <div class="footer">
+        <p>IMPERIA Magic System v2.0</p>
+    </div>
+    
+    <script>
+        // Check session
+        async function checkSession() {
+            try {
+                const response = await fetch('/api/status', {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    // Session invalid, redirect to login
+                    localStorage.removeItem('imperiaSession');
+                    window.location.href = '/control/';
+                }
+            } catch (error) {
+                // Error checking session
+                window.location.href = '/control/';
+            }
+        }
+        
+        // Check session on load
+        checkSession();
+        
+        // Logout handler
+        document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            try {
+                await fetch('/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+            } catch (error) {
+                // Ignore errors
+            }
+            
+            // Clear local storage
+            localStorage.removeItem('imperiaSession');
+            
+            // Redirect to login
+            window.location.href = '/control/';
+        });
+        
+        // Add touch feedback for mobile
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('touchstart', () => {
+                item.style.transform = 'scale(0.98)';
+            });
+            
+            item.addEventListener('touchend', () => {
+                setTimeout(() => {
+                    item.style.transform = '';
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>

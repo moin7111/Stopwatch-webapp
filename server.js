@@ -231,8 +231,9 @@ app.post('/auth/login', requireDB, async (req, res) => {
         const sessionId = createSession(user.id, clientInfo);
         res.cookie('MAGIC_SESSION', sessionId, { 
             httpOnly: true, 
-            maxAge: 24 * 60 * 60 * 1000,
-            sameSite: 'strict'
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production'
         });
 
         // Log login
@@ -294,6 +295,39 @@ app.post('/auth/logout', requireDB, async (req, res) => {
     } catch (error) {
         console.error('Logout error:', error);
         res.status(500).json({ error: 'Logout failed' });
+    }
+});
+
+// === LICENSE VERIFICATION ===
+
+app.post('/auth/verify-license', requireDB, async (req, res) => {
+    try {
+        const { code } = req.body;
+        
+        if (!code) {
+            return res.status(400).json({ error: 'Lizenz-Code erforderlich' });
+        }
+        
+        // Check if license exists and is not used
+        const license = await db.getLicenseByCode(code);
+        
+        if (!license) {
+            return res.status(404).json({ error: 'Ungültiger Lizenz-Code' });
+        }
+        
+        if (license.is_used) {
+            return res.status(400).json({ error: 'Lizenz-Code wurde bereits verwendet' });
+        }
+        
+        // License is valid
+        res.json({ 
+            ok: true, 
+            message: 'Lizenz-Code ist gültig' 
+        });
+        
+    } catch (error) {
+        console.error('License verification error:', error);
+        res.status(500).json({ error: 'Fehler bei der Lizenz-Verifizierung' });
     }
 });
 
@@ -874,6 +908,226 @@ app.post('/api/tick-connection', requireDB, async (req, res) => {
     }
 });
 
+// === STOPWATCH API ENDPOINTS ===
+
+// Get forces for MainTick/ModulTick
+app.get('/api/stopwatch/:type/data/:token', requireDB, async (req, res) => {
+    try {
+        const { type, token } = req.params;
+        
+        if (type !== 'maintick' && type !== 'modultick') {
+            return res.status(400).json({ error: 'Invalid type' });
+        }
+        
+        // Get active forces for token
+        const forces = await db.getActiveForces(token);
+        
+        // Filter forces based on app type
+        const filteredForces = forces.filter(f => {
+            const forceApp = f.data.app || 'stopwatch';
+            return forceApp === 'stopwatch' || forceApp === type;
+        });
+        
+        res.json({ 
+            forces: filteredForces,
+            timestamp: Date.now()
+        });
+        
+    } catch (error) {
+        console.error('Get stopwatch data error:', error);
+        res.status(500).json({ error: 'Failed to get data' });
+    }
+});
+
+// Create force from MainTick
+app.post('/api/stopwatch/maintick/force/:token', requireDB, async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { force } = req.body;
+        
+        // Get token data
+        const tokenData = await db.getTokenByValue(token);
+        if (!tokenData || !tokenData.is_active) {
+            return res.status(404).json({ error: 'Invalid token' });
+        }
+        
+        // Create force
+        const forceId = generateUUID();
+        const forceData = {
+            forceId,
+            ...force,
+            app: 'stopwatch',
+            timestamp: Date.now()
+        };
+        
+        await db.createEnhancedForce(
+            tokenData.id,
+            forceId,
+            forceData,
+            force.mode,
+            force.conditions || null,
+            null
+        );
+        
+        res.json({ ok: true, forceId });
+        
+    } catch (error) {
+        console.error('Create force from MainTick error:', error);
+        res.status(500).json({ error: 'Failed to create force' });
+    }
+});
+
+// Acknowledge force
+app.post('/api/stopwatch/:type/ack/:token', requireDB, async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { forceId } = req.body;
+        
+        await db.acknowledgeForce(forceId);
+        
+        res.json({ ok: true });
+        
+    } catch (error) {
+        console.error('Acknowledge force error:', error);
+        res.status(500).json({ error: 'Failed to acknowledge force' });
+    }
+});
+
+// Get presets for token
+app.get('/api/stopwatch/presets/:token', requireDB, async (req, res) => {
+    try {
+        const { token } = req.params;
+        
+        // Get token data
+        const tokenData = await db.getTokenByValue(token);
+        if (!tokenData || !tokenData.is_active) {
+            return res.status(404).json({ error: 'Invalid token' });
+        }
+        
+        // Get user
+        const user = await db.getUserByUsername(tokenData.owner_username);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Get presets
+        const presets = await db.getUserPresets(user.id);
+        
+        res.json(presets);
+        
+    } catch (error) {
+        console.error('Get presets error:', error);
+        res.status(500).json({ error: 'Failed to get presets' });
+    }
+});
+
+// Get specific preset
+app.get('/api/stopwatch/preset/:name', requireDB, async (req, res) => {
+    try {
+        const { name } = req.params;
+        const token = req.query.token;
+        
+        if (!token) {
+            return res.status(400).json({ error: 'Token required' });
+        }
+        
+        // Get token data
+        const tokenData = await db.getTokenByValue(token);
+        if (!tokenData || !tokenData.is_active) {
+            return res.status(404).json({ error: 'Invalid token' });
+        }
+        
+        // Get user
+        const user = await db.getUserByUsername(tokenData.owner_username);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Get preset
+        const preset = await db.getPresetByName(user.id, name);
+        if (!preset) {
+            return res.status(404).json({ error: 'Preset not found' });
+        }
+        
+        res.json(preset);
+        
+    } catch (error) {
+        console.error('Get preset error:', error);
+        res.status(500).json({ error: 'Failed to get preset' });
+    }
+});
+
+// Save preset from MainTick
+app.post('/api/stopwatch/preset', requireDB, async (req, res) => {
+    try {
+        const { token, name, forces, conditions } = req.body;
+        
+        if (!token || !name || !forces || !Array.isArray(forces)) {
+            return res.status(400).json({ error: 'Invalid request' });
+        }
+        
+        // Get token data
+        const tokenData = await db.getTokenByValue(token);
+        if (!tokenData || !tokenData.is_active) {
+            return res.status(404).json({ error: 'Invalid token' });
+        }
+        
+        // Get user
+        const user = await db.getUserByUsername(tokenData.owner_username);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Extract force type from first force
+        const forceType = forces[0]?.mode || 'ms';
+        
+        // Create preset
+        const presetId = await db.createPreset(
+            user.id,
+            name,
+            `Preset erstellt von MainTick`,
+            forceType,
+            forces.map(f => f.target),
+            conditions,
+            forces[0]?.trigger || 'egal'
+        );
+        
+        res.json({ ok: true, presetId });
+        
+    } catch (error) {
+        console.error('Save preset error:', error);
+        res.status(500).json({ error: 'Failed to save preset' });
+    }
+});
+
+// Connect MainTick to ModulTick
+app.post('/api/stopwatch/connect', requireDB, async (req, res) => {
+    try {
+        const { mainTickToken, modulTickToken } = req.body;
+        
+        if (!mainTickToken || !modulTickToken) {
+            return res.status(400).json({ error: 'Both tokens required' });
+        }
+        
+        // Verify both tokens
+        const mainToken = await db.getTokenByValue(mainTickToken);
+        const modulToken = await db.getTokenByValue(modulTickToken);
+        
+        if (!mainToken || !modulToken) {
+            return res.status(404).json({ error: 'Invalid token(s)' });
+        }
+        
+        // Create connection
+        const connectionId = await db.createTickConnection(mainToken.id, modulToken.id);
+        
+        res.json({ ok: true, connectionId });
+        
+    } catch (error) {
+        console.error('Connect ticks error:', error);
+        res.status(500).json({ error: 'Failed to connect' });
+    }
+});
+
 // === HEALTH & STATUS ===
 
 app.get('/health', (req, res) => {
@@ -881,11 +1135,15 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/api/status', requireDB, (req, res) => {
+    const sessionId = req.cookies.MAGIC_SESSION;
+    const session = sessionId ? getSession(sessionId) : null;
+    
     res.json({ 
         ok: true, 
         uptime: process.uptime(),
         database: dbInitialized ? 'connected' : 'disconnected',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        authenticated: !!session
     });
 });
 

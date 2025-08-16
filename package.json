@@ -1,7 +1,7 @@
 {
   "name": "stopwatch-magic-webapp",
-  "version": "2.1.0",
-  "description": "🎩 Professional Magic Performance PWA - Secret force technology for stage magicians with enterprise-level backend",
+  "version": "0.3.0",
+  "description": "🎩 IMPERIA Magic System - Professional force technology for stage magicians with enterprise-level backend",
   "main": "server.js",
   "type": "commonjs",
   "homepage": "https://stopwatch-webapp-1.onrender.com",

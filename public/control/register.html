@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+    <title>Imperia - Account erstellen</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.7;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 8px;
+            opacity: 0.8;
+        }
+        
+        input {
+            width: 100%;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #667eea;
+        }
+        
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .success-indicator {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #30d158;
+            display: none;
+        }
+        
+        .form-group.valid .success-indicator {
+            display: block;
+        }
+        
+        .form-group {
+            position: relative;
+        }
+        
+        .button-group {
+            margin-top: 40px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 16px 32px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 16px;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .error {
+            color: #ff453a;
+            font-size: 14px;
+            margin-top: 16px;
+            display: none;
+            text-align: center;
+        }
+        
+        .error.show {
+            display: block;
+        }
+        
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading.show {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Account erstellen</h1>
+            <p class="subtitle">Nur noch wenige Schritte</p>
+        </div>
+        
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="username">Benutzername</label>
+                <input type="text" id="username" placeholder="z.B. magician123" autocomplete="off" required>
+                <span class="success-indicator">✓</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Passwort</label>
+                <input type="password" id="password" placeholder="Mindestens 6 Zeichen" required>
+                <span class="success-indicator">✓</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="passwordConfirm">Passwort bestätigen</label>
+                <input type="password" id="passwordConfirm" placeholder="Passwort wiederholen" required>
+                <span class="success-indicator">✓</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="displayName">Anzeigename (optional)</label>
+                <input type="text" id="displayName" placeholder="z.B. Der große Magier">
+            </div>
+            
+            <div class="button-group">
+                <button type="submit" id="submitBtn">Account erstellen</button>
+            </div>
+        </form>
+        
+        <a href="/control/" class="back-link">Zurück</a>
+        
+        <div class="error" id="errorMsg"></div>
+    </div>
+    
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+    
+    <script>
+        // Check for verified license
+        const verifiedLicense = sessionStorage.getItem('verifiedLicense');
+        if (!verifiedLicense) {
+            window.location.href = '/control/';
+        }
+        
+        // Form validation
+        const form = document.getElementById('registerForm');
+        const username = document.getElementById('username');
+        const password = document.getElementById('password');
+        const passwordConfirm = document.getElementById('passwordConfirm');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        function validateField(input) {
+            const parent = input.closest('.form-group');
+            
+            if (input.id === 'username' && input.value.length >= 3) {
+                parent.classList.add('valid');
+            } else if (input.id === 'password' && input.value.length >= 6) {
+                parent.classList.add('valid');
+            } else if (input.id === 'passwordConfirm' && input.value === password.value && input.value.length > 0) {
+                parent.classList.add('valid');
+            } else {
+                parent.classList.remove('valid');
+            }
+            
+            // Check if form is valid
+            const isValid = username.value.length >= 3 && 
+                          password.value.length >= 6 && 
+                          passwordConfirm.value === password.value;
+            
+            submitBtn.disabled = !isValid;
+        }
+        
+        username.addEventListener('input', () => validateField(username));
+        password.addEventListener('input', () => {
+            validateField(password);
+            validateField(passwordConfirm);
+        });
+        passwordConfirm.addEventListener('input', () => validateField(passwordConfirm));
+        
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.classList.remove('show');
+            document.getElementById('loading').classList.add('show');
+            
+            try {
+                const response = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        code: verifiedLicense,
+                        username: username.value,
+                        password: password.value,
+                        displayName: document.getElementById('displayName').value || username.value
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Save session to localStorage for persistence
+                    localStorage.setItem('imperiaSession', JSON.stringify({
+                        username: username.value,
+                        timestamp: Date.now()
+                    }));
+                    
+                    // Clear the temporary license
+                    sessionStorage.removeItem('verifiedLicense');
+                    
+                    // Redirect to main menu
+                    window.location.href = '/control/menu.html';
+                } else {
+                    throw new Error(data.error || 'Registrierung fehlgeschlagen');
+                }
+            } catch (error) {
+                errorMsg.textContent = error.message;
+                errorMsg.classList.add('show');
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

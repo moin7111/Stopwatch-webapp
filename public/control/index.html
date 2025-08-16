@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+    <meta name="apple-mobile-web-app-title" content="Imperia Control"/>
+    <link rel="apple-touch-icon" href="/icon-192x192.png"/>
+    <link rel="manifest" href="/manifest.json"/>
+    <title>Imperia Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 48px;
+            font-weight: 200;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.7;
+            margin-bottom: 48px;
+        }
+        
+        .input-group {
+            margin-bottom: 24px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #667eea;
+        }
+        
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 32px;
+        }
+        
+        button {
+            padding: 16px 32px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .primary-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+        
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .secondary-btn {
+            background: transparent;
+            color: #667eea;
+            border: 1px solid #667eea;
+        }
+        
+        .secondary-btn:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading.show {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error {
+            color: #ff453a;
+            font-size: 14px;
+            margin-top: 16px;
+            display: none;
+        }
+        
+        .error.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="logo">IMPERIA</h1>
+        <p class="subtitle">Magic Control System</p>
+        
+        <div class="input-group">
+            <input type="text" id="licenseCode" placeholder="Lizenz-Code eingeben" autocomplete="off" spellcheck="false">
+        </div>
+        
+        <div class="button-group">
+            <button class="primary-btn" id="verifyBtn">Verifizieren</button>
+            <button class="secondary-btn" id="loginBtn">Ich habe bereits einen Account</button>
+        </div>
+        
+        <div class="error" id="errorMsg"></div>
+    </div>
+    
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+    
+    <script>
+        // Check for existing session on load
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Check localStorage for persistent session
+            const savedSession = localStorage.getItem('imperiaSession');
+            if (savedSession) {
+                try {
+                    const session = JSON.parse(savedSession);
+                    // Verify session is still valid
+                    const response = await fetch('/api/status', {
+                        credentials: 'include'
+                    });
+                    
+                    if (response.ok) {
+                        // Session valid, redirect to main menu
+                        window.location.href = '/control/menu.html';
+                        return;
+                    }
+                } catch (e) {
+                    // Invalid session, clear it
+                    localStorage.removeItem('imperiaSession');
+                }
+            }
+            
+            // Also check for cookie session
+            try {
+                const response = await fetch('/api/status', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.authenticated) {
+                        window.location.href = '/control/menu.html';
+                    }
+                }
+            } catch (e) {
+                // Not logged in, stay on this page
+            }
+        });
+        
+        // License verification
+        document.getElementById('verifyBtn').addEventListener('click', async () => {
+            const code = document.getElementById('licenseCode').value.trim();
+            const errorMsg = document.getElementById('errorMsg');
+            
+            if (!code) {
+                errorMsg.textContent = 'Bitte Lizenz-Code eingeben';
+                errorMsg.classList.add('show');
+                return;
+            }
+            
+            errorMsg.classList.remove('show');
+            document.getElementById('loading').classList.add('show');
+            
+            try {
+                // Verify license code
+                const response = await fetch('/auth/verify-license', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Save license temporarily and redirect to registration
+                    sessionStorage.setItem('verifiedLicense', code);
+                    window.location.href = '/control/register.html';
+                } else {
+                    throw new Error(data.error || 'Ungültiger Lizenz-Code');
+                }
+            } catch (error) {
+                errorMsg.textContent = error.message;
+                errorMsg.classList.add('show');
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+            }
+        });
+        
+        // Existing account login
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            window.location.href = '/control/login.html';
+        });
+        
+        // Auto-focus license input
+        document.getElementById('licenseCode').focus();
+    </script>
+</body>
+</html>
