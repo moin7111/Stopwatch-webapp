@@ -399,6 +399,92 @@ body {
     overflow: auto;
 }
 
+/* Force Type Buttons */
+.force-type-btn {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.force-type-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* Manual Input Enhancements */
+.manual-input-info {
+    background: #2C2C2E;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.manual-input-info p {
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Preset Creation Form */
+.preset-content h3 {
+    margin-bottom: 16px;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.preset-content label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+}
+
+.preset-content input[type="text"],
+.preset-content input[type="number"],
+.preset-content select {
+    -webkit-appearance: none;
+    appearance: none;
+    outline: none;
+    font-size: 16px;
+}
+
+.preset-content input[type="number"]::-webkit-inner-spin-button,
+.preset-content input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Preset List Items */
+.preset-item {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.preset-item:hover {
+    transform: translateX(4px);
+    background: #3C3C3E !important;
+}
+
+/* Scrollbar Styling */
+.manual-input-list::-webkit-scrollbar,
+.preset-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.manual-input-list::-webkit-scrollbar-track,
+.preset-content::-webkit-scrollbar-track {
+    background: #1C1C1E;
+    border-radius: 4px;
+}
+
+.manual-input-list::-webkit-scrollbar-thumb,
+.preset-content::-webkit-scrollbar-thumb {
+    background: #3C3C3E;
+    border-radius: 4px;
+}
+
+.manual-input-list::-webkit-scrollbar-thumb:hover,
+.preset-content::-webkit-scrollbar-thumb:hover {
+    background: #4C4C4E;
+}
+
 /* Responsive */
 @media (max-width: 420px) {
     .time-display { 

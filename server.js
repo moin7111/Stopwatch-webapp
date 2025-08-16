@@ -1060,7 +1060,8 @@ app.get('/api/stopwatch/preset/:name', requireDB, async (req, res) => {
 // Save preset from MainTick
 app.post('/api/stopwatch/preset', requireDB, async (req, res) => {
     try {
-        const { token, name, forces, conditions } = req.body;
+        const preset = req.body;
+        const { token, name, forces, condition } = preset;
         
         if (!token || !name || !forces || !Array.isArray(forces)) {
             return res.status(400).json({ error: 'Invalid request' });
@@ -1088,7 +1089,7 @@ app.post('/api/stopwatch/preset', requireDB, async (req, res) => {
             `Preset erstellt von MainTick`,
             forceType,
             forces.map(f => f.target),
-            conditions,
+            condition,
             forces[0]?.trigger || 'egal'
         );
         
@@ -1125,6 +1126,151 @@ app.post('/api/stopwatch/connect', requireDB, async (req, res) => {
     } catch (error) {
         console.error('Connect ticks error:', error);
         res.status(500).json({ error: 'Failed to connect' });
+    }
+});
+
+// Update stopwatch status
+app.post('/api/stopwatch/:type/status/:token', requireDB, async (req, res) => {
+    try {
+        const { type, token } = req.params;
+        const { status } = req.body;
+        
+        // Update status in database or cache
+        // For now, just acknowledge
+        res.json({ ok: true });
+        
+    } catch (error) {
+        console.error('Update status error:', error);
+        res.status(500).json({ error: 'Failed to update status' });
+    }
+});
+
+// Activate preset
+app.post('/api/stopwatch/:type/activate-preset/:token', requireDB, async (req, res) => {
+    try {
+        const { type, token } = req.params;
+        const { presetName } = req.body;
+        
+        // Get token data
+        const tokenData = await db.getTokenByValue(token);
+        if (!tokenData || !tokenData.is_active) {
+            return res.status(404).json({ error: 'Invalid token' });
+        }
+        
+        // Get user
+        const user = await db.getUserByUsername(tokenData.owner_username);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Get preset
+        const preset = await db.getPresetByName(user.id, presetName);
+        if (!preset) {
+            return res.status(404).json({ error: 'Preset not found' });
+        }
+        
+        // Create forces from preset
+        if (preset.forces && Array.isArray(preset.forces)) {
+            for (const force of preset.forces) {
+                const forceId = generateUUID();
+                const forceData = {
+                    forceId,
+                    ...force,
+                    app: 'stopwatch',
+                    timestamp: Date.now()
+                };
+                
+                await db.createEnhancedForce(
+                    tokenData.id,
+                    forceId,
+                    forceData,
+                    force.mode,
+                    force.condition || null,
+                    null
+                );
+            }
+        }
+        
+        res.json({ ok: true });
+        
+    } catch (error) {
+        console.error('Activate preset error:', error);
+        res.status(500).json({ error: 'Failed to activate preset' });
+    }
+});
+
+// Manual force
+app.post('/api/stopwatch/:type/manual-force/:token', requireDB, async (req, res) => {
+    try {
+        const { type, token } = req.params;
+        const { force } = req.body;
+        
+        // Get token data
+        const tokenData = await db.getTokenByValue(token);
+        if (!tokenData || !tokenData.is_active) {
+            return res.status(404).json({ error: 'Invalid token' });
+        }
+        
+        // Create force
+        const forceId = force.id || generateUUID();
+        const forceData = {
+            forceId,
+            ...force,
+            app: 'stopwatch',
+            timestamp: Date.now()
+        };
+        
+        await db.createEnhancedForce(
+            tokenData.id,
+            forceId,
+            forceData,
+            force.mode,
+            force.condition || null,
+            null
+        );
+        
+        res.json({ ok: true, forceId });
+        
+    } catch (error) {
+        console.error('Manual force error:', error);
+        res.status(500).json({ error: 'Failed to create manual force' });
+    }
+});
+
+// Delete preset
+app.delete('/api/stopwatch/preset/:name', requireDB, async (req, res) => {
+    try {
+        const { name } = req.params;
+        const { token } = req.body;
+        
+        if (!token) {
+            return res.status(400).json({ error: 'Token required' });
+        }
+        
+        // Get token data
+        const tokenData = await db.getTokenByValue(token);
+        if (!tokenData || !tokenData.is_active) {
+            return res.status(404).json({ error: 'Invalid token' });
+        }
+        
+        // Get user
+        const user = await db.getUserByUsername(tokenData.owner_username);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Delete preset
+        const deleted = await db.deletePreset(user.id, name);
+        
+        if (deleted) {
+            res.json({ ok: true });
+        } else {
+            res.status(404).json({ error: 'Preset not found' });
+        }
+        
+    } catch (error) {
+        console.error('Delete preset error:', error);
+        res.status(500).json({ error: 'Failed to delete preset' });
     }
 });
 

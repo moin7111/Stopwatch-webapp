@@ -19,12 +19,18 @@ class ManualInput {
         this.modal.innerHTML = `
             <div class="manual-input-content">
                 <h3>Manuelle Force-Eingabe</h3>
-                <input type="text" id="manualInputField" placeholder="Zahl eingeben..." />
+                <div class="manual-input-info">
+                    <p style="font-size: 14px; opacity: 0.8; margin: 8px 0;">
+                        Geben Sie Zahlen ein und drücken Sie Enter. 
+                        Bei mehreren Zahlen werden diese nacheinander forciert.
+                    </p>
+                </div>
+                <input type="text" id="manualInputField" placeholder="Zahl eingeben und Enter drücken..." />
                 <div class="manual-input-list" id="manualInputList"></div>
                 <div class="manual-input-buttons">
-                    <button id="manualInputMS" style="background: #30D058;">MS-Force</button>
-                    <button id="manualInputS" style="background: #30D058;">S-Force</button>
-                    <button id="manualInputFT" style="background: #30D058;">FT-Force</button>
+                    <button id="manualInputMS" style="background: #30D058;" title="Millisekunden Force (00-99)">MS-Force</button>
+                    <button id="manualInputS" style="background: #30D058;" title="Summen Force (Quersumme)">S-Force</button>
+                    <button id="manualInputFT" style="background: #30D058;" title="Full Time Force (MMSS)">FT-Force</button>
                     <button id="manualInputCancel" style="background: #FF453A;">Abbrechen</button>
                 </div>
             </div>
@@ -110,18 +116,32 @@ class ManualInput {
             return;
         }
 
+        // Validiere Eingaben basierend auf Mode
+        let validatedEntries = [];
+        for (let entry of this.entries) {
+            const validated = this.validateEntry(entry, mode);
+            if (validated !== null) {
+                validatedEntries.push(validated);
+            }
+        }
+
+        if (validatedEntries.length === 0) {
+            alert('Keine gültigen Eingaben für ' + mode.toUpperCase() + ' Force!');
+            return;
+        }
+
         // Erstelle Force-Objekt
-        if (this.entries.length === 1) {
+        if (validatedEntries.length === 1) {
             // Einzelner Force
             const force = {
                 mode: mode,
-                target: this.entries[0],
+                target: validatedEntries[0],
                 trigger: 'egal' // Bei Manual Input immer egal
             };
             this.stopwatch.addForce(force);
         } else {
             // Liste von Forces
-            const forceList = this.entries.map(entry => ({
+            const forceList = validatedEntries.map(entry => ({
                 mode: mode,
                 target: entry
             }));
@@ -133,8 +153,43 @@ class ManualInput {
             this.stopwatch.addForce(force);
         }
 
-        this.stopwatch.updateStatus(`${this.entries.length} Force(s) (${mode.toUpperCase()}) aktiviert`);
+        this.stopwatch.updateStatus(`${validatedEntries.length} Force(s) (${mode.toUpperCase()}) aktiviert`);
         this.close();
+    }
+
+    validateEntry(entry, mode) {
+        const cleaned = entry.replace(/[^0-9]/g, '');
+        
+        switch (mode) {
+            case 'ms':
+                // MS-Force: 00-99
+                const ms = parseInt(cleaned, 10);
+                if (!isNaN(ms) && ms >= 0 && ms <= 99) {
+                    return ms;
+                }
+                break;
+                
+            case 's':
+                // S-Force: Beliebige Quersumme
+                const sum = parseInt(cleaned, 10);
+                if (!isNaN(sum) && sum >= 0) {
+                    return sum;
+                }
+                break;
+                
+            case 'ft':
+                // FT-Force: MMSS Format
+                if (cleaned.length === 4) {
+                    const minutes = parseInt(cleaned.substring(0, 2), 10);
+                    const seconds = parseInt(cleaned.substring(2, 4), 10);
+                    if (!isNaN(minutes) && !isNaN(seconds) && seconds < 60) {
+                        return cleaned;
+                    }
+                }
+                break;
+        }
+        
+        return null;
     }
 }
 
