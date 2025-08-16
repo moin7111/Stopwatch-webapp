@@ -1,5 +1,5 @@
 // sw.js - Service Worker für IMPERIA Control System PWA
-const CACHE_NAME = 'imperia-control-v1';
+const CACHE_NAME = 'imperia-control-v4';
 const urlsToCache = [
   '/imperia/',
   '/imperia/control/index.html',
@@ -50,7 +50,10 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
+          // Delete all old caches (v1, v2, v3)
+          if (cacheName !== CACHE_NAME && 
+              (cacheName.includes('imperia-control-v') || 
+               cacheName.includes('imperia-v'))) {
             console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -61,4 +64,11 @@ self.addEventListener('activate', event => {
       return self.clients.claim();
     })
   );
+});
+
+// Notify clients about the update
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

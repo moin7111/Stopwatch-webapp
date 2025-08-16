@@ -1,7 +1,8 @@
 {
-  "name": "IMPERIA Tempral",
+  "name": "IMPERIA Tempral V4",
   "short_name": "Tempral",
-  "description": "IMPERIA Modul System - Tempral",
+  "description": "IMPERIA Modul System V4 - Tempral",
+  "version": "4.0.0",
   "start_url": "/imperia-modul/tempral.html?source=pwa",
   "display": "standalone",
   "background_color": "#000000",
