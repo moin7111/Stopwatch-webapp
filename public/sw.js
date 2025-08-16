@@ -1,5 +1,5 @@
 // sw.js - Service Worker für Stopwatch Magic PWA
-const CACHE_NAME = 'stopwatch-magic-v3';
+const CACHE_NAME = 'stopwatch-magic-v5';
 const urlsToCache = [
   '/',
   '/modultick.html',
@@ -29,11 +29,21 @@ self.addEventListener('install', event => {
         console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
+      .then(() => {
+        // Force the waiting service worker to become the active service worker
+        self.skipWaiting();
+      })
   );
 });
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', event => {
+  // Bypass cache for API calls
+  if (event.request.url.includes('/api/')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -51,10 +61,14 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME) {
+            console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
+    }).then(() => {
+      // Claim all clients immediately
+      return self.clients.claim();
     })
   );
 });

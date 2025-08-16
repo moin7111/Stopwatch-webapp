@@ -14,7 +14,7 @@
     <title>MainTick - Stoppuhr</title>
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/maintick/manifest.json" />
+    <link rel="manifest" href="/manifest.json" />
     
     <!-- Icons -->
     <link rel="apple-touch-icon" href="/icon-192x192.png" />
@@ -247,13 +247,31 @@
             // Service Worker Registration
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(function(registration) {
-                    console.log('Service Worker registered with scope:', registration.scope);
-                    // Check if a new service worker is available
-                    registration.addEventListener('updatefound', function() {
-                        console.log('Service Worker update found');
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    
+                    // Check for updates every 30 seconds
+                    setInterval(() => {
+                        registration.update();
+                    }, 30000);
+                    
+                    // Listen for updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'activated') {
+                                // New service worker activated, reload page
+                                console.log('New service worker activated, reloading...');
+                                if (stopwatch) {
+                                    stopwatch.updateStatus('Update verfügbar - Seite wird neu geladen...');
+                                }
+                                setTimeout(() => {
+                                    window.location.reload(true);
+                                }, 1000);
+                            }
+                        });
                     });
                 }).catch(function(err) {
-                    console.log('Service Worker registration failed:', err);
+                    console.log('ServiceWorker registration failed: ', err);
                 });
             }
         }); // Ende DOMContentLoaded
