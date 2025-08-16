@@ -11,18 +11,19 @@
     "db:backup": "node -e \"const fs=require('fs'); const path=require('path'); const now=new Date().toISOString().replace(/[:.]/g,'-'); const src='database/stopwatch_magic.db'; const dest=`database/backup/${now}_stopwatch_magic.db`; if(fs.existsSync(src)) { fs.mkdirSync(path.dirname(dest), {recursive:true}); fs.copyFileSync(src, dest); console.log('Database backed up to:', dest); } else { console.log('No database file found to backup'); }\""
   },
   "keywords": [
-    "pwa", 
-    "stopwatch", 
-    "magic", 
-    "api", 
-    "sqlite", 
+    "pwa",
+    "stopwatch",
+    "magic",
+    "api",
+    "sqlite",
     "express"
   ],
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
     "cookie-parser": "^1.4.6",
+    "dotenv": "^17.2.1",
+    "express": "^4.18.2",
     "sqlite3": "^5.1.7"
   },
   "engines": {
