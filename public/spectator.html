@@ -1,68 +1,486 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Stoppuhr"/>
 <link rel="apple-touch-icon" href="/icon-192x192.png"/>
 <link rel="manifest" href="/manifest.json"/>
-<title>Stoppuhr (Zuschauer)</title>
-<link rel="stylesheet" href="/css/styles.css">
+<title>Stoppuhr</title>
+<style>
+/* --- CSS identisch zu deiner bisherigen UI --- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overscroll-behavior: none; -ms-touch-action: manipulation; touch-action: manipulation; }
+body {
+    font-family: "SF Pro Display","SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background:#000;
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+    overflow:hidden;
+}
+.status-bar { display:flex; justify-content:flex-end; align-items:center; padding:10px 18px; font-size:17px; font-weight:600; color:#fff; }
+.stopwatch-container { position:relative; height: calc(100vh - 116px); padding: 90px 12px 0 12px; display:flex; flex-direction:column; align-items:center; min-height:0; }
+.time-display { height: 80px; display:flex; align-items:center; justify-content:center; font-family: "SF Pro Display","SF Pro Text",-apple-system,system-ui,"Helvetica Neue",Arial; font-weight:100; font-size:120px; line-height:1; letter-spacing:-2px; margin-top:24px; margin-bottom:20px; -webkit-font-smoothing:antialiased; font-variant-numeric: tabular-nums; text-rendering: optimizeLegibility; white-space: nowrap; user-select: none; z-index: 5; }
+.controls { position:absolute; left:50%; transform:translateX(-50%); top: calc(50% - 44px); width:100%; max-width:400px; height:100px; margin:0; z-index:20; pointer-events: auto; }
+.control-button { position:absolute; width:88px; height:88px; border-radius:50%; border:none; font-size:18px; font-weight:400; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; transition: transform .08s ease; user-select:none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; color: #ffffff; }
+.control-button:active { transform: scale(0.96); }
+.control-button.left { left:14px; top:6px; } .control-button.right { right:14px; top:6px; }
+.left-idle { background:#1C1C1E; color:#9A9AA0; } .left-running, .left-stopped { background:#333333; color:#E8E8E8; }
+.right-start { background: #092A11; color: #30D058; } .right-running { background: #340E0B; color: #FF453A; } .right-continue { background: #092A11; color: #30D058; }
+.dots { position:absolute; left:50%; top:44px; transform:translateX(-50%); display:flex; gap:12px; align-items:center; justify-content:center; z-index:10; pointer-events:none; }
+.dot { width:7px; height:7px; border-radius:50%; background:#333; } .dot.active { background:#fff; }
+.separator-line { position: absolute; top: calc(50% + 56px); left: 50%; transform: translateX(-50%); width: calc(100% - 48px); max-width: 420px; height: 1px; background:#2C2C2E; }
+.laps-container { position: absolute; top: calc(50% + 64px); left: 50%; transform: translateX(-50%); width: calc(100% - 48px); max-width:420px; bottom: 0; overflow:auto; padding-bottom:12px; }
+.lap-item { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #2C2C2E; color:#fff; font-size:16px; font-weight:400; }
+.lap-item:last-child { border-bottom:none; } .lap-item.fastest { color:#30D058; } .lap-item.slowest { color:#FF453A; }
+.bottom-nav { position: absolute; left: 0; right: 0; bottom: 20px; height: 86px; display:flex; justify-content:space-around; align-items:flex-end; padding: 8px 6px 8px 6px; background: transparent; gap:6px; z-index: 30; }
+.nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; color:#7D7D7D; font-size:11px; font-weight:600; width:72px; } .nav-item.active { color:#F4A30F; } .nav-icon { width:28px; height:24px; display:flex; align-items:center; justify-content:center; }
+.home-indicator { display:none !important; }
+.dev-panel { position: fixed; left: 12px; top: 12px; background: rgba(255,255,255,0.06); color: #fff; padding: 10px; border-radius: 8px; z-index: 200; width: calc(100% - 24px); max-width:480px; display:none; gap:8px; }
+.dev-panel.show { display:flex; flex-direction:column; }
+.dev-panel input { padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.06); background: transparent; color:#fff; }
+.dev-panel button { padding:8px 12px; border-radius:6px; border:none; background:#30D058; color:#000; font-weight:700; }
+@media (max-width:420px) {
+    .time-display { font-size:86px; letter-spacing:-2px; margin-bottom:22px; }
+    .control-button { width:78px; height:78px; font-size:16px; }
+    .control-button.left { left:12px; top:6px; }
+    .control-button.right { right:12px; top:6px; }
+    .dots { top:39px; }
+}
+@media (max-height:700px) {
+    .time-display { font-size:74px; letter-spacing:-1px; margin-bottom:12px; }
+}
+</style>
 </head>
 <body>
-  <div id="app">
-    <div class="time-display" id="timeDisplay">00:00,00</div>
-    <div class="controls">
-      <button id="leftButton" class="control-button left left-idle" disabled>Runde</button>
-      <button id="rightButton" class="control-button right right-start">Start</button>
+    <div class="status-bar"><div id="statusText" style="height:20px;">&nbsp;</div></div>
+
+    <div class="stopwatch-container">
+        <div class="time-display" id="timeDisplay">00:00,00</div>
+
+        <div class="controls" aria-hidden="false">
+            <button id="leftButton" class="control-button left left-idle" disabled>Runde</button>
+            <button id="rightButton" class="control-button right right-start">Start</button>
+
+            <div class="dots" aria-hidden="true">
+                <div class="dot active"></div>
+                <div class="dot"></div>
+            </div>
+        </div>
+
+        <div class="separator-line" aria-hidden="true"></div>
+        <div class="laps-container" id="lapsContainer"></div>
     </div>
-    <div class="laps-container" id="lapsContainer"></div>
 
-    <!-- Dev panel: token connect (only with ?dev=1). Use ?token=... to auto connect -->
-    <div class="dev-panel" id="devPanel" style="display:none;">
-      <input id="tokenInput" placeholder="Token (z.B. CZVOVZ)">
-      <div style="display:flex;gap:8px;margin-top:8px;">
-        <button id="connectBtn">Verbinden</button>
-        <button id="clearBtn" style="background:#FF6B6B">Trennen</button>
-      </div>
+    <div class="bottom-nav" role="navigation" aria-label="Uhr Navigation">
+        <!-- nav icons unchanged -->
+        <div class="nav-item"><div class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v18"></path><path d="M12 3 C7.5 7.5, 7.5 16.5, 12 21"></path><path d="M12 3 C16.5 7.5, 16.5 16.5, 12 21"></path><path d="M5.2 7.2c2 1.2 6 1.8 13.6 0"></path><path d="M4 12h16"></path><path d="M5.2 16.8c2-1.2 6-1.8 13.6 0"></path></svg></div><div>Weltuhr</div></div>
+
+        <div class="nav-item"><div class="nav-icon"><svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M381.2 64.1c-1.3-.1-2.6-.1-3.9-.1h-.2c-16.2 0-32 5.4-44.6 15.1-1.6 1.3-2.6 3.2-2.7 5.2-.1 2 .8 4 2.3 5.4l89.8 80.5c1.3 1.1 2.9 1.8 4.6 1.8h.4c1.9-.1 3.6-1 4.8-2.4C440.9 159 448 150.8 448 133c.1-36.4-29.1-66.8-66.8-68.9zM64 133c0 17.8 7.1 26 16.3 36.6 1.2 1.4 2.9 2.3 4.8 2.4h.4c1.7 0 3.3-.6 4.6-1.8L180 89.7c1.5-1.4 2.4-3.3 2.3-5.4-.1-2-1-3.9-2.7-5.2C167 69.4 151.2 64 135 64h-.2c-1.3 0-2.6 0-3.9.1-37.7 2.1-67 32.5-66.9 68.9z"/><g><path d="M390 386c26.2-30.7 42-70.5 42-114 0-97.2-78.8-176-176-176S80 174.8 80 272c0 43.5 15.8 83.3 42 114l-34.7 35.5c-6.2 6.3-6 15.5.3 21.6 3.1 3 7.4 4.8 11.4 4.8 4.2 0 8.1-1.9 11.2-5.1l34.6-34.5c30.3 24.7 69 39.6 111.2 39.6s80.9-14.8 111.2-39.6l33.6 34.5c3.1 3.2 7.3 5.1 11.5 5.1 4 0 8.1-1.8 11.2-4.8 6.3-6.2 7.5-15.3 1.3-21.6L390 386zM270 274c0 7.7-6.3 14-14 14h-82c-7.7 0-14-6.3-14-14s6.3-14 14-14h68V158c0-7.7 6.3-14 14-14s14 6.3 14 14v116z"/></g></svg></div><div>Wecker</div></div>
+
+        <div class="nav-item active"><div class="nav-icon"><svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M415.9 143.7c3.1 3.1 8.2 3.1 11.3 0l11.3-11.3c3.1-3.1 3.1-8.2 0-11.3L413 95.6c-3.1-3.1-8.2-3.1-11.3 0l-11.3 11.3c-3.1 3.1-3.1 8.2 0 11.3l25.5 25.5zM84.8 143.7c3.1 3.1 8.2 3.1 11.3 0l25.5-25.5c3.1-3.1 3.1-8.2 0-11.3l-11.3-11.3c-3.1-3.1-8.2-3.1-11.3 0L73.5 121c-3.1 3.1-3.1 8.2 0 11.3l11.3 11.4z"/><path d="M280 81.5V64c0-8.8-7.2-16-16-16h-16c-8.8 0-16 7.2-16 16v17.5C137.3 93.3 64 174.1 64 272c0 106 86 192 192 192s192-86 192-192c0-97.9-73.3-178.7-168-190.5zm-10 219.3V320c0 7.7-6.3 14-14 14s-14-6.3-14-14v-19.2c-10.7-5.2-18-16.1-18-28.8s7.3-23.6 18-28.8V144c0-7.7 6.3-14 14-14s14 6.3 14 14v99.2c10.7 5.2 18 16.1 18 28.8s-7.3 23.6-18 28.8z"/></svg></div><div>Stoppuhr</div></div>
+
+        <div class="nav-item"><div class="nav-icon"><svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M256 456c-110.3 0-200-89.7-200-200 0-54.8 21.7-105.9 61.2-144 6.4-6.2 16.6-6 22.7.4 6.2 6.4 6 16.6-.4 22.7-33.1 32-51.3 74.9-51.3 120.9 0 92.5 75.3 167.8 167.8 167.8S423.8 348.5 423.8 256c0-87.1-66.7-159-151.8-167.1v62.6c0 8.9-7.2 16.1-16.1 16.1s-16.1-7.2-16.1-16.1V72.1c0-8.9 7.2-16.1 16.1-16.1 110.3 0 200 89.7 200 200S366.3 456 256 456z"/><path d="M175.9 161.9l99.5 71.5c13.5 9.7 16.7 28.5 7 42s-28.5 16.7-42 7c-2.8-2-5.2-4.4-7-7l-71.5-99.5c-3.2-4.5-2.2-10.8 2.3-14 3.6-2.6 8.3-2.4 11.7 0z"/></svg></div><div>Timer</div></div>
     </div>
-  </div>
 
-  <!-- Service Worker Registration -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(registration => console.log('SW registered'))
-          .catch(registrationError => console.log('SW registration failed'));
-      });
-    }
-  </script>
+    <div class="home-indicator" aria-hidden="true"></div>
 
-<script src="/js/shared.js"></script>
-<script src="/js/stopwatch.js"></script>
+    <!-- Dev connect panel (nur sichtbar bei ?dev=1) -->
+    <div class="dev-panel" id="devPanel">
+        <input id="tokenInput" placeholder="Token (z.B. CZVOVZ)" />
+        <div style="display:flex; gap:8px;"><button id="connectBtn">Verbinden</button><button id="clearBtn" style="background:#FF6B6B">Trennen</button></div>
+        <div style="font-size:13px; opacity:0.8; margin-top:6px;">Wenn verbunden, polled die App /api/data/:token und akzeptiert Forces (app=stopwatch).</div>
+    </div>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(registrationError => console.log('SW registration failed'));
+            });
+        }
+    </script>
+
 <script>
-  // initialize stopwatch with secretForce client that uses token-based polling
-  (function(){
-    const params = new URLSearchParams(location.search);
-    const t = params.get('token');
-    const dev = params.get('dev');
-    if (dev === '1') document.getElementById('devPanel').style.display = 'block';
-    // auto-connect if token present
-    if (t) {
-      // secretForce.install expects { token }
-      try { secretForce.install({ token: t, pollIntervalMs: 400 }); } catch(e) { console.warn(e); }
+    // --- Stoppuhr-Logik (wie gehabt) ---
+    let startTime = 0;
+    let elapsedTime = 0;
+    let timerInterval = null;
+    let isRunning = false;
+    let lapCounter = 0;
+    let laps = [];
+    let currentLapStartTime = 0;
+
+    const timeDisplay = document.getElementById('timeDisplay');
+    const leftButton = document.getElementById('leftButton');
+    const rightButton = document.getElementById('rightButton');
+    const lapsContainer = document.getElementById('lapsContainer');
+    const statusText = document.getElementById('statusText');
+
+    function formatTime(milliseconds) {
+        const totalSeconds = Math.floor(milliseconds / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        const centiseconds = Math.floor((milliseconds % 1000) / 10);
+        return `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')},${centiseconds.toString().padStart(2,'0')}`;
     }
-    document.getElementById('connectBtn').addEventListener('click', ()=> {
-      const val = document.getElementById('tokenInput').value.trim();
-      if (!val) return alert('Bitte Token eingeben');
-      secretForce.install({ token: val, pollIntervalMs: 400 });
-      alert('Verbunden (Dev)');
+    function timeStringToMs(timeString) {
+        const parts = timeString.split(':');
+        const minutes = parseInt(parts[0],10) || 0;
+        const secondsParts = (parts[1] || '00').split(',');
+        const seconds = parseInt(secondsParts[0],10) || 0;
+        const centiseconds = parseInt(secondsParts[1],10) || 0;
+        return (minutes * 60 + seconds) * 1000 + centiseconds * 10;
+    }
+
+    function updateDisplay() {
+        const now = Date.now();
+        const total = elapsedTime + (isRunning ? (now - startTime) : 0);
+        timeDisplay.textContent = formatTime(total);
+
+        if (laps.length > 0 && laps[0].isCurrent) {
+            let currentLapElapsed;
+            if (isRunning) currentLapElapsed = now - currentLapStartTime;
+            else currentLapElapsed = timeStringToMs(laps[0].time);
+            laps[0].time = formatTime(currentLapElapsed);
+            updateLapsDisplay();
+        }
+    }
+    function updateLapsDisplay() {
+        lapsContainer.innerHTML = '';
+        const completedLaps = laps.filter(l => !l.isCurrent);
+        let fastest = null, slowest = null, fastestIdx = -1, slowestIdx = -1;
+        if (completedLaps.length >= 2) {
+            completedLaps.forEach(lap => {
+                const ms = timeStringToMs(lap.time);
+                if (fastest === null || ms < fastest) { fastest = ms; fastestIdx = laps.indexOf(lap); }
+                if (slowest === null || ms > slowest) { slowest = ms; slowestIdx = laps.indexOf(lap); }
+            });
+        }
+        laps.forEach((lap, idx) => {
+            const el = document.createElement('div');
+            let cls = 'lap-item';
+            if (!lap.isCurrent && completedLaps.length >= 2) {
+                if (idx === fastestIdx) cls += ' fastest';
+                else if (idx === slowestIdx) cls += ' slowest';
+            }
+            el.className = cls;
+            el.innerHTML = `<span class="lap-number">Runde ${lap.number}</span><span class="lap-time">${lap.time}</span>`;
+            lapsContainer.appendChild(el);
+        });
+    }
+
+    function setRightButtonStyleByText(text) {
+        rightButton.classList.remove('right-start','right-running','right-continue');
+        if (text === 'Start') { rightButton.classList.add('right-start'); rightButton.textContent = 'Start'; }
+        else if (text === 'Stopp') { rightButton.classList.add('right-running'); rightButton.textContent = 'Stopp'; }
+        else if (text === 'Weiter') { rightButton.classList.add('right-continue'); rightButton.textContent = 'Weiter'; }
+        else { rightButton.classList.add('right-start'); rightButton.textContent = text; }
+    }
+
+    function startStopwatch() {
+        isRunning = true;
+        startTime = Date.now();
+
+        if (lapCounter === 0) {
+            currentLapStartTime = startTime;
+            lapCounter = 1;
+            laps.unshift({ number: lapCounter, time: '00:00,00', isCurrent: true });
+            updateLapsDisplay();
+        }
+
+        timerInterval = setInterval(updateDisplay, 10);
+
+        setRightButtonStyleByText('Stopp');
+        leftButton.textContent = 'Runde';
+        leftButton.className = 'control-button left left-running';
+        leftButton.disabled = false;
+
+        if (window.secretForce && typeof window.secretForce.resetCounters === 'function') window.secretForce.resetCounters();
+    }
+
+    function stopStopwatch() {
+        isRunning = false;
+        const now = Date.now();
+        const realTotal = elapsedTime + (now - startTime);
+        clearInterval(timerInterval);
+
+        (async function(){
+            let forcedMs = null;
+            if (window.secretForce && typeof window.secretForce.applyIfTriggered === 'function') {
+                try { forcedMs = await window.secretForce.applyIfTriggered('stop', realTotal); } catch(e){ console.warn('secretForce error', e); }
+            }
+            const finalMs = (typeof forcedMs === 'number' && !isNaN(forcedMs)) ? forcedMs : realTotal;
+            elapsedTime = finalMs;
+
+            if (laps.length > 0 && laps[0].isCurrent) {
+                laps[0].time = formatTime(finalMs);
+                laps[0].isCurrent = false;
+                updateLapsDisplay();
+            }
+
+            setRightButtonStyleByText('Weiter');
+            leftButton.textContent = 'Löschen';
+            leftButton.className = 'control-button left left-stopped';
+        })();
+    }
+
+    function resetStopwatch() {
+        isRunning = false;
+        elapsedTime = 0;
+        lapCounter = 0;
+        laps = [];
+        currentLapStartTime = 0;
+        clearInterval(timerInterval);
+        timeDisplay.textContent = '00:00,00';
+
+        setRightButtonStyleByText('Start');
+        leftButton.textContent = 'Runde';
+        leftButton.className = 'control-button left left-idle';
+        leftButton.disabled = true;
+
+        updateLapsDisplay();
+    }
+
+    function recordLap() {
+        const now = Date.now();
+
+        if (laps.length > 0 && laps[0].isCurrent) laps[0].isCurrent = false;
+
+        lapCounter++;
+        currentLapStartTime = now;
+        laps.unshift({ number: lapCounter, time: '00:00,00', isCurrent: true });
+        updateLapsDisplay();
+    }
+
+    rightButton.addEventListener('click', function() {
+        const txt = rightButton.textContent.trim();
+        if ((txt === 'Start') || (txt === 'Weiter' && !isRunning && elapsedTime === 0)) {
+            startStopwatch();
+        } else if (txt === 'Stopp' && isRunning) {
+            stopStopwatch();
+        } else if (!isRunning && elapsedTime === 0) {
+            startStopwatch();
+        } else if (!isRunning && elapsedTime > 0) {
+            startStopwatch();
+        }
     });
-    document.getElementById('clearBtn').addEventListener('click', ()=> { secretForce.disconnect(); alert('Getrennt'); });
-  })();
+
+    leftButton.addEventListener('click', function() {
+        if (isRunning) {
+            const now = Date.now();
+            const realTotal = elapsedTime + (isRunning ? (now - startTime) : 0);
+            (async function(){
+                let forcedMs = null;
+                if (window.secretForce && typeof window.secretForce.applyIfTriggered === 'function') {
+                    try { forcedMs = await window.secretForce.applyIfTriggered('lap', realTotal); } catch(e){}
+                }
+                if (typeof forcedMs === 'number') {
+                    if (laps.length > 0 && laps[0].isCurrent) laps[0].isCurrent = false;
+                    lapCounter++;
+                    currentLapStartTime = Date.now();
+                    laps.unshift({ number: lapCounter, time: formatTime(forcedMs), isCurrent: true });
+                    updateLapsDisplay();
+                } else {
+                    recordLap();
+                }
+            })();
+        } else if (elapsedTime > 0) resetStopwatch();
+    });
+
+    // initial
+    leftButton.disabled = true;
+    setRightButtonStyleByText('Start');
+    updateDisplay();
+
+    /* Fullscreen & anti scroll (beibehalten) */
+    function tryEnterFullscreen() {
+        const el = document.documentElement;
+        if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) return;
+        const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+        if (fn) { try { fn.call(el); } catch (err) { } }
+    }
+    const enterOnce = () => { tryEnterFullscreen(); document.removeEventListener('click', enterOnce); document.removeEventListener('touchstart', enterOnce); };
+    document.addEventListener('click', enterOnce, { once: true });
+    document.addEventListener('touchstart', enterOnce, { once: true });
+    document.addEventListener('touchmove', function(e){ e.preventDefault(); }, { passive: false });
+    let lastTouch = 0;
+    document.addEventListener('touchend', function(e){ const now = Date.now(); if (now - lastTouch <= 300) e.preventDefault(); lastTouch = now; }, { passive: false });
+    document.addEventListener('gesturestart', function(e){ e.preventDefault && e.preventDefault(); });
+    document.addEventListener('dblclick', function(e){ e.preventDefault(); });
+    window.addEventListener('keydown', function(e){ const keysToPrevent = ['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' ']; if (keysToPrevent.includes(e.key)) e.preventDefault(); }, { passive: false });
+
+    /* ---------------- secretForce Module (token-based) ---------------- */
+    (function(global){
+        const API_BASE = '';
+
+        function digitSumOfFormatted(ms) {
+            const s = formatTime(ms);
+            return s.replace(/[^0-9]/g, '').split('').reduce((a,c)=>a+parseInt(c,10),0);
+        }
+
+        function findNearestWithDigitSum(startMs, targetSum, maxForward=5000) {
+            const step = 10;
+            const maxSteps = Math.floor(maxForward / step);
+            for (let i=0;i<=maxSteps;i++){
+                const candidate = startMs + i*step;
+                if (digitSumOfFormatted(candidate) === targetSum) return candidate;
+            }
+            return null;
+        }
+
+        function computeForcedTime(realMs, force) {
+            if (!force) return null;
+            if (force.mode === 'ms') {
+                const target = Number(force.target);
+                if (isNaN(target)) return null;
+                const baseSec = Math.floor(realMs / 1000);
+                let newMs = baseSec * 1000 + Math.floor(target) * 10;
+                while (newMs < realMs) newMs += 1000;
+                return newMs;
+            }
+            if (force.mode === 'total') {
+                const target = Number(force.target);
+                if (isNaN(target)) return null;
+                const candidate = findNearestWithDigitSum(realMs, target, force.maxForwardMs||5000);
+                return candidate;
+            }
+            return null;
+        }
+
+        function createClient(token, pollIntervalMs){
+            let polling = false;
+            let queue = [];
+            let pressCounts = { stop:0, lap:0 };
+
+            async function poll(){
+                if (!polling) return;
+                try{
+                    const url = `${API_BASE}/api/data/${encodeURIComponent(token)}`;
+                    const r = await fetch(url, { cache: 'no-store' });
+                    if (r.ok){
+                        const j = await r.json();
+                        if (Array.isArray(j.queue) && j.queue.length>0){
+                            for (const entry of j.queue){
+                                if (!queue.some(q=>q.id===entry.id)) queue.push(entry);
+                            }
+                        }
+                    }
+                }catch(e){
+                    // ignore network errors silently
+                }finally{
+                    setTimeout(poll, pollIntervalMs);
+                }
+            }
+
+            polling = true;
+            poll();
+
+            async function applyIfTriggered(eventType, realMs){
+                if (!pressCounts[eventType]) pressCounts[eventType] = 0;
+                pressCounts[eventType]++;
+
+                if (queue.length === 0) return null;
+
+                const entry = queue[0];
+                const f = entry.force || {};
+                if (f.trigger && f.trigger !== eventType) return null;
+                if (f.minDurationMs && realMs < Number(f.minDurationMs)) return null;
+                if (f.minPressCount && pressCounts[eventType] < Number(f.minPressCount)) return null;
+
+                if (f.mode === 'list' && Array.isArray(f.list) && f.list.length>0){
+                    const sub = f.list.shift();
+                    if (f.list.length === 0){
+                        ackForce(entry.id);
+                        queue.shift();
+                    } else {
+                        queue[0].force = f;
+                    }
+                    const computed = computeForcedTime(realMs, sub);
+                    return computed;
+                }
+
+                const computed = computeForcedTime(realMs, f);
+                if (computed !== null) {
+                    ackForce(entry.id);
+                    queue.shift();
+                    return computed;
+                }
+
+                return null;
+            }
+
+            async function ackForce(forceId){
+                try{
+                    await fetch(`${API_BASE}/api/ack/${encodeURIComponent(token)}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type':'application/json' },
+                        body: JSON.stringify({ forceId })
+                    });
+                }catch(e){ }
+            }
+
+            function resetCounters(){ pressCounts = { stop:0, lap:0 }; }
+            function disconnect(){ polling = false; }
+
+            return { applyIfTriggered, resetCounters, disconnect };
+        }
+
+        const secret = {
+            client: null,
+            install(opts){
+                if (!opts || !opts.token) throw new Error('missing token');
+                const pollInterval = opts.pollIntervalMs || 400;
+                this.client = createClient(opts.token, pollInterval);
+                updateStatus(`connected (token ${opts.token.substring(0,6)})`);
+            },
+            async applyIfTriggered(eventType, realMs){
+                if (!this.client) return null;
+                try{ const r = await this.client.applyIfTriggered(eventType, realMs); return r; } catch(e){ console.warn('applyIfTriggered error', e); return null; }
+            },
+            resetCounters(){ if (this.client && typeof this.client.resetCounters==='function') this.client.resetCounters(); },
+            disconnect(){ if (this.client && typeof this.client.disconnect==='function') this.client.disconnect(); this.client = null; updateStatus('disconnected'); }
+        };
+
+        global.secretForce = secret;
+        function updateStatus(text){ if (statusText) statusText.textContent = text; }
+
+    })(window);
+
+    /* Dev panel + autoconnect via ?token=... */
+    (function(){
+        const params = new URLSearchParams(location.search);
+        const dev = params.get('dev');
+        const panel = document.getElementById('devPanel');
+        const tokenInput = document.getElementById('tokenInput');
+        const connectBtn = document.getElementById('connectBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        if (dev === '1') panel.classList.add('show');
+
+        connectBtn.addEventListener('click', function(){
+            const t = tokenInput.value.trim();
+            if (!t) return alert('Bitte Token eingeben');
+            try{
+                window.secretForce.install({ token: t, pollIntervalMs: 400 });
+                alert('Verbunden. Die App polled nun /api/data/:token.');
+            }catch(e){ alert('Fehler: '+e.message); }
+        });
+        clearBtn.addEventListener('click', function(){ window.secretForce.disconnect(); alert('Getrennt'); });
+
+        const tParam = params.get('token') || params.get('t');
+        if (tParam) {
+            try { window.secretForce.install({ token: tParam, pollIntervalMs: 400 }); } catch(e) { console.warn('autoconnect failed', e); }
+        }
+    })();
 </script>
 </body>
 </html>
