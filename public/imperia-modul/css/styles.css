@@ -1,0 +1,335 @@
+/* public/css/styles.css */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { 
+  height: 100%; 
+  overscroll-behavior: none; 
+  -ms-touch-action: manipulation; 
+  touch-action: manipulation; 
+}
+
+body {
+  font-family: "SF Pro Display","SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #000;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* --- Magician pages styling --- */
+main {
+  background: #1a1a1a;
+  color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 800px;
+  margin: 20px auto;
+}
+
+h1, h2, h3 {
+  margin-bottom: 16px;
+  color: #f0f0f0;
+}
+
+input {
+  padding: 10px;
+  margin: 8px 0;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #2a2a2a;
+  color: #fff;
+  font-size: 16px;
+  width: 100%;
+  max-width: 300px;
+}
+
+input::placeholder {
+  color: #888;
+}
+
+button {
+  padding: 10px 16px;
+  margin: 8px 4px;
+  border: none;
+  border-radius: 6px;
+  background: #30D058;
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.2s ease;
+}
+
+button:hover {
+  background: #28B946;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+hr {
+  border: none;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 20px 0;
+}
+
+/* --- Stopwatch specific styles (from index.html) --- */
+.status-bar { 
+  display: flex; 
+  justify-content: flex-end; 
+  align-items: center; 
+  padding: 10px 18px; 
+  font-size: 17px; 
+  font-weight: 600; 
+  color: #fff; 
+}
+
+.stopwatch-container { 
+  position: relative; 
+  height: calc(100vh - 116px); 
+  padding: 90px 12px 0 12px; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  min-height: 0; 
+}
+
+.time-display { 
+  height: 80px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-family: "SF Pro Display","SF Pro Text",-apple-system,system-ui,"Helvetica Neue",Arial; 
+  font-weight: 100; 
+  font-size: 120px; 
+  line-height: 1; 
+  letter-spacing: -2px; 
+  margin-top: 24px; 
+  margin-bottom: 20px; 
+  -webkit-font-smoothing: antialiased; 
+  font-variant-numeric: tabular-nums; 
+  text-rendering: optimizeLegibility; 
+  white-space: nowrap; 
+  user-select: none; 
+  z-index: 5; 
+}
+
+.controls { 
+  position: absolute; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  top: calc(50% - 44px); 
+  width: 100%; 
+  max-width: 400px; 
+  height: 100px; 
+  margin: 0; 
+  z-index: 20; 
+  pointer-events: auto; 
+}
+
+.control-button { 
+  position: absolute; 
+  width: 88px; 
+  height: 88px; 
+  border-radius: 50%; 
+  border: none; 
+  font-size: 18px; 
+  font-weight: 400; 
+  cursor: pointer; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  padding: 0; 
+  transition: transform .08s ease; 
+  user-select: none; 
+  -webkit-tap-highlight-color: transparent; 
+  touch-action: manipulation; 
+  color: #ffffff; 
+}
+
+.control-button:active { transform: scale(0.96); }
+.control-button.left { left: 14px; top: 6px; } 
+.control-button.right { right: 14px; top: 6px; }
+
+.left-idle { background: #1C1C1E; color: #9A9AA0; } 
+.left-running, .left-stopped { background: #333333; color: #E8E8E8; }
+.right-start { background: #092A11; color: #30D058; } 
+.right-running { background: #340E0B; color: #FF453A; } 
+.right-continue { background: #092A11; color: #30D058; }
+
+.dots { 
+  position: absolute; 
+  left: 50%; 
+  top: 44px; 
+  transform: translateX(-50%); 
+  display: flex; 
+  gap: 12px; 
+  align-items: center; 
+  justify-content: center; 
+  z-index: 10; 
+  pointer-events: none; 
+}
+
+.dot { 
+  width: 7px; 
+  height: 7px; 
+  border-radius: 50%; 
+  background: #333; 
+} 
+.dot.active { background: #fff; }
+
+.separator-line { 
+  position: absolute; 
+  top: calc(50% + 56px); 
+  left: 50%; 
+  transform: translateX(-50%); 
+  width: calc(100% - 48px); 
+  max-width: 420px; 
+  height: 1px; 
+  background: #2C2C2E; 
+}
+
+.laps-container { 
+  position: absolute; 
+  top: calc(50% + 64px); 
+  left: 50%; 
+  transform: translateX(-50%); 
+  width: calc(100% - 48px); 
+  max-width: 420px; 
+  bottom: 0; 
+  overflow: auto; 
+  padding-bottom: 12px; 
+}
+
+.lap-item { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  padding: 12px 0; 
+  border-bottom: 1px solid #2C2C2E; 
+  color: #fff; 
+  font-size: 16px; 
+  font-weight: 400; 
+}
+
+.lap-item:last-child { border-bottom: none; } 
+.lap-item.fastest { color: #30D058; } 
+.lap-item.slowest { color: #FF453A; }
+
+.bottom-nav { 
+  position: absolute; 
+  left: 0; 
+  right: 0; 
+  bottom: 20px; 
+  height: 86px; 
+  display: flex; 
+  justify-content: space-around; 
+  align-items: flex-end; 
+  padding: 8px 6px 8px 6px; 
+  background: transparent; 
+  gap: 6px; 
+  z-index: 30; 
+}
+
+.nav-item { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  gap: 4px; 
+  color: #7D7D7D; 
+  font-size: 11px; 
+  font-weight: 600; 
+  width: 72px; 
+} 
+.nav-item.active { color: #F4A30F; } 
+.nav-icon { 
+  width: 28px; 
+  height: 24px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+}
+
+.home-indicator { display: none !important; }
+
+.dev-panel { 
+  position: fixed; 
+  left: 12px; 
+  top: 12px; 
+  background: rgba(255,255,255,0.06); 
+  color: #fff; 
+  padding: 10px; 
+  border-radius: 8px; 
+  z-index: 200; 
+  width: calc(100% - 24px); 
+  max-width: 480px; 
+  display: none; 
+  gap: 8px; 
+}
+
+.dev-panel.show { 
+  display: flex; 
+  flex-direction: column; 
+}
+
+.dev-panel input { 
+  padding: 8px; 
+  border-radius: 6px; 
+  border: 1px solid rgba(255,255,255,0.06); 
+  background: transparent; 
+  color: #fff; 
+  margin: 4px 0;
+}
+
+.dev-panel button { 
+  padding: 8px 12px; 
+  border-radius: 6px; 
+  border: none; 
+  background: #30D058; 
+  color: #000; 
+  font-weight: 700; 
+  margin: 2px;
+}
+
+/* --- Responsive adjustments --- */
+@media (max-width: 420px) {
+  .time-display { 
+    font-size: 86px; 
+    letter-spacing: -2px; 
+    margin-bottom: 22px; 
+  }
+  .control-button { 
+    width: 78px; 
+    height: 78px; 
+    font-size: 16px; 
+  }
+  .control-button.left { left: 12px; top: 6px; }
+  .control-button.right { right: 12px; top: 6px; }
+  .dots { top: 39px; }
+}
+
+@media (max-height: 700px) {
+  .time-display { 
+    font-size: 74px; 
+    letter-spacing: -1px; 
+    margin-bottom: 12px; 
+  }
+}
+
+/* --- List editor styles --- */
+.item {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+  align-items: center;
+}
+
+.item input, .item select {
+  max-width: 100px;
+}

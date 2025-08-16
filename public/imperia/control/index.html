@@ -6,8 +6,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes"/>
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
     <meta name="apple-mobile-web-app-title" content="Imperia Control"/>
-    <link rel="apple-touch-icon" href="/icon-192x192.png"/>
-    <link rel="manifest" href="/manifest.json"/>
+    <link rel="apple-touch-icon" href="/imperia/icon-192x192.png"/>
+    <link rel="manifest" href="/imperia/manifest.json"/>
     <title>Imperia Control</title>
     <style>
         * {
@@ -192,7 +192,7 @@
                     
                     if (response.ok) {
                         // Session valid, redirect to main menu
-                        window.location.href = '/control/menu.html';
+                        window.location.href = '/imperia/control/menu.html';
                         return;
                     }
                 } catch (e) {
@@ -210,7 +210,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.authenticated) {
-                        window.location.href = '/control/menu.html';
+                        window.location.href = '/imperia/control/menu.html';
                     }
                 }
             } catch (e) {
@@ -245,7 +245,7 @@
                 if (response.ok) {
                     // Save license temporarily and redirect to registration
                     sessionStorage.setItem('verifiedLicense', code);
-                    window.location.href = '/control/register.html';
+                    window.location.href = '/imperia/control/register.html';
                 } else {
                     throw new Error(data.error || 'Ungültiger Lizenz-Code');
                 }
@@ -259,7 +259,7 @@
         
         // Existing account login
         document.getElementById('loginBtn').addEventListener('click', () => {
-            window.location.href = '/control/login.html';
+            window.location.href = '/imperia/control/login.html';
         });
         
         // Auto-focus license input

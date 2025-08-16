@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>IMPERIA Magic System</title>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/imperia/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="IMPERIA">
+    <link rel="apple-touch-icon" href="/imperia/icon-192x192.png">
+    <link rel="icon" type="image/png" href="/imperia/icon-192x192.png">
+    <meta name="theme-color" content="#000000">
+    
+    <meta http-equiv="refresh" content="0; url=/imperia/control/index.html">
+    <link rel="canonical" href="/imperia/control/index.html">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #333;
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .message {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .link {
+            color: #007AFF;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="spinner"></div>
+    <div class="message">🎩 IMPERIA Magic System</div>
+    <div style="font-size: 14px; opacity: 0.8; margin-bottom: 20px;">
+        Weiterleitung zur App...
+    </div>
+    <a href="/imperia/control/index.html" class="link">
+        Klicken Sie hier, falls die Weiterleitung nicht funktioniert
+    </a>
+    
+    <script>
+        // Register service worker if supported
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/imperia/sw.js')
+                    .then(registration => console.log('Service Worker registered'))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
+        
+        // Zusätzliche JavaScript-Weiterleitung für maximale Kompatibilität
+        setTimeout(() => {
+            window.location.href = '/imperia/control/index.html';
+        }, 100);
+    </script>
+</body>
+</html>
