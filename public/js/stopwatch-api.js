@@ -113,6 +113,24 @@ class StopwatchAPI {
     }
 
     /**
+     * Sendet Manual Force an Server
+     */
+    async sendManualForce(force) {
+        try {
+            const response = await fetch(`${this.apiBase}/api/stopwatch/${this.type}/manual-force/${encodeURIComponent(this.token)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ force })
+            });
+            
+            return response.ok;
+        } catch (error) {
+            console.error('Send manual force error:', error);
+            return false;
+        }
+    }
+
+    /**
      * Lädt Preset vom Server
      */
     async loadPreset(presetName, stopwatch) {

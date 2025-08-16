@@ -62,8 +62,9 @@ class ManualInput {
         });
     }
 
-    open(stopwatch) {
+    open(stopwatch, api = null) {
         this.stopwatch = stopwatch;
+        this.api = api;
         this.entries = [];
         this.updateList();
         this.modal.classList.add('show');
@@ -138,7 +139,7 @@ class ManualInput {
                 target: validatedEntries[0],
                 trigger: 'egal' // Bei Manual Input immer egal
             };
-            this.stopwatch.addForce(force);
+            this.addForceToStopwatch(force);
         } else {
             // Liste von Forces
             const forceList = validatedEntries.map(entry => ({
@@ -150,7 +151,7 @@ class ManualInput {
                 list: forceList,
                 trigger: 'egal'
             };
-            this.stopwatch.addForce(force);
+            this.addForceToStopwatch(force);
         }
 
         this.stopwatch.updateStatus(`${validatedEntries.length} Force(s) (${mode.toUpperCase()}) aktiviert`);
@@ -190,6 +191,20 @@ class ManualInput {
         }
         
         return null;
+    }
+
+    async addForceToStopwatch(force) {
+        // Füge Force lokal hinzu
+        this.stopwatch.addForce(force);
+        
+        // Sende auch via API wenn verfügbar und es sich um MainTick handelt
+        if (this.api && this.api.type === 'maintick') {
+            try {
+                await this.api.sendManualForce(force);
+            } catch (error) {
+                console.warn('Failed to send manual force via API:', error);
+            }
+        }
     }
 }
 

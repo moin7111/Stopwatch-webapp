@@ -111,6 +111,7 @@
         // Initialisierung
         const stopwatch = new StopwatchCore();
         let api = null;
+        window.api = null; // Global API reference
 
         // UI-Elemente initialisieren
         stopwatch.initUI({
@@ -165,6 +166,7 @@
             if (!token) return alert('Bitte Token eingeben');
             
             api = new StopwatchAPI(token, 'maintick');
+            window.api = api; // Update global reference
             api.startPolling(stopwatch);
             stopwatch.updateStatus(`MainTick verbunden (${token.substring(0,6)}...)`);
         });
@@ -173,6 +175,7 @@
             if (api) {
                 api.stopPolling();
                 api = null;
+                window.api = null; // Clear global reference
             }
             stopwatch.updateStatus('Getrennt');
         });
@@ -181,6 +184,7 @@
         const tokenParam = params.get('token') || params.get('t');
         if (tokenParam) {
             api = new StopwatchAPI(tokenParam, 'maintick');
+            window.api = api; // Update global reference
             api.startPolling(stopwatch);
             stopwatch.updateStatus(`MainTick verbunden (${tokenParam.substring(0,6)}...)`);
         }
