@@ -2,7 +2,7 @@
   "name": "Stopwatch Magic",
   "short_name": "Stopwatch",
   "description": "Magische Stoppuhr für Bühnenzauber",
-  "start_url": "/magician/login.html",
+  "start_url": "/app",
   "display": "fullscreen",
   "orientation": "portrait",
   "theme_color": "#000000",

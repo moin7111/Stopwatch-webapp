@@ -123,9 +123,14 @@ app.use((req, res, next) => {
 
 app.use(express.static('public'));
 
-// 🔥 FIX: Hauptroute für PWA
+// 🔥 FIX: Hauptroute für PWA  
 app.get('/', (req, res) => {
-    res.redirect('/magician/login.html');
+    res.redirect(301, '/magician/login.html');
+});
+
+// Alternative route for PWA
+app.get('/app', (req, res) => {
+    res.redirect(301, '/magician/login.html');
 });
 
 // === ENHANCED AUTHENTICATION ROUTES ===
