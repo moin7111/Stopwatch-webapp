@@ -15,6 +15,7 @@ class StopwatchCore {
         // Force queue und Einstellungen
         this.forceQueue = [];
         this.pressCounts = { stop: 0, lap: 0 };
+        this.resetCount = 0;
         
         // UI Elements
         this.timeDisplay = null;
@@ -110,29 +111,63 @@ class StopwatchCore {
         // MS-Force: Millisekunden werden forciert
         if (force.mode === 'ms') {
             const target = Number(force.target);
-            if (isNaN(target)) return null;
-            const baseSec = Math.floor(realMs / 1000);
-            let newMs = baseSec * 1000 + Math.floor(target) * 10;
-            while (newMs < realMs) newMs += 1000;
-            return newMs;
+            if (isNaN(target) || target < 0 || target > 99) return null;
+            
+            // Extrahiere aktuelle Zeit-Komponenten
+            const totalSeconds = Math.floor(realMs / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            
+            // Setze neue Millisekunden
+            return minutes * 60000 + seconds * 1000 + target * 10;
         }
         
         // S-Force: Quersumme wird forciert
         if (force.mode === 's') {
             const target = Number(force.target);
             if (isNaN(target)) return null;
-            const candidate = this.findNearestWithDigitSum(realMs, target, force.maxForwardMs || 5000);
-            return candidate;
+            
+            // Berechne aktuelle Quersumme
+            const currentSum = this.digitSumOfFormatted(realMs);
+            if (currentSum === target) return realMs; // Bereits richtig
+            
+            // Versuche durch Änderung der Millisekunden die Ziel-Quersumme zu erreichen
+            const totalSeconds = Math.floor(realMs / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            
+            // Probiere verschiedene Millisekunden-Werte
+            for (let ms = 0; ms <= 99; ms++) {
+                const testMs = minutes * 60000 + seconds * 1000 + ms * 10;
+                if (this.digitSumOfFormatted(testMs) === target) {
+                    return testMs;
+                }
+            }
+            
+            // Wenn keine passende Millisekunde gefunden wurde, kein Force
+            return null;
         }
         
-        // FT-Force: Volle Zeit wird forciert
+        // FT-Force: Volle Zeit wird forciert (MMSS Format)
         if (force.mode === 'ft') {
             const target = force.target.toString().replace(/[^0-9]/g, '');
             if (target.length !== 4) return null;
+            
             const minutes = parseInt(target.substring(0, 2), 10);
             const seconds = parseInt(target.substring(2, 4), 10);
+            
             if (seconds >= 60) return null; // Ungültige Sekunden
-            return (minutes * 60 + seconds) * 1000 + 43 * 10; // Immer .43 als Millisekunden
+            
+            // Berechne die forcierte Zeit in Millisekunden
+            const forcedMs = minutes * 60000 + seconds * 1000 + 430; // .43 als Standard
+            
+            // Stelle sicher, dass die forcierte Zeit nicht in der Vergangenheit liegt
+            if (forcedMs < realMs) {
+                // Addiere eine Minute wenn nötig
+                return forcedMs + 60000;
+            }
+            
+            return forcedMs;
         }
         
         return null;
@@ -150,12 +185,14 @@ class StopwatchCore {
         const entry = this.forceQueue[0];
         const f = entry.force || {};
         
-        // Prüfe Trigger
+        // Prüfe Trigger (stop, lap oder egal)
         if (f.trigger && f.trigger !== eventType && f.trigger !== 'egal') return null;
         
         // Prüfe Bedingungen
-        if (f.minDurationMs && realMs < Number(f.minDurationMs)) return null;
-        if (f.minPressCount && this.pressCounts[eventType] < Number(f.minPressCount)) return null;
+        if (f.condition) {
+            const conditionMet = this.checkCondition(f.condition, eventType, realMs);
+            if (!conditionMet) return null;
+        }
 
         // Bei Listen-Force
         if (f.mode === 'list' && Array.isArray(f.list) && f.list.length > 0) {
@@ -177,6 +214,39 @@ class StopwatchCore {
         }
 
         return null;
+    }
+
+    /**
+     * Prüft ob eine Bedingung erfüllt ist
+     */
+    checkCondition(condition, eventType, realMs) {
+        if (!condition || !condition.type || !condition.value) return true;
+        
+        const value = Number(condition.value);
+        if (isNaN(value)) return true;
+        
+        switch (condition.type) {
+            case 'sekunden':
+                // Nach X Sekunden
+                const seconds = Math.floor(realMs / 1000);
+                return seconds >= value;
+                
+            case 'stops':
+                // Nach X Stops
+                return this.pressCounts.stop >= value;
+                
+            case 'runden':
+                // Nach X Runden
+                return this.lapCounter >= value;
+                
+            case 'loeschen':
+                // Nach X mal Löschen
+                if (!this.resetCount) this.resetCount = 0;
+                return this.resetCount >= value;
+                
+            default:
+                return true;
+        }
     }
 
     /**
@@ -330,6 +400,9 @@ class StopwatchCore {
         this.leftButton.disabled = true;
 
         this.updateLapsDisplay();
+        
+        // Erhöhe Reset Counter für Bedingungen
+        this.resetCount++;
     }
 
     /**

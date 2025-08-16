@@ -60,9 +60,10 @@ class PresetManager {
                         <input type="number" id="conditionValue" placeholder="Anzahl" style="flex: 1; padding: 8px; background: #2C2C2E; border: 1px solid #3C3C3E; border-radius: 6px; color: #fff;">
                         <select id="conditionType" style="flex: 2; padding: 8px; background: #2C2C2E; border: 1px solid #3C3C3E; border-radius: 6px; color: #fff;">
                             <option value="none">Keine Bedingung</option>
-                            <option value="seconds">Sekunden</option>
-                            <option value="stops">mal Stoppen</option>
-                            <option value="laps">Runden</option>
+                            <option value="sekunden">Nach X Sekunden</option>
+                            <option value="stops">Nach X mal Stoppen</option>
+                            <option value="runden">Nach X Runden</option>
+                            <option value="loeschen">Nach X mal Löschen</option>
                         </select>
                     </div>
                     
@@ -205,33 +206,45 @@ class PresetManager {
             return;
         }
         
-        // Erstelle Forces
-        const forces = this.currentSequence.map(value => ({
-            mode: forceType,
-            target: value,
-            trigger: triggerType
-        }));
-        
-        // Bedingungen
-        const conditions = conditionType !== 'none' && conditionValue ? {
+        // Erstelle Bedingung wenn angegeben
+        const condition = conditionType !== 'none' && conditionValue ? {
             type: conditionType,
             value: parseInt(conditionValue)
         } : null;
         
-        // Wenn Bedingungen vorhanden, füge sie dem ersten Force hinzu
-        if (conditions && forces.length > 0) {
-            if (conditions.type === 'seconds') {
-                forces[0].minDurationMs = conditions.value * 1000;
-            } else if (conditions.type === 'stops') {
-                forces[0].minPressCount = conditions.value;
-            } else if (conditions.type === 'laps') {
-                forces[0].minPressCount = conditions.value;
-            }
+        // Erstelle Forces
+        let forces;
+        if (this.currentSequence.length === 1) {
+            // Einzelner Force
+            forces = [{
+                mode: forceType,
+                target: this.currentSequence[0],
+                trigger: triggerType,
+                condition: condition
+            }];
+        } else {
+            // Liste von Forces
+            const forceList = this.currentSequence.map(value => ({
+                mode: forceType,
+                target: value
+            }));
+            forces = [{
+                mode: 'list',
+                list: forceList,
+                trigger: triggerType,
+                condition: condition
+            }];
         }
         
         // Speichere Preset
+        const preset = {
+            name: name,
+            forces: forces,
+            condition: condition // Speichere auch separat für Anzeige
+        };
+        
         if (this.api) {
-            const success = await this.api.savePreset(name, forces, conditions);
+            const success = await this.api.savePreset(preset);
             if (success) {
                 this.stopwatch.updateStatus(`Preset "${name}" gespeichert`);
                 this.hideCreateModal();
@@ -242,7 +255,7 @@ class PresetManager {
         } else {
             // Lokale Speicherung für Tests
             const presets = JSON.parse(localStorage.getItem('stopwatchPresets') || '[]');
-            presets.push({ name, forces, conditions });
+            presets.push(preset);
             localStorage.setItem('stopwatchPresets', JSON.stringify(presets));
             
             this.stopwatch.updateStatus(`Preset "${name}" lokal gespeichert`);
@@ -274,7 +287,7 @@ class PresetManager {
                     <div style="font-size: 18px; font-weight: 600; margin-bottom: 4px;">${preset.name}</div>
                     <div style="font-size: 14px; opacity: 0.7;">
                         ${preset.forces.length} Force(s)
-                        ${preset.conditions ? ` - Bedingung: ${preset.conditions.value} ${preset.conditions.type}` : ''}
+                        ${preset.condition ? ` - Bedingung: ${preset.condition.value} ${preset.condition.type}` : ''}
                     </div>
                 </div>
             `).join('');

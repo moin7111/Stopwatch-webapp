@@ -5,7 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#000000" />
     <title>MainTick - Stoppuhr</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/maintick/manifest.json" />
+    
+    <!-- Icons -->
+    <link rel="apple-touch-icon" href="/icon-192x192.png" />
+    <link rel="icon" type="image/png" href="/icon-192x192.png" />
+    
+    <!-- Styles -->
     <link rel="stylesheet" href="/css/stopwatch-ui.css">
 </head>
 <body>
@@ -31,7 +42,7 @@
     </div>
 
     <div class="bottom-nav" role="navigation" aria-label="Uhr Navigation">
-        <div class="nav-item">
+        <div class="nav-item" id="worldClockNavItem">
             <div class="nav-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="9"></circle>
@@ -125,6 +136,20 @@
             alarmClickTimer = setTimeout(() => alarmClickCount = 0, 500);
         });
 
+        // Triple-Click auf Weltuhr für Routinen-Bereich
+        let worldClockClickCount = 0;
+        let worldClockClickTimer = null;
+        document.getElementById('worldClockNavItem').addEventListener('click', () => {
+            worldClockClickCount++;
+            if (worldClockClickCount === 3) {
+                // Zurück zum Routinen-Bereich
+                window.location.href = '/control/index.html';
+                worldClockClickCount = 0;
+            }
+            clearTimeout(worldClockClickTimer);
+            worldClockClickTimer = setTimeout(() => worldClockClickCount = 0, 500);
+        });
+
         // Dev Panel
         const params = new URLSearchParams(location.search);
         const dev = params.get('dev');
@@ -192,6 +217,15 @@
             const keysToPrevent = ['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' ']; 
             if (keysToPrevent.includes(e.key)) e.preventDefault(); 
         }, { passive: false });
+        
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                console.log('Service Worker registered with scope:', registration.scope);
+            }).catch(function(err) {
+                console.log('Service Worker registration failed:', err);
+            });
+        }
     </script>
 </body>
 </html>

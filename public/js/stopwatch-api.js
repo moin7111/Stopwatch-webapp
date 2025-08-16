@@ -139,17 +139,15 @@ class StopwatchAPI {
     /**
      * Speichert Preset (nur MainTick)
      */
-    async savePreset(name, forces, conditions) {
-        if (this.type !== 'maintick') return;
+    async savePreset(preset) {
+        if (this.type !== 'maintick') return false;
 
         try {
             const response = await fetch(`${this.apiBase}/api/stopwatch/preset`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    name,
-                    forces,
-                    conditions,
+                    ...preset,
                     token: this.token
                 })
             });
@@ -200,4 +198,86 @@ class StopwatchAPI {
             return false;
         }
     }
+
+    /**
+     * Sendet aktuelle Stopwatch-Status an Server
+     */
+    async sendStatus(status) {
+        try {
+            const response = await fetch(`${this.apiBase}/api/stopwatch/${this.type}/status/${encodeURIComponent(this.token)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            
+            return response.ok;
+        } catch (error) {
+            console.error('Send status error:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Aktiviert Preset per API (für ModulTick)
+     */
+    async activatePreset(presetName) {
+        try {
+            const response = await fetch(`${this.apiBase}/api/stopwatch/${this.type}/activate-preset/${encodeURIComponent(this.token)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ presetName })
+            });
+            
+            return response.ok;
+        } catch (error) {
+            console.error('Activate preset error:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Sendet manuellen Force direkt
+     */
+    async sendManualForce(force) {
+        try {
+            const response = await fetch(`${this.apiBase}/api/stopwatch/${this.type}/manual-force/${encodeURIComponent(this.token)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    force: {
+                        ...force,
+                        id: Date.now().toString() // Generiere eindeutige ID
+                    }
+                })
+            });
+            
+            return response.ok;
+        } catch (error) {
+            console.error('Send manual force error:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Löscht ein Preset
+     */
+    async deletePreset(presetName) {
+        if (this.type !== 'maintick') return false;
+
+        try {
+            const response = await fetch(`${this.apiBase}/api/stopwatch/preset/${encodeURIComponent(presetName)}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: this.token })
+            });
+            
+            return response.ok;
+        } catch (error) {
+            console.error('Delete preset error:', error);
+            return false;
+        }
+    }
 }
+
+// Export für globale Nutzung
+window.StopwatchAPI = StopwatchAPI;
