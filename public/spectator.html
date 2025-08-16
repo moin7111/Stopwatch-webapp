@@ -221,8 +221,13 @@ body {
             const finalMs = (typeof forcedMs === 'number' && !isNaN(forcedMs)) ? forcedMs : realTotal;
             elapsedTime = finalMs;
 
+            // 🔥 KRITISCHER FIX: Hauptzeit (timeDisplay) sofort aktualisieren!
+            timeDisplay.textContent = formatTime(finalMs);
+
             if (laps.length > 0 && laps[0].isCurrent) {
-                laps[0].time = formatTime(finalMs);
+                // Aktuelle Runde auf die forcierte Hauptzeit setzen
+                const currentLapTime = finalMs - (elapsedTime - timeStringToMs(laps[0].time));
+                laps[0].time = formatTime(Math.max(0, currentLapTime));
                 laps[0].isCurrent = false;
                 updateLapsDisplay();
             }
@@ -284,10 +289,21 @@ body {
                     try { forcedMs = await window.secretForce.applyIfTriggered('lap', realTotal); } catch(e){}
                 }
                 if (typeof forcedMs === 'number') {
-                    if (laps.length > 0 && laps[0].isCurrent) laps[0].isCurrent = false;
+                    // 🔥 KRITISCHER FIX: Hauptzeit (elapsedTime) aktualisieren!
+                    const timeDiff = forcedMs - realTotal;
+                    elapsedTime += timeDiff;
+                    startTime = now; // Reset startTime für korrekte weitere Berechnung
+                    
+                    if (laps.length > 0 && laps[0].isCurrent) {
+                        // Aktuelle Runde beenden mit forcierter Zeit
+                        const currentLapElapsed = forcedMs - (elapsedTime - timeDiff - timeStringToMs(laps[0].time));
+                        laps[0].time = formatTime(Math.max(0, currentLapElapsed));
+                        laps[0].isCurrent = false;
+                    }
+                    
                     lapCounter++;
-                    currentLapStartTime = Date.now();
-                    laps.unshift({ number: lapCounter, time: formatTime(forcedMs), isCurrent: true });
+                    currentLapStartTime = now;
+                    laps.unshift({ number: lapCounter, time: '00:00,00', isCurrent: true });
                     updateLapsDisplay();
                 } else {
                     recordLap();

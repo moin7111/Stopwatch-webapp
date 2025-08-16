@@ -392,25 +392,30 @@ body {
     }
 
     function stopStopwatch() {
-        isRunning = false;
-        const now = Date.now();
-        const realTotal = elapsedTime + (now - startTime);
-        clearInterval(timerInterval);
+    isRunning = false;
+    const now = Date.now();
+    const realTotal = elapsedTime + (now - startTime);
+    clearInterval(timerInterval);
 
-        // Apply local force
-        const finalMs = applyLocalForce('stop', realTotal);
-        elapsedTime = finalMs;
+    // Apply local force
+    const finalMs = applyLocalForce('stop', realTotal);
+    elapsedTime = finalMs;
 
-        if (laps.length > 0 && laps[0].isCurrent) {
-            laps[0].time = formatTime(finalMs);
-            laps[0].isCurrent = false;
-            updateLapsDisplay();
-        }
+    // 🔥 KRITISCHER FIX: Hauptzeit (timeDisplay) sofort aktualisieren!
+    timeDisplay.textContent = formatTime(finalMs);
 
-        setRightButtonStyleByText('Weiter');
-        leftButton.textContent = 'Löschen';
-        leftButton.className = 'control-button left left-stopped';
+    if (laps.length > 0 && laps[0].isCurrent) {
+        // Aktuelle Runde auf die forcierte Hauptzeit setzen
+        const currentLapTime = finalMs - (elapsedTime - timeStringToMs(laps[0].time));
+        laps[0].time = formatTime(Math.max(0, currentLapTime));
+        laps[0].isCurrent = false;
+        updateLapsDisplay();
     }
+
+    setRightButtonStyleByText('Weiter');
+    leftButton.textContent = 'Löschen';
+    leftButton.className = 'control-button left left-stopped';
+}
 
     function resetStopwatch() {
         isRunning = false;
@@ -470,7 +475,33 @@ body {
 
     leftButton.addEventListener('click', function() {
         if (isRunning) {
-            recordLap();
+            const now = Date.now();
+            const realTotal = elapsedTime + (now - startTime);
+            
+            // Apply local force for lap
+            const finalMs = applyLocalForce('lap', realTotal);
+            
+            if (finalMs !== realTotal) {
+                // 🔥 KRITISCHER FIX: Hauptzeit (elapsedTime) aktualisieren!
+                const timeDiff = finalMs - realTotal;
+                elapsedTime += timeDiff;
+                startTime = now; // Reset startTime für korrekte weitere Berechnung
+                
+                if (laps.length > 0 && laps[0].isCurrent) {
+                    // Aktuelle Runde beenden mit forcierter Zeit
+                    const currentLapElapsed = finalMs - (elapsedTime - timeDiff - timeStringToMs(laps[0].time));
+                    laps[0].time = formatTime(Math.max(0, currentLapElapsed));
+                    laps[0].isCurrent = false;
+                }
+                
+                lapCounter++;
+                currentLapStartTime = now;
+                laps.unshift({ number: lapCounter, time: '00:00,00', isCurrent: true });
+                updateLapsDisplay();
+            } else {
+                // No force - normal lap
+                recordLap();
+            }
         } else if (elapsedTime > 0) {
             resetStopwatch();
         }
