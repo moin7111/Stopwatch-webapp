@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+    <title>Imperia - Einstellungen</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 40px;
+        }
+        
+        .back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+        }
+        
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .settings-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .section-icon {
+            font-size: 24px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+        
+        .info-value {
+            font-size: 16px;
+            font-weight: 500;
+            text-align: right;
+            max-width: 60%;
+            word-break: break-word;
+        }
+        
+        .token-item {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .token-value {
+            font-family: 'SF Mono', monospace;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: #667eea;
+        }
+        
+        .token-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .token-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .token-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .token-btn.delete {
+            background: rgba(255, 69, 58, 0.2);
+            border-color: rgba(255, 69, 58, 0.4);
+        }
+        
+        .token-btn.delete:hover {
+            background: rgba(255, 69, 58, 0.3);
+        }
+        
+        .add-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 16px;
+        }
+        
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .url-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+        
+        .url-label {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+        
+        .url-display {
+            font-family: 'SF Mono', monospace;
+            font-size: 13px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 6px;
+            word-break: break-all;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .copy-btn {
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid rgba(102, 126, 234, 0.4);
+            padding: 8px 16px;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .copy-btn:hover {
+            background: rgba(102, 126, 234, 0.3);
+        }
+        
+        .copy-btn.copied {
+            background: rgba(48, 209, 88, 0.2);
+            border-color: rgba(48, 209, 88, 0.4);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .version-info {
+            text-align: center;
+            opacity: 0.5;
+            font-size: 14px;
+            margin-top: 40px;
+        }
+        
+        .password-change {
+            margin-top: 20px;
+        }
+        
+        .input-group {
+            margin-bottom: 16px;
+        }
+        
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #667eea;
+        }
+        
+        .save-btn {
+            background: #30d158;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: #000;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(48, 209, 88, 0.4);
+        }
+        
+        .save-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/control/menu.html" class="back-btn">← Zurück</a>
+        <h1>Einstellungen</h1>
+        <div style="width: 80px;"></div>
+    </div>
+    
+    <div class="content">
+        <!-- Benutzer-Informationen -->
+        <div class="settings-section">
+            <div class="section-header">
+                <span class="section-icon">👤</span>
+                <h2 class="section-title">Benutzer-Informationen</h2>
+            </div>
+            
+            <div id="userInfo" class="loading show">
+                <div class="spinner"></div>
+            </div>
+            
+            <div class="password-change" style="display: none;" id="passwordSection">
+                <h3 style="font-size: 18px; margin-bottom: 16px;">Passwort ändern</h3>
+                <div class="input-group">
+                    <label for="currentPassword">Aktuelles Passwort</label>
+                    <input type="password" id="currentPassword">
+                </div>
+                <div class="input-group">
+                    <label for="newPassword">Neues Passwort</label>
+                    <input type="password" id="newPassword">
+                </div>
+                <div class="input-group">
+                    <label for="confirmPassword">Passwort bestätigen</label>
+                    <input type="password" id="confirmPassword">
+                </div>
+                <button class="save-btn" id="changePasswordBtn">Passwort ändern</button>
+            </div>
+        </div>
+        
+        <!-- API Tokens -->
+        <div class="settings-section">
+            <div class="section-header">
+                <span class="section-icon">🔑</span>
+                <h2 class="section-title">API Tokens</h2>
+            </div>
+            
+            <div id="tokensList" class="loading show">
+                <div class="spinner"></div>
+            </div>
+            
+            <button class="add-btn" id="addTokenBtn">Neuen Token erstellen</button>
+        </div>
+        
+        <!-- Module URLs -->
+        <div class="settings-section">
+            <div class="section-header">
+                <span class="section-icon">🔗</span>
+                <h2 class="section-title">Module URLs</h2>
+            </div>
+            
+            <div id="moduleUrls" class="loading show">
+                <div class="spinner"></div>
+            </div>
+        </div>
+        
+        <!-- API Dokumentation -->
+        <div class="settings-section">
+            <div class="section-header">
+                <span class="section-icon">📡</span>
+                <h2 class="section-title">API Dokumentation</h2>
+            </div>
+            
+            <div class="url-container">
+                <div class="url-label">Force senden (POST)</div>
+                <div class="url-display">/api/stopwatch/maintick/force/{TOKEN}</div>
+            </div>
+            
+            <div class="url-container">
+                <div class="url-label">Presets abrufen (GET)</div>
+                <div class="url-display">/api/stopwatch/presets/{TOKEN}</div>
+            </div>
+            
+            <div class="url-container">
+                <div class="url-label">Status prüfen (GET)</div>
+                <div class="url-display">/api/stopwatch/maintick/data/{TOKEN}</div>
+            </div>
+        </div>
+        
+        <div class="version-info">
+            IMPERIA Magic System v0.3 (Beta)
+        </div>
+    </div>
+    
+    <script>
+        let currentUser = null;
+        
+        // Load user info
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/auth/status', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data;
+                    
+                    const userInfoDiv = document.getElementById('userInfo');
+                    userInfoDiv.classList.remove('loading', 'show');
+                    userInfoDiv.innerHTML = `
+                        <div class="info-row">
+                            <span class="info-label">Benutzername</span>
+                            <span class="info-value">${data.username}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Anzeigename</span>
+                            <span class="info-value">${data.displayName || data.username}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Status</span>
+                            <span class="info-value" style="color: #30d158;">Aktiv</span>
+                        </div>
+                    `;
+                    
+                    document.getElementById('passwordSection').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading user info:', error);
+            }
+        }
+        
+        // Load tokens
+        async function loadTokens() {
+            try {
+                const response = await fetch('/api/tokens', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const tokensList = document.getElementById('tokensList');
+                    tokensList.classList.remove('loading', 'show');
+                    
+                    if (data.tokens.length === 0) {
+                        tokensList.innerHTML = '<p style="text-align: center; opacity: 0.6;">Keine Tokens vorhanden</p>';
+                    } else {
+                        tokensList.innerHTML = data.tokens.map(token => `
+                            <div class="token-item">
+                                <span class="token-value">${token.value}</span>
+                                <div class="token-actions">
+                                    <button class="token-btn" onclick="copyToken('${token.value}')">Kopieren</button>
+                                    <button class="token-btn delete" onclick="deleteToken('${token.value}')">Löschen</button>
+                                </div>
+                            </div>
+                        `).join('');
+                        
+                        // Update module URLs
+                        updateModuleUrls(data.tokens[0]?.value);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading tokens:', error);
+            }
+        }
+        
+        // Update module URLs
+        function updateModuleUrls(token) {
+            const moduleUrlsDiv = document.getElementById('moduleUrls');
+            moduleUrlsDiv.classList.remove('loading', 'show');
+            
+            if (!token) {
+                moduleUrlsDiv.innerHTML = '<p style="text-align: center; opacity: 0.6;">Erstelle zuerst einen Token</p>';
+                return;
+            }
+            
+            const baseUrl = window.location.origin;
+            
+            moduleUrlsDiv.innerHTML = `
+                <div class="url-container">
+                    <div class="url-label">ModulTick (Zuschauer-App)</div>
+                    <div class="url-display" id="modulTickUrl">${baseUrl}/modultick.html?token=${token}</div>
+                    <button class="copy-btn" onclick="copyUrl('modulTickUrl')">URL kopieren</button>
+                </div>
+                
+                <div class="url-container">
+                    <div class="url-label">MainTick (Deine Kontrolle)</div>
+                    <div class="url-display" id="mainTickUrl">${baseUrl}/maintick/stopwatch.html?token=${token}</div>
+                    <button class="copy-btn" onclick="copyUrl('mainTickUrl')">URL kopieren</button>
+                </div>
+            `;
+        }
+        
+        // Copy token
+        window.copyToken = async function(token) {
+            try {
+                await navigator.clipboard.writeText(token);
+                event.target.textContent = 'Kopiert!';
+                setTimeout(() => {
+                    event.target.textContent = 'Kopieren';
+                }, 2000);
+            } catch (error) {
+                alert('Kopieren fehlgeschlagen');
+            }
+        };
+        
+        // Copy URL
+        window.copyUrl = async function(elementId) {
+            try {
+                const url = document.getElementById(elementId).textContent;
+                await navigator.clipboard.writeText(url);
+                event.target.classList.add('copied');
+                event.target.textContent = 'Kopiert!';
+                setTimeout(() => {
+                    event.target.classList.remove('copied');
+                    event.target.textContent = 'URL kopieren';
+                }, 2000);
+            } catch (error) {
+                alert('Kopieren fehlgeschlagen');
+            }
+        };
+        
+        // Delete token
+        window.deleteToken = async function(token) {
+            if (!confirm('Token wirklich löschen?')) return;
+            
+            try {
+                const response = await fetch(`/api/token/${token}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    loadTokens();
+                }
+            } catch (error) {
+                console.error('Error deleting token:', error);
+            }
+        };
+        
+        // Add new token
+        document.getElementById('addTokenBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/token', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                
+                if (response.ok) {
+                    loadTokens();
+                }
+            } catch (error) {
+                console.error('Error creating token:', error);
+            }
+        });
+        
+        // Change password
+        document.getElementById('changePasswordBtn').addEventListener('click', async () => {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                alert('Bitte alle Felder ausfüllen');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                alert('Neue Passwörter stimmen nicht überein');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                alert('Neues Passwort muss mindestens 6 Zeichen lang sein');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/auth/change-password', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        currentPassword,
+                        newPassword
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('Passwort erfolgreich geändert');
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Fehler beim Ändern des Passworts');
+                }
+            } catch (error) {
+                alert('Fehler beim Ändern des Passworts');
+            }
+        });
+        
+        // Initialize
+        loadUserInfo();
+        loadTokens();
+    </script>
+</body>
+</html>
