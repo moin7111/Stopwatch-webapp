@@ -209,7 +209,7 @@
             </div>
         </form>
         
-        <a href="/control/" class="back-link">Zurück</a>
+        <a href="/imperia/control/" class="back-link">Zurück</a>
         
         <div class="error" id="errorMsg"></div>
     </div>
@@ -222,7 +222,7 @@
         // Check for verified license
         const verifiedLicense = sessionStorage.getItem('verifiedLicense');
         if (!verifiedLicense) {
-            window.location.href = '/control/';
+            window.location.href = '/imperia/control/';
         }
         
         // Form validation
@@ -294,7 +294,7 @@
                     sessionStorage.removeItem('verifiedLicense');
                     
                     // Redirect to main menu
-                    window.location.href = '/control/menu.html';
+                    window.location.href = '/imperia/control/menu.html';
                 } else {
                     throw new Error(data.error || 'Registrierung fehlgeschlagen');
                 }

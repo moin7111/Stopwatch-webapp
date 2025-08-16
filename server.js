@@ -21,6 +21,9 @@ async function initializeDatabase() {
         await db.init();
         dbInitialized = true;
         console.log('🗄️ Database initialized successfully');
+        
+        // Restore active sessions from database
+        await restoreSessionsFromDatabase();
     } catch (error) {
         console.error('❌ Failed to initialize database:', error);
         process.exit(1);
@@ -57,9 +60,33 @@ function generateUUID() {
 // In-memory sessions (enhanced)
 const sessions = new Map();
 
+// Restore sessions from database on startup
+async function restoreSessionsFromDatabase() {
+    try {
+        const activeSessions = await db.getActiveSessions();
+        let restoredCount = 0;
+        
+        for (const session of activeSessions) {
+            sessions.set(session.session_id, {
+                userId: session.user_id,
+                createdAt: new Date(session.created_at),
+                expiresAt: new Date(session.expires_at),
+                lastActivity: new Date(session.last_activity || session.created_at),
+                ip: session.ip_address,
+                userAgent: session.user_agent
+            });
+            restoredCount++;
+        }
+        
+        console.log(`✅ Restored ${restoredCount} active sessions from database`);
+    } catch (error) {
+        console.error('Failed to restore sessions:', error);
+    }
+}
+
 function createSession(userId, clientInfo) {
     const sessionId = generateUUID();
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
     
     sessions.set(sessionId, {
         userId,
@@ -178,8 +205,9 @@ app.post('/auth/register', requireDB, async (req, res) => {
         const sessionId = createSession(userId, clientInfo);
         res.cookie('MAGIC_SESSION', sessionId, { 
             httpOnly: true, 
-            maxAge: 24 * 60 * 60 * 1000,
-            sameSite: 'strict'
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production'
         });
 
         // Log registration

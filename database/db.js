@@ -388,6 +388,16 @@ class Database {
         return await this.run(sql, [userId]);
     }
 
+    async getActiveSessions() {
+        const sql = `
+            SELECT s.*, u.username, u.display_name 
+            FROM sessions s
+            JOIN users u ON s.user_id = u.id
+            WHERE s.is_active = 1 AND s.expires_at > datetime('now')
+        `;
+        return await this.query(sql);
+    }
+
     // === AUDIT LOG METHODS ===
 
     async logAction(userId, action, details = null, ipAddress = null, userAgent = null) {
