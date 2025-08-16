@@ -148,24 +148,19 @@ class StopwatchCore {
             return null;
         }
         
-        // FT-Force: Volle Zeit wird forciert (MMSS Format)
+        // FT-Force: Volle Zeit wird forciert (SSCC Format)
         if (force.mode === 'ft') {
             const target = force.target.toString().replace(/[^0-9]/g, '');
             if (target.length !== 4) return null;
             
-            const minutes = parseInt(target.substring(0, 2), 10);
-            const seconds = parseInt(target.substring(2, 4), 10);
+            // Beispiel: 2443 -> 00:24.43 (24 Sekunden, 43 Centisekunden)
+            const seconds = parseInt(target.substring(0, 2), 10);
+            const centiseconds = parseInt(target.substring(2, 4), 10);
             
-            if (seconds >= 60) return null; // Ungültige Sekunden
+            if (seconds >= 60 || centiseconds >= 100) return null; // Ungültige Werte
             
             // Berechne die forcierte Zeit in Millisekunden
-            const forcedMs = minutes * 60000 + seconds * 1000 + 430; // .43 als Standard
-            
-            // Stelle sicher, dass die forcierte Zeit nicht in der Vergangenheit liegt
-            if (forcedMs < realMs) {
-                // Addiere eine Minute wenn nötig
-                return forcedMs + 60000;
-            }
+            const forcedMs = seconds * 1000 + centiseconds * 10;
             
             return forcedMs;
         }
@@ -332,10 +327,19 @@ class StopwatchCore {
         this.startTime = Date.now();
 
         if (this.lapCounter === 0) {
+            // Erste Mal starten
             this.currentLapStartTime = this.startTime;
             this.lapCounter = 1;
             this.laps.unshift({ number: this.lapCounter, time: '00:00,00', isCurrent: true });
             this.updateLapsDisplay();
+        } else {
+            // Resume - aktuelle Runde Zeit beibehalten
+            if (this.laps.length > 0 && this.laps[0].isCurrent) {
+                // Berechne wie lange die aktuelle Runde vor dem Stop gelaufen ist
+                const currentLapMs = this.timeStringToMs(this.laps[0].time);
+                // Setze neue Start-Zeit für die aktuelle Runde
+                this.currentLapStartTime = this.startTime - currentLapMs;
+            }
         }
 
         this.timerInterval = setInterval(() => this.updateDisplay(), 10);
@@ -472,7 +476,9 @@ class StopwatchCore {
      */
     openManualInput() {
         if (window.ManualInput) {
-            window.ManualInput.open(this);
+            // Finde API-Instanz aus dem globalen Scope
+            const api = window.api || null;
+            window.ManualInput.open(this, api);
         }
     }
 
