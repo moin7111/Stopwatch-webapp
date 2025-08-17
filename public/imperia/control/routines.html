@@ -186,7 +186,7 @@
             <div class="app-grid">
                 <a href="/imperia/tempra/stopwatch.html" class="app-card" id="mainTickCard">
                     <div class="app-icon">⏱️</div>
-                    <div class="app-name">MainTick</div>
+                    <div class="app-name">Tempra</div>
                     <div class="app-status status-active">Verfügbar</div>
                 </a>
                 
@@ -205,7 +205,7 @@
             
             <div class="info-box">
                 <span class="info-icon">ℹ️</span>
-                <strong>MainTick</strong> ist deine professionelle Stoppuhr mit Force-Funktionen. 
+                <strong>Tempra</strong> ist deine professionelle Stoppuhr mit Force-Funktionen. 
                 Perfekt für Zeit-Vorhersagen und kontrollierte Stoppuhr-Effekte.
             </div>
         </div>
@@ -254,8 +254,8 @@
     </div>
     
     <script>
-        // Get user token for MainTick
-        async function getMainTickUrl() {
+        // Get user token for Tempra
+        async function getTempraUrl() {
             try {
                 const response = await fetch('/api/tokens', {
                     credentials: 'include'
@@ -275,10 +275,10 @@
             return '/maintick/stopwatch.html';
         }
         
-        // Update MainTick link with token
+        // Update Tempra link with token
         document.addEventListener('DOMContentLoaded', async () => {
             const mainTickCard = document.getElementById('mainTickCard');
-            const url = await getMainTickUrl();
+            const url = await getTempraUrl();
             mainTickCard.href = url;
         });
         
