@@ -6,9 +6,9 @@ const urlsToCache = [
   '/imperia/control/index.html',
   '/imperia/control/login.html',
   '/imperia/control/menu.html',
-  '/imperia/tempra/stopwatch.html',
-  '/imperia/tempra/login.html',
-  '/imperia/tempra/dashboard.html',
+  '/imperia/control/settings.html',
+  '/imperia/control/routines.html',
+  '/imperia/control/instructions.html',
   '/imperia/manifest.json',
   '/imperia/icon-192x192.png',
   '/imperia/icon-512x512.png'
