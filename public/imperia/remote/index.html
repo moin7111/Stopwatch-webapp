@@ -334,33 +334,8 @@
         
         // Module Content basierend auf Typ
         function getModuleContent(moduleData) {
-            switch(moduleData.type) {
-                case 'card_prediction':
-                    return `
-                        <div style="text-align: center;">
-                            <p>Denken Sie an eine Karte...</p>
-                            <div style="font-size: 120px; margin: 30px 0;">🃏</div>
-                            <p style="color: #666;">Der Zauberer wird Ihre Gedanken lesen</p>
-                        </div>
-                    `;
-                case 'number_magic':
-                    return `
-                        <div style="text-align: center;">
-                            <p>Wählen Sie eine Zahl zwischen 1 und 100</p>
-                            <input type="number" min="1" max="100" style="font-size: 48px; text-align: center; margin: 20px auto;">
-                            <p style="color: #666;">Nur Sie kennen diese Zahl</p>
-                        </div>
-                    `;
-                case 'color_illusion':
-                    return `
-                        <div style="text-align: center;">
-                            <p>Konzentrieren Sie sich auf diese Farbe</p>
-                            <div style="width: 200px; height: 200px; background: ${moduleData.color || '#6c5ce7'}; margin: 20px auto; border-radius: 20px;"></div>
-                        </div>
-                    `;
-                default:
-                    return `<p style="text-align: center;">Modul wird geladen...</p>`;
-            }
+            // Aktuell leer - Module werden später implementiert
+            return `<p style="text-align: center;">Modul-Inhalt wird angezeigt...</p>`;
         }
         
         // Cleanup beim Verlassen
