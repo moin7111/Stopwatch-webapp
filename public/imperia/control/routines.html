@@ -257,6 +257,13 @@
         // Get user token for Tempra
         async function getTempraUrl() {
             try {
+                // Versuche zuerst aus localStorage (falls von Tempra gespeichert)
+                const storedToken = localStorage.getItem('tempra_token');
+                if (storedToken) {
+                    return `/imperia/tempra/stopwatch.html?token=${encodeURIComponent(storedToken)}`;
+                }
+                
+                // Sonst von API holen
                 const response = await fetch('/api/tokens', {
                     credentials: 'include'
                 });
@@ -265,14 +272,17 @@
                     const data = await response.json();
                     if (data.tokens && data.tokens.length > 0) {
                         const token = data.tokens[0].value;
-                        return `/imperia/tempra/stopwatch.html?token=${token}`;
+                        // Speichere für spätere Verwendung
+                        localStorage.setItem('tempra_token', token);
+                        return `/imperia/tempra/stopwatch.html?token=${encodeURIComponent(token)}`;
                     }
                 }
             } catch (error) {
                 console.error('Error getting token:', error);
             }
             
-            return '/imperia/tempra/stopwatch.html';
+            // Default - leitet zu Login weiter wenn kein Token
+            return '/imperia/tempra/login.html';
         }
         
         // Update Tempra link with token
