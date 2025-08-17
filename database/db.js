@@ -101,7 +101,7 @@ class Database {
     async createUser(userData) {
         const { username, displayName, email, password } = userData;
         const salt = crypto.randomBytes(16).toString('hex');
-        const passwordHash = crypto.scryptSync(password, salt, 64).toString('hex');
+        const passwordHash = crypto.scryptSync(String(password), salt, 64).toString('hex');
 
         const sql = `
             INSERT INTO users (username, display_name, email, password_hash, salt)
@@ -432,148 +432,94 @@ class Database {
         return await this.query(sql, params);
     }
 
-    // ============= PRESETS MANAGEMENT =============
-    
-    async createPreset(userId, name, description, forceType, forceSequence, conditions) {
+    // === REMOTE SESSIONS METHODS ===
+
+    async createOrUpdateRemoteSession(userId, token) {
         const sql = `
-            INSERT INTO presets (user_id, name, description, force_type, force_sequence, conditions)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO remote_sessions 
+            (user_id, token, last_active, created_at)
+            VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         `;
-        const result = await this.run(sql, [
+        return await this.run(sql, [userId, token]);
+    }
+
+    async getRemoteSession(token) {
+        const sql = `
+            SELECT rs.*, u.username, u.display_name 
+            FROM remote_sessions rs
+            JOIN users u ON rs.user_id = u.id
+            WHERE rs.token = ?
+        `;
+        return await this.get(sql, [token]);
+    }
+
+    async updateRemoteSessionActivity(token) {
+        const sql = 'UPDATE remote_sessions SET last_active = CURRENT_TIMESTAMP WHERE token = ?';
+        return await this.run(sql, [token]);
+    }
+
+    async getActiveRemoteSessions(userId = null) {
+        let sql = `
+            SELECT rs.*, u.username, u.display_name 
+            FROM remote_sessions rs
+            JOIN users u ON rs.user_id = u.id
+        `;
+        let params = [];
+        
+        if (userId) {
+            sql += ' WHERE rs.user_id = ?';
+            params.push(userId);
+        }
+        
+        sql += ' ORDER BY rs.last_active DESC';
+        return await this.query(sql, params);
+    }
+
+    // === ACTIVE MODULES METHODS ===
+
+    async getActiveModule(userId) {
+        const sql = `
+            SELECT * FROM active_modules 
+            WHERE user_id = ? 
+            ORDER BY activated_at DESC 
+            LIMIT 1
+        `;
+        return await this.get(sql, [userId]);
+    }
+
+    async activateModule(userId, moduleData) {
+        const { moduleId, moduleName, moduleType, moduleIcon, moduleDescription, moduleData: data } = moduleData;
+        
+        const sql = `
+            INSERT OR REPLACE INTO active_modules 
+            (user_id, module_id, module_name, module_type, module_icon, module_description, module_data, activated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        `;
+        
+        return await this.run(sql, [
             userId, 
-            name, 
-            description, 
-            forceType, 
-            JSON.stringify(forceSequence), 
-            JSON.stringify(conditions)
+            moduleId, 
+            moduleName, 
+            moduleType, 
+            moduleIcon || null, 
+            moduleDescription || null,
+            data ? JSON.stringify(data) : null
         ]);
-        return result.lastID;
     }
 
-    async getPresets(userId, isActive = true) {
+    async deactivateModule(userId) {
+        const sql = 'DELETE FROM active_modules WHERE user_id = ?';
+        return await this.run(sql, [userId]);
+    }
+
+    async getAllActiveModules() {
         const sql = `
-            SELECT * FROM presets 
-            WHERE user_id = ? AND is_active = ?
-            ORDER BY name ASC
+            SELECT am.*, u.username, u.display_name 
+            FROM active_modules am
+            JOIN users u ON am.user_id = u.id
+            ORDER BY am.activated_at DESC
         `;
-        const presets = await this.query(sql, [userId, isActive ? 1 : 0]);
-        
-        // Parse JSON fields
-        return presets.map(preset => ({
-            ...preset,
-            force_sequence: JSON.parse(preset.force_sequence || '[]'),
-            conditions: JSON.parse(preset.conditions || '{}')
-        }));
-    }
-
-    async getPresetByName(userId, name) {
-        const sql = `SELECT * FROM presets WHERE user_id = ? AND name = ? AND is_active = 1`;
-        const preset = await this.queryOne(sql, [userId, name]);
-        
-        if (preset) {
-            preset.force_sequence = JSON.parse(preset.force_sequence || '[]');
-            preset.conditions = JSON.parse(preset.conditions || '{}');
-        }
-        
-        return preset;
-    }
-
-    async updatePreset(presetId, updates) {
-        const fields = [];
-        const values = [];
-        
-        if (updates.name !== undefined) {
-            fields.push('name = ?');
-            values.push(updates.name);
-        }
-        if (updates.description !== undefined) {
-            fields.push('description = ?');
-            values.push(updates.description);
-        }
-        if (updates.force_type !== undefined) {
-            fields.push('force_type = ?');
-            values.push(updates.force_type);
-        }
-        if (updates.force_sequence !== undefined) {
-            fields.push('force_sequence = ?');
-            values.push(JSON.stringify(updates.force_sequence));
-        }
-        if (updates.conditions !== undefined) {
-            fields.push('conditions = ?');
-            values.push(JSON.stringify(updates.conditions));
-        }
-        if (updates.is_active !== undefined) {
-            fields.push('is_active = ?');
-            values.push(updates.is_active ? 1 : 0);
-        }
-        
-        if (fields.length === 0) return;
-        
-        values.push(presetId);
-        const sql = `UPDATE presets SET ${fields.join(', ')} WHERE id = ?`;
-        await this.run(sql, values);
-    }
-
-    async deletePreset(presetId) {
-        const sql = `UPDATE presets SET is_active = 0 WHERE id = ?`;
-        await this.run(sql, [presetId]);
-    }
-
-    // ============= MANUAL INPUT HISTORY =============
-    
-    async createManualInputHistory(userId, tokenId, forceType, forceValues) {
-        const sql = `
-            INSERT INTO manual_input_history (user_id, token_id, force_type, force_values)
-            VALUES (?, ?, ?, ?)
-        `;
-        const result = await this.run(sql, [
-            userId,
-            tokenId,
-            forceType,
-            JSON.stringify(forceValues)
-        ]);
-        return result.lastID;
-    }
-
-    async getManualInputHistory(userId, tokenId, limit = 10) {
-        const sql = `
-            SELECT * FROM manual_input_history 
-            WHERE user_id = ? AND token_id = ?
-            ORDER BY created_at DESC
-            LIMIT ?
-        `;
-        const history = await this.query(sql, [userId, tokenId, limit]);
-        
-        return history.map(item => ({
-            ...item,
-            force_values: JSON.parse(item.force_values || '[]')
-        }));
-    }
-
-    async incrementManualInputAppliedCount(historyId) {
-        const sql = `UPDATE manual_input_history SET applied_count = applied_count + 1 WHERE id = ?`;
-        await this.run(sql, [historyId]);
-    }
-
-    // ============= FUTURE CONNECTIONS =============
-    // Placeholder for future connection methods
-
-    // ============= ENHANCED FORCE QUEUE =============
-    
-    async createEnhancedForce(tokenId, forceId, forceData, forceType, conditions = null, presetId = null) {
-        const sql = `
-            INSERT INTO force_queue (token_id, force_id, force_data, force_type, conditions, preset_id)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `;
-        const result = await this.run(sql, [
-            tokenId,
-            forceId,
-            JSON.stringify(forceData),
-            forceType,
-            conditions ? JSON.stringify(conditions) : null,
-            presetId
-        ]);
-        return result.lastID;
+        return await this.query(sql);
     }
 
     // Close database connection

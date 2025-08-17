@@ -57,6 +57,13 @@ npm-debug.log*
 yarn-debug.log*
 lerna-debug.log*
 
+# === LOGS ===
+# Server logs (Contains runtime information)
+logs/
+*.log
+*.log.*
+logs/*.log
+
 # Runtime data
 pids/
 *.pid
