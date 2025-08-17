@@ -7,10 +7,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#000000" />
-    <title>MainTick - Dashboard</title>
+    <title>Tempra - Dashboard</title>
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/maintick/manifest.json" />
+    <link rel="manifest" href="/imperia/manifest.json" />
     
     <!-- Icons -->
     <link rel="apple-touch-icon" href="/icon-192x192.png" />
@@ -37,8 +37,8 @@
     <section style="margin-top:24px;">
       <h2>🔗 Schnellzugriffe</h2>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin:16px 0;">
-        <button id="openModulTick" style="background:#30D058;">🎯 ModulTick öffnen</button>
-        <button id="openMainTickStopwatch" style="background:#FF9500;">⏱️ MainTick Stoppuhr öffnen</button>
+        <button id="openModulTick" style="background:#30D058;">🎯 Tempral öffnen</button>
+        <button id="openMainTickStopwatch" style="background:#FF9500;">⏱️ Tempra Stoppuhr öffnen</button>
       </div>
     </section>
 
@@ -126,17 +126,17 @@ Content-Type: application/json<br><br>
 
   document.getElementById('logoutBtn').addEventListener('click', async ()=>{
     await fetch('/auth/logout', { method:'POST' });
-    location.href = '/maintick/login.html';
+    location.href = '/imperia/tempra/login.html';
   });
 
   document.getElementById('openModulTick').addEventListener('click', ()=> {
     if (!currentToken) return alert('Token noch nicht geladen');
-    window.open(`/modultick.html?token=${encodeURIComponent(currentToken)}`, '_blank');
+    window.open(`/imperia-modul/tempral.html?token=${encodeURIComponent(currentToken)}`, '_blank');
   });
 
   document.getElementById('openMainTickStopwatch').addEventListener('click', ()=> {
     if (!currentToken) return alert('Token noch nicht geladen');
-    window.open(`/maintick/stopwatch.html?token=${encodeURIComponent(currentToken)}`, '_blank');
+    window.open(`/imperia/tempra/stopwatch.html?token=${encodeURIComponent(currentToken)}`, '_blank');
   });
 
   // Init
