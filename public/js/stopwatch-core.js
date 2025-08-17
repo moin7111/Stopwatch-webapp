@@ -11,6 +11,7 @@ class StopwatchCore {
         this.lapCounter = 0;
         this.laps = [];
         this.currentLapStartTime = 0;
+        this.currentLapElapsed = 0; // Zeit die in der aktuellen Runde bereits vergangen ist
         
         // Force queue und Einstellungen
         this.forceQueue = [];
@@ -329,17 +330,13 @@ class StopwatchCore {
         if (this.lapCounter === 0) {
             // Erste Mal starten
             this.currentLapStartTime = this.startTime;
+            this.currentLapElapsed = 0;
             this.lapCounter = 1;
             this.laps.unshift({ number: this.lapCounter, time: '00:00,00', isCurrent: true });
             this.updateLapsDisplay();
         } else {
-            // Resume - aktuelle Runde Zeit beibehalten
-            if (this.laps.length > 0 && this.laps[0].isCurrent) {
-                // Berechne wie lange die aktuelle Runde vor dem Stop gelaufen ist
-                const currentLapMs = this.timeStringToMs(this.laps[0].time);
-                // Setze neue Start-Zeit für die aktuelle Runde
-                this.currentLapStartTime = this.startTime - currentLapMs;
-            }
+            // Resume nach Stop - Setze die Startzeit so, dass die verstrichene Zeit berücksichtigt wird
+            this.currentLapStartTime = this.startTime - this.currentLapElapsed;
         }
 
         this.timerInterval = setInterval(() => this.updateDisplay(), 10);
@@ -367,16 +364,20 @@ class StopwatchCore {
 
         if (this.laps.length > 0 && this.laps[0].isCurrent) {
             // Bei Force in der Runde
+            let lapDuration;
             if (forcedMs !== null) {
                 // Berechne die Differenz und passe die Rundenzeit an
-                const lapDuration = now - this.currentLapStartTime;
+                lapDuration = now - this.currentLapStartTime;
                 const adjustment = forcedMs - realTotal;
                 const adjustedLapTime = lapDuration + adjustment;
                 this.laps[0].time = this.formatTime(adjustedLapTime);
+                this.currentLapElapsed = adjustedLapTime; // Speichere für Resume
             } else {
-                this.laps[0].time = this.formatTime(now - this.currentLapStartTime);
+                lapDuration = now - this.currentLapStartTime;
+                this.laps[0].time = this.formatTime(lapDuration);
+                this.currentLapElapsed = lapDuration; // Speichere für Resume
             }
-            this.laps[0].isCurrent = false;
+            // Runde bleibt aktiv für Resume!
             this.updateLapsDisplay();
         }
 
@@ -395,6 +396,7 @@ class StopwatchCore {
         this.lapCounter = 0;
         this.laps = [];
         this.currentLapStartTime = 0;
+        this.currentLapElapsed = 0;
         clearInterval(this.timerInterval);
         this.timeDisplay.textContent = '00:00,00';
 
@@ -430,6 +432,7 @@ class StopwatchCore {
 
         this.lapCounter++;
         this.currentLapStartTime = now;
+        this.currentLapElapsed = 0; // Reset für neue Runde
         this.laps.unshift({ number: this.lapCounter, time: '00:00,00', isCurrent: true });
         this.updateLapsDisplay();
     }

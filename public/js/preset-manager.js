@@ -306,8 +306,32 @@ class PresetManager {
         this.stopwatch.updateStatus(`Preset "${preset.name}" aktiviert`);
         this.close();
     }
+    
+    /**
+     * Zeigt Presets im Read-Only Modus für Tempral
+     */
+    showReadOnly() {
+        this.loadPresets();
+        this.showPresetsList();
+        
+        // Verstecke Create Button für Tempral
+        const createBtn = this.presetsModal.querySelector('button[onclick*="showCreateModal"]');
+        if (createBtn) {
+            createBtn.style.display = 'none';
+        }
+        
+        // Verstecke Löschen-Buttons
+        this.presetsModal.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.style.display = 'none';
+        });
+    }
 }
 
 // Singleton Instance
 PresetManager.instance = new PresetManager();
-window.PresetManager = PresetManager.instance;
+window.PresetManager = PresetManager;
+PresetManager.openReadOnly = function(stopwatch, api) {
+    PresetManager.instance.stopwatch = stopwatch;
+    PresetManager.instance.api = api;
+    PresetManager.instance.showReadOnly();
+};

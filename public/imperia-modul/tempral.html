@@ -70,7 +70,9 @@
 
     <!-- Scripts -->
     <script src="/js/stopwatch-core.js?v=2024011501"></script>
+    <script src="/js/manual-input.js?v=2024011501"></script>
     <script src="/js/stopwatch-api.js?v=2024011501"></script>
+    <script src="/js/preset-manager.js?v=2024011501"></script>
     <script>
         // Warte bis DOM geladen ist
         document.addEventListener('DOMContentLoaded', function() {
@@ -81,10 +83,14 @@
             let api = null;
 
             // UI-Elemente initialisieren (nur Anzeige)
+            // Erstelle dummy buttons für die Initialisierung
+            const dummyButton = document.createElement('button');
+            dummyButton.style.display = 'none';
+            
             stopwatch.initUI({
                 timeDisplay: document.getElementById('timeDisplay'),
-                leftButton: null, // Keine Buttons in Tempral
-                rightButton: null,
+                leftButton: dummyButton, // Dummy für Initialisierung
+                rightButton: dummyButton, // Dummy für Initialisierung
                 lapsContainer: document.getElementById('lapsContainer'),
                 statusText: document.getElementById('statusText')
             });
@@ -108,8 +114,27 @@
                 stopwatch.updateStatus('Kein Token - bitte URL mit ?token=XXX aufrufen');
             }
 
-            // Navigation deaktivieren
-            document.querySelectorAll('.nav-item').forEach(item => {
+            // Triple-Click auf Wecker für Preset-Auswahl
+            let alarmClickCount = 0;
+            let alarmClickTimer = null;
+            document.getElementById('alarmNavItem').addEventListener('click', (e) => {
+                e.preventDefault();
+                alarmClickCount++;
+                if (alarmClickCount === 3) {
+                    if (window.PresetManager) {
+                        // Tempral kann nur Presets auswählen, nicht bearbeiten
+                        window.PresetManager.openReadOnly(stopwatch, api);
+                    } else {
+                        stopwatch.updateStatus('Preset Manager nicht verfügbar');
+                    }
+                    alarmClickCount = 0;
+                }
+                clearTimeout(alarmClickTimer);
+                alarmClickTimer = setTimeout(() => alarmClickCount = 0, 500);
+            });
+            
+            // Andere Navigation deaktivieren
+            document.querySelectorAll('.nav-item:not(#alarmNavItem)').forEach(item => {
                 item.addEventListener('click', (e) => {
                     e.preventDefault();
                     stopwatch.updateStatus('Navigation in Tempral nicht verfügbar');
