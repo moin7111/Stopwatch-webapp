@@ -166,6 +166,7 @@ CREATE TABLE IF NOT EXISTS remote_sessions (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     ip_address VARCHAR(45),
     user_agent TEXT,
+    UNIQUE(user_id, token),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (token) REFERENCES tokens(token) ON DELETE CASCADE
 );
@@ -173,7 +174,7 @@ CREATE TABLE IF NOT EXISTS remote_sessions (
 -- Active modules table for remote control
 CREATE TABLE IF NOT EXISTS active_modules (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL UNIQUE,
     module_id VARCHAR(50) NOT NULL,
     module_name VARCHAR(100) NOT NULL,
     module_type VARCHAR(50) NOT NULL,

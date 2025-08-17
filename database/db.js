@@ -432,6 +432,96 @@ class Database {
         return await this.query(sql, params);
     }
 
+    // === REMOTE SESSIONS METHODS ===
+
+    async createOrUpdateRemoteSession(userId, token) {
+        const sql = `
+            INSERT OR REPLACE INTO remote_sessions 
+            (user_id, token, last_active, created_at)
+            VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        `;
+        return await this.run(sql, [userId, token]);
+    }
+
+    async getRemoteSession(token) {
+        const sql = `
+            SELECT rs.*, u.username, u.display_name 
+            FROM remote_sessions rs
+            JOIN users u ON rs.user_id = u.id
+            WHERE rs.token = ?
+        `;
+        return await this.get(sql, [token]);
+    }
+
+    async updateRemoteSessionActivity(token) {
+        const sql = 'UPDATE remote_sessions SET last_active = CURRENT_TIMESTAMP WHERE token = ?';
+        return await this.run(sql, [token]);
+    }
+
+    async getActiveRemoteSessions(userId = null) {
+        let sql = `
+            SELECT rs.*, u.username, u.display_name 
+            FROM remote_sessions rs
+            JOIN users u ON rs.user_id = u.id
+        `;
+        let params = [];
+        
+        if (userId) {
+            sql += ' WHERE rs.user_id = ?';
+            params.push(userId);
+        }
+        
+        sql += ' ORDER BY rs.last_active DESC';
+        return await this.query(sql, params);
+    }
+
+    // === ACTIVE MODULES METHODS ===
+
+    async getActiveModule(userId) {
+        const sql = `
+            SELECT * FROM active_modules 
+            WHERE user_id = ? 
+            ORDER BY activated_at DESC 
+            LIMIT 1
+        `;
+        return await this.get(sql, [userId]);
+    }
+
+    async activateModule(userId, moduleData) {
+        const { moduleId, moduleName, moduleType, moduleIcon, moduleDescription, moduleData: data } = moduleData;
+        
+        const sql = `
+            INSERT OR REPLACE INTO active_modules 
+            (user_id, module_id, module_name, module_type, module_icon, module_description, module_data, activated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        `;
+        
+        return await this.run(sql, [
+            userId, 
+            moduleId, 
+            moduleName, 
+            moduleType, 
+            moduleIcon || null, 
+            moduleDescription || null,
+            data ? JSON.stringify(data) : null
+        ]);
+    }
+
+    async deactivateModule(userId) {
+        const sql = 'DELETE FROM active_modules WHERE user_id = ?';
+        return await this.run(sql, [userId]);
+    }
+
+    async getAllActiveModules() {
+        const sql = `
+            SELECT am.*, u.username, u.display_name 
+            FROM active_modules am
+            JOIN users u ON am.user_id = u.id
+            ORDER BY am.activated_at DESC
+        `;
+        return await this.query(sql);
+    }
+
     // Close database connection
     close() {
         if (this.db) {

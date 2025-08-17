@@ -919,10 +919,7 @@ app.get('/api/remote/validate/:token', requireDB, async (req, res) => {
         }
         
         // Create or update remote session
-        await db.run(`
-            INSERT OR REPLACE INTO remote_sessions (user_id, token, last_active, created_at)
-            VALUES (?, ?, datetime('now'), datetime('now'))
-        `, [userToken.user_id, token]);
+        await db.createOrUpdateRemoteSession(userToken.user_id, token);
         
         res.json({ 
             success: true, 
@@ -947,12 +944,7 @@ app.get('/api/remote/module/:token', requireDB, async (req, res) => {
         }
         
         // Get active module for user
-        const result = await db.get(`
-            SELECT * FROM active_modules 
-            WHERE user_id = ? 
-            ORDER BY activated_at DESC 
-            LIMIT 1
-        `, [userToken.user_id]);
+        const result = await db.getActiveModule(userToken.user_id);
         
         if (result) {
             res.json({ 
@@ -988,17 +980,17 @@ app.post('/api/remote/module/:token', requireDB, async (req, res) => {
         
         if (moduleId) {
             // Activate module
-            await db.run(`
-                INSERT OR REPLACE INTO active_modules 
-                (user_id, module_id, module_name, module_type, module_icon, module_description, module_data, activated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
-            `, [userToken.user_id, moduleId, moduleName, moduleType, moduleIcon, moduleDescription, 
-                moduleData ? JSON.stringify(moduleData) : null]);
+            await db.activateModule(userToken.user_id, {
+                moduleId,
+                moduleName,
+                moduleType,
+                moduleIcon,
+                moduleDescription,
+                moduleData
+            });
         } else {
             // Deactivate module
-            await db.run(`
-                DELETE FROM active_modules WHERE user_id = ?
-            `, [userToken.user_id]);
+            await db.deactivateModule(userToken.user_id);
         }
         
         res.json({ success: true });
