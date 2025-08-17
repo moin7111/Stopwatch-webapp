@@ -127,6 +127,10 @@
             console.log('PresetManager:', typeof window.PresetManager);
             console.log('StopwatchAPI:', typeof window.StopwatchAPI);
             
+            // Check for remote mode
+            const params = new URLSearchParams(window.location.search);
+            const isRemoteMode = params.get('mode') === 'remote';
+            
             // Initialisierung
             const stopwatch = new StopwatchCore();
             let api = null;
@@ -140,24 +144,34 @@
                 lapsContainer: document.getElementById('lapsContainer'),
                 statusText: document.getElementById('statusText')
             });
+            
+            // In Remote Mode: Disable controls
+            if (isRemoteMode) {
+                document.getElementById('leftButton').style.display = 'none';
+                document.getElementById('rightButton').style.display = 'none';
+                document.querySelector('.dots').style.display = 'none';
+                stopwatch.updateStatus('Remote Mode - Nur Anzeige');
+            }
 
-            // Triple-Click auf Wecker für Presets (nur Tempra)
-            let alarmClickCount = 0;
-            let alarmClickTimer = null;
-                        document.getElementById('alarmNavItem').addEventListener('click', () => {
-                alarmClickCount++;
-                if (alarmClickCount === 3) {
-                    if (window.PresetManager && window.PresetManager.instance) {
-                        window.PresetManager.open(stopwatch, api);
-                    } else {
-                        console.error('PresetManager not found');
-                        stopwatch.updateStatus('Preset Manager nicht verfügbar');
+            // Triple-Click auf Wecker für Presets (nur im normalen Modus)
+            if (!isRemoteMode) {
+                let alarmClickCount = 0;
+                let alarmClickTimer = null;
+                document.getElementById('alarmNavItem').addEventListener('click', () => {
+                    alarmClickCount++;
+                    if (alarmClickCount === 3) {
+                        if (window.PresetManager && window.PresetManager.instance) {
+                            window.PresetManager.open(stopwatch, api);
+                        } else {
+                            console.error('PresetManager not found');
+                            stopwatch.updateStatus('Preset Manager nicht verfügbar');
+                        }
+                        alarmClickCount = 0;
                     }
-                    alarmClickCount = 0;
-                }
-                clearTimeout(alarmClickTimer);
-                alarmClickTimer = setTimeout(() => alarmClickCount = 0, 500);
-            });
+                    clearTimeout(alarmClickTimer);
+                    alarmClickTimer = setTimeout(() => alarmClickCount = 0, 500);
+                });
+            }
 
             // Triple-Click auf Weltuhr für Routinen-Bereich
             let worldClockClickCount = 0;

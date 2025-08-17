@@ -255,8 +255,8 @@
         </div>
         
         <!-- Tempra Tutorial -->
-        <div class="instruction-section collapsed" id="maintick-tutorial">
-            <div class="section-header" onclick="toggleSection('maintick-tutorial')">
+        <div class="instruction-section collapsed" id="tempra-tutorial">
+            <div class="section-header" onclick="toggleSection('tempra-tutorial')">
                 <span class="section-icon">⏱️</span>
                 <h2 class="section-title">Tempra Stoppuhr</h2>
                 <span class="expand-icon">▼</span>
@@ -321,8 +321,8 @@
         </div>
         
         <!-- Tempral Zuschauer -->
-        <div class="instruction-section collapsed" id="modultick-tutorial">
-            <div class="section-header" onclick="toggleSection('modultick-tutorial')">
+        <div class="instruction-section collapsed" id="tempra-remote-tutorial">
+            <div class="section-header" onclick="toggleSection('tempra-remote-tutorial')">
                 <span class="section-icon">👥</span>
                 <h2 class="section-title">Tempral für Zuschauer</h2>
                 <span class="expand-icon">▼</span>
@@ -332,9 +332,9 @@
                     <div class="step-number">1</div>
                     <div class="step-title">URL generieren</div>
                     <div class="step-content">
-                        Gehe zu Einstellungen → Module URLs. Dort findest du den Link für ModulTick mit deinem Token:
+                        Gehe zu Einstellungen → Module URLs. Dort findest du den Link für Tempra Remote mit deinem Token:
                         <div class="code-block">
-                            https://deine-domain.com/modultick.html?token=XXXXXX
+                            https://deine-domain.com/imperia/tempra/stopwatch.html?token=XXXXXX&mode=remote
                         </div>
                     </div>
                 </div>
@@ -375,7 +375,7 @@
                     <div class="step-content">
                         Du kannst Forces auch über die API senden:
                         <div class="code-block">
-POST /api/stopwatch/maintick/force/TOKEN
+POST /api/stopwatch/tempra/force/TOKEN
 {
   "force": {
     "mode": "ms",
@@ -393,9 +393,9 @@ POST /api/stopwatch/maintick/force/TOKEN
                     <div class="step-content">
                         Verwende mehrere Geräte gleichzeitig:
                         <ul style="margin-left: 20px; margin-top: 8px;">
-                            <li>MainTick auf deinem Haupt-Gerät</li>
-                            <li>ModulTick auf Zuschauer-Geräten</li>
-                            <li>Backup-MainTick auf einem zweiten Gerät</li>
+                            <li>Tempra auf deinem Haupt-Gerät</li>
+                            <li>Tempra Remote auf Zuschauer-Geräten</li>
+                            <li>Backup-Tempra auf einem zweiten Gerät</li>
                         </ul>
                     </div>
                 </div>

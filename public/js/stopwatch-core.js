@@ -1,5 +1,5 @@
 /**
- * Stoppuhr Core - Kern-Funktionalität für MainTick und ModulTick
+ * Stoppuhr Core - Kern-Funktionalität für Tempra
  */
 
 class StopwatchCore {

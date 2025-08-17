@@ -184,7 +184,7 @@
             </div>
             
             <div class="app-grid">
-                <a href="/imperia/tempra/stopwatch.html" class="app-card" id="mainTickCard">
+                <a href="/imperia/tempra/stopwatch.html" class="app-card" id="tempraCard">
                     <div class="app-icon">⏱️</div>
                     <div class="app-name">Tempra</div>
                     <div class="app-status status-active">Verfügbar</div>
@@ -277,9 +277,9 @@
         
         // Update Tempra link with token
         document.addEventListener('DOMContentLoaded', async () => {
-            const mainTickCard = document.getElementById('mainTickCard');
+            const tempraCard = document.getElementById('tempraCard');
             const url = await getTempraUrl();
-            mainTickCard.href = url;
+            tempraCard.href = url;
         });
         
         // Add touch feedback

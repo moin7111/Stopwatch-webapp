@@ -1,11 +1,11 @@
 /**
- * Stopwatch API Module - Kommunikation zwischen MainTick, ModulTick und Server
+ * Stopwatch API Module - Kommunikation zwischen Tempra und Server
  */
 
 class StopwatchAPI {
-    constructor(token, type = 'modultick') {
+    constructor(token, type = 'tempra') {
         this.token = token;
-        this.type = type; // 'tempra', 'maintick' oder 'modultick'
+        this.type = type; // 'tempra'
         this.polling = false;
         this.pollInterval = 400;
         this.apiBase = '';
@@ -93,13 +93,13 @@ class StopwatchAPI {
     }
 
     /**
-     * Sendet Force an Server (nur MainTick/Tempra)
+     * Sendet Force an Server
      */
     async sendForce(force) {
-        if (this.type !== 'maintick' && this.type !== 'tempra') return;
+        // Alle Tempra-Instanzen können Force senden
 
         try {
-            const response = await fetch(`${this.apiBase}/api/stopwatch/maintick/force/${encodeURIComponent(this.token)}`, {
+            const response = await fetch(`${this.apiBase}/api/stopwatch/tempra/force/${encodeURIComponent(this.token)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ force })
@@ -155,10 +155,10 @@ class StopwatchAPI {
     }
 
     /**
-     * Speichert Preset (nur MainTick/Tempra)
+     * Speichert Preset
      */
     async savePreset(preset) {
-        if (this.type !== 'maintick' && this.type !== 'tempra') return false;
+        // Alle Tempra-Instanzen können Presets speichern
 
         try {
             const response = await fetch(`${this.apiBase}/api/stopwatch/preset`, {
@@ -195,18 +195,18 @@ class StopwatchAPI {
     }
 
     /**
-     * Verbindet MainTick/Tempra mit ModulTick
+     * Verbindet zwei Tempra-Instanzen
      */
-    async connectToModulTick(modulTickToken) {
-        if (this.type !== 'maintick' && this.type !== 'tempra') return;
+    async connectToTempra(tempraToken) {
+        // Verbinde mit einer anderen Tempra-Instanz
 
         try {
             const response = await fetch(`${this.apiBase}/api/stopwatch/connect`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    mainTickToken: this.token,
-                    modulTickToken: modulTickToken
+                    primaryToken: this.token,
+                    secondaryToken: tempraToken
                 })
             });
             
@@ -280,7 +280,7 @@ class StopwatchAPI {
      * Löscht ein Preset
      */
     async deletePreset(presetName) {
-        if (this.type !== 'maintick' && this.type !== 'tempra') return false;
+        // Alle Tempra-Instanzen können Presets löschen
 
         try {
             const response = await fetch(`${this.apiBase}/api/stopwatch/preset/${encodeURIComponent(presetName)}`, {
