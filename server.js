@@ -155,6 +155,11 @@ app.get('/', (req, res) => {
     res.redirect(301, '/imperia/control/settings.html');
 });
 
+// Remote App Route - serves the same HTML for all token URLs
+app.get('/imperia/remote/:token', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/imperia/remote/index.html'));
+});
+
 // Alternative route for PWA
 app.get('/app', (req, res) => {
     res.redirect(301, '/imperia/control/settings.html');
@@ -890,6 +895,109 @@ app.post('/api/manual-input/:token', requireDB, async (req, res) => {
 // === API ENDPOINTS ===
 
 // Placeholder for future API endpoints
+
+// === REMOTE API ENDPOINTS ===
+
+// Validate remote access token
+app.get('/api/remote/validate/:token', requireDB, async (req, res) => {
+    try {
+        const { token } = req.params;
+        
+        // Find user by token
+        const userToken = await db.getToken(token);
+        if (!userToken) {
+            return res.status(401).json({ error: 'Invalid token' });
+        }
+        
+        // Create or update remote session
+        await db.run(`
+            INSERT OR REPLACE INTO remote_sessions (user_id, token, last_active, created_at)
+            VALUES (?, ?, datetime('now'), datetime('now'))
+        `, [userToken.user_id, token]);
+        
+        res.json({ 
+            success: true, 
+            userId: userToken.user_id,
+            message: 'Remote session established' 
+        });
+    } catch (error) {
+        console.error('Remote validation error:', error);
+        res.status(500).json({ error: 'Failed to validate remote access' });
+    }
+});
+
+// Get active module for remote
+app.get('/api/remote/module/:token', requireDB, async (req, res) => {
+    try {
+        const { token } = req.params;
+        
+        // Verify token
+        const userToken = await db.getToken(token);
+        if (!userToken) {
+            return res.status(401).json({ error: 'Invalid token' });
+        }
+        
+        // Get active module for user
+        const result = await db.get(`
+            SELECT * FROM active_modules 
+            WHERE user_id = ? 
+            ORDER BY activated_at DESC 
+            LIMIT 1
+        `, [userToken.user_id]);
+        
+        if (result) {
+            res.json({ 
+                activeModule: {
+                    id: result.module_id,
+                    name: result.module_name,
+                    type: result.module_type,
+                    icon: result.module_icon,
+                    description: result.module_description,
+                    data: result.module_data ? JSON.parse(result.module_data) : null
+                }
+            });
+        } else {
+            res.json({ activeModule: null });
+        }
+    } catch (error) {
+        console.error('Get remote module error:', error);
+        res.status(500).json({ error: 'Failed to get active module' });
+    }
+});
+
+// Set active module (called from Control app)
+app.post('/api/remote/module/:token', requireDB, async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { moduleId, moduleName, moduleType, moduleIcon, moduleDescription, moduleData } = req.body;
+        
+        // Verify token
+        const userToken = await db.getToken(token);
+        if (!userToken) {
+            return res.status(401).json({ error: 'Invalid token' });
+        }
+        
+        if (moduleId) {
+            // Activate module
+            await db.run(`
+                INSERT OR REPLACE INTO active_modules 
+                (user_id, module_id, module_name, module_type, module_icon, module_description, module_data, activated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            `, [userToken.user_id, moduleId, moduleName, moduleType, moduleIcon, moduleDescription, 
+                moduleData ? JSON.stringify(moduleData) : null]);
+        } else {
+            // Deactivate module
+            await db.run(`
+                DELETE FROM active_modules WHERE user_id = ?
+            `, [userToken.user_id]);
+        }
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Set remote module error:', error);
+        res.status(500).json({ error: 'Failed to set active module' });
+    }
+});
 
 // === HEALTH & STATUS ===
 

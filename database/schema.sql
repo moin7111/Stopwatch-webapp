@@ -154,3 +154,49 @@ SELECT 1, 'stopwatch', 'default_precision', '10' WHERE EXISTS (SELECT 1 FROM use
 
 INSERT OR IGNORE INTO webapp_settings (user_id, app_type, setting_key, setting_value) 
 SELECT 1, 'stopwatch', 'auto_lap_count', '0' WHERE EXISTS (SELECT 1 FROM users WHERE id = 1);
+
+-- Remote functionality tables for Imperia Magic System
+
+-- Remote sessions for tracking connected remote devices
+CREATE TABLE IF NOT EXISTS remote_sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    token VARCHAR(10) NOT NULL,
+    last_active DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (token) REFERENCES tokens(token) ON DELETE CASCADE
+);
+
+-- Active modules table for remote control
+CREATE TABLE IF NOT EXISTS active_modules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    module_id VARCHAR(50) NOT NULL,
+    module_name VARCHAR(100) NOT NULL,
+    module_type VARCHAR(50) NOT NULL,
+    module_icon VARCHAR(10),
+    module_description TEXT,
+    module_data JSON,
+    activated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Module interaction logs
+CREATE TABLE IF NOT EXISTS module_interactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    module_id VARCHAR(50) NOT NULL,
+    interaction_type VARCHAR(50) NOT NULL,
+    interaction_data JSON,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Indexes for remote functionality
+CREATE INDEX IF NOT EXISTS idx_remote_sessions_user ON remote_sessions(user_id, last_active);
+CREATE INDEX IF NOT EXISTS idx_remote_sessions_token ON remote_sessions(token);
+CREATE INDEX IF NOT EXISTS idx_active_modules_user ON active_modules(user_id, activated_at);
+CREATE INDEX IF NOT EXISTS idx_module_interactions_user ON module_interactions(user_id, created_at);

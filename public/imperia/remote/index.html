@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1a0033">
+    <title>Imperia Remote</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0033 100%);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        .remote-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .remote-header {
+            background: rgba(26, 26, 26, 0.9);
+            padding: 15px 20px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(108, 92, 231, 0.1);
+        }
+        
+        .remote-header h1 {
+            font-size: 24px;
+            background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #00b894;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #00b894;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        .remote-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .waiting-screen {
+            text-align: center;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .magic-icon {
+            font-size: 80px;
+            margin-bottom: 30px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        
+        .waiting-screen h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #f0f0f0;
+        }
+        
+        .waiting-screen p {
+            font-size: 16px;
+            color: #999;
+            margin-bottom: 30px;
+        }
+        
+        .pulse-ring {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .pulse-ring::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(108, 92, 231, 0.4) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: expand 2s ease-out infinite;
+        }
+        
+        @keyframes expand {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+        
+        .module-container {
+            background: rgba(26, 26, 26, 0.9);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .module-container.active {
+            display: block;
+        }
+        
+        .module-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .module-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        .module-content {
+            margin-top: 20px;
+        }
+        
+        .error-screen {
+            text-align: center;
+            color: #d63031;
+        }
+        
+        .error-screen h2 {
+            color: #d63031;
+            margin-bottom: 20px;
+        }
+        
+        .error-screen button {
+            background: #d63031;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .error-screen button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(214, 48, 49, 0.4);
+        }
+        
+        .remote-footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="remote-container">
+        <div class="remote-header">
+            <h1>Imperia Remote</h1>
+            <div class="connection-status" id="connectionStatus" style="display: none;">
+                <span class="status-dot"></span>
+                <span>Verbunden</span>
+            </div>
+        </div>
+        
+        <div class="remote-content">
+            <!-- Ladebildschirm -->
+            <div id="loadingScreen" style="display: none;">
+                <div class="waiting-screen">
+                    <div class="magic-icon">⏳</div>
+                    <h2>Verbindung wird hergestellt...</h2>
+                    <div class="pulse-ring"></div>
+                </div>
+            </div>
+            
+            <!-- Wartebildschirm -->
+            <div id="waitingScreen" style="display: none;">
+                <div class="waiting-screen">
+                    <div class="magic-icon">✨</div>
+                    <h2>Bereit für Magie</h2>
+                    <p>Warten auf Anweisungen vom Zauberer...</p>
+                    <div class="pulse-ring"></div>
+                </div>
+            </div>
+            
+            <!-- Fehlerbildschirm -->
+            <div id="errorScreen" style="display: none;">
+                <div class="error-screen">
+                    <div class="magic-icon">❌</div>
+                    <h2>Ungültiger Zugangslink</h2>
+                    <p>Dieser Link ist nicht gültig oder abgelaufen.</p>
+                    <p>Bitte fordern Sie einen neuen Link vom Zauberer an.</p>
+                    <button onclick="window.location.href='/imperia'">Zur Startseite</button>
+                </div>
+            </div>
+            
+            <!-- Modul-Container (wird dynamisch gefüllt) -->
+            <div id="moduleContainer" class="module-container">
+                <!-- Module content will be inserted here -->
+            </div>
+        </div>
+        
+        <div class="remote-footer">
+            <p>Powered by Imperia Magic System</p>
+        </div>
+    </div>
+    
+    <script>
+        // Token aus URL extrahieren
+        const pathParts = window.location.pathname.split('/');
+        const token = pathParts[pathParts.length - 1];
+        
+        // Screens
+        const loadingScreen = document.getElementById('loadingScreen');
+        const waitingScreen = document.getElementById('waitingScreen');
+        const errorScreen = document.getElementById('errorScreen');
+        const moduleContainer = document.getElementById('moduleContainer');
+        const connectionStatus = document.getElementById('connectionStatus');
+        
+        // Token validieren und Session starten
+        async function initializeRemote() {
+            loadingScreen.style.display = 'block';
+            
+            try {
+                // Validiere Token beim Server
+                const response = await fetch(`/api/remote/validate/${token}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    loadingScreen.style.display = 'none';
+                    waitingScreen.style.display = 'block';
+                    connectionStatus.style.display = 'flex';
+                    
+                    // Starte Polling für Module
+                    startModulePolling();
+                } else {
+                    throw new Error('Invalid token');
+                }
+            } catch (error) {
+                console.error('Initialization error:', error);
+                loadingScreen.style.display = 'none';
+                errorScreen.style.display = 'block';
+            }
+        }
+        
+        // Polling für aktive Module
+        let pollingInterval;
+        function startModulePolling() {
+            // Poll every 2 seconds
+            pollingInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/remote/module/${token}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.activeModule) {
+                            displayModule(data.activeModule);
+                        } else {
+                            hideModule();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Polling error:', error);
+                }
+            }, 2000);
+        }
+        
+        // Modul anzeigen
+        function displayModule(moduleData) {
+            waitingScreen.style.display = 'none';
+            moduleContainer.classList.add('active');
+            
+            // Beispiel Module Content
+            moduleContainer.innerHTML = `
+                <div class="module-header">
+                    <div class="module-icon">${moduleData.icon || '🎭'}</div>
+                    <h2>${moduleData.name || 'Modul'}</h2>
+                    <p>${moduleData.description || ''}</p>
+                </div>
+                <div class="module-content">
+                    ${getModuleContent(moduleData)}
+                </div>
+            `;
+        }
+        
+        // Modul verstecken
+        function hideModule() {
+            moduleContainer.classList.remove('active');
+            moduleContainer.innerHTML = '';
+            waitingScreen.style.display = 'block';
+        }
+        
+        // Module Content basierend auf Typ
+        function getModuleContent(moduleData) {
+            switch(moduleData.type) {
+                case 'card_prediction':
+                    return `
+                        <div style="text-align: center;">
+                            <p>Denken Sie an eine Karte...</p>
+                            <div style="font-size: 120px; margin: 30px 0;">🃏</div>
+                            <p style="color: #666;">Der Zauberer wird Ihre Gedanken lesen</p>
+                        </div>
+                    `;
+                case 'number_magic':
+                    return `
+                        <div style="text-align: center;">
+                            <p>Wählen Sie eine Zahl zwischen 1 und 100</p>
+                            <input type="number" min="1" max="100" style="font-size: 48px; text-align: center; margin: 20px auto;">
+                            <p style="color: #666;">Nur Sie kennen diese Zahl</p>
+                        </div>
+                    `;
+                case 'color_illusion':
+                    return `
+                        <div style="text-align: center;">
+                            <p>Konzentrieren Sie sich auf diese Farbe</p>
+                            <div style="width: 200px; height: 200px; background: ${moduleData.color || '#6c5ce7'}; margin: 20px auto; border-radius: 20px;"></div>
+                        </div>
+                    `;
+                default:
+                    return `<p style="text-align: center;">Modul wird geladen...</p>`;
+            }
+        }
+        
+        // Cleanup beim Verlassen
+        window.addEventListener('beforeunload', () => {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+        });
+        
+        // Initialisierung starten
+        if (token && token !== 'remote') {
+            initializeRemote();
+        } else {
+            errorScreen.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
