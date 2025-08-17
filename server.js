@@ -63,24 +63,34 @@ const sessions = new Map();
 // Restore sessions from database on startup
 async function restoreSessionsFromDatabase() {
     try {
+        console.log('🔄 Restoring sessions from database...');
         const activeSessions = await db.getActiveSessions();
         let restoredCount = 0;
+        let skippedCount = 0;
         
         for (const session of activeSessions) {
-            sessions.set(session.session_id, {
-                userId: session.user_id,
-                createdAt: new Date(session.created_at),
-                expiresAt: new Date(session.expires_at),
-                lastActivity: new Date(session.last_activity || session.created_at),
-                ip: session.ip_address,
-                userAgent: session.user_agent
-            });
-            restoredCount++;
+            // Check if session is still valid
+            const expiresAt = new Date(session.expires_at);
+            if (expiresAt > new Date()) {
+                sessions.set(session.session_id, {
+                    userId: session.user_id,
+                    createdAt: new Date(session.created_at),
+                    expiresAt: expiresAt,
+                    lastActivity: new Date(session.last_activity || session.created_at),
+                    ip: session.ip_address,
+                    userAgent: session.user_agent
+                });
+                restoredCount++;
+                console.log(`✓ Restored session ${session.session_id} for user ${session.user_id}`);
+            } else {
+                skippedCount++;
+                console.log(`✗ Skipped expired session ${session.session_id}`);
+            }
         }
         
-        console.log(`✅ Restored ${restoredCount} active sessions from database`);
+        console.log(`✅ Restored ${restoredCount} active sessions from database (${skippedCount} expired sessions skipped)`);
     } catch (error) {
-        console.error('Failed to restore sessions:', error);
+        console.error('❌ Failed to restore sessions:', error);
     }
 }
 
@@ -244,6 +254,8 @@ app.post('/auth/login', requireDB, async (req, res) => {
         const { username, password } = req.body;
         const clientInfo = getClientInfo(req);
 
+        console.log(`Login attempt for user: ${username}`);
+
         if (!username || !password) {
             return res.status(400).json({ error: 'Username and password required' });
         }
@@ -251,14 +263,20 @@ app.post('/auth/login', requireDB, async (req, res) => {
         // Get user
         const user = await db.getUserByUsername(username);
         if (!user) {
+            console.log(`User not found: ${username}`);
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
+        console.log(`User found: ${username}, verifying password...`);
+
         // Verify password
         if (!verifyPassword(password, user.salt, user.password_hash)) {
+            console.log(`Password verification failed for user: ${username}`);
             await db.logAction(user.id, 'login_failed', { reason: 'invalid_password' }, clientInfo.ip, clientInfo.userAgent);
             return res.status(401).json({ error: 'Invalid credentials' });
         }
+
+        console.log(`Password verified for user: ${username}`);
 
         // Update last login
         await db.updateUserLastLogin(user.id);
@@ -271,6 +289,8 @@ app.post('/auth/login', requireDB, async (req, res) => {
 
         // Create session
         const sessionId = createSession(user.id, clientInfo);
+        console.log(`Session created: ${sessionId} for user: ${username}`);
+        
         res.cookie('MAGIC_SESSION', sessionId, { 
             httpOnly: true, 
             maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
@@ -281,6 +301,7 @@ app.post('/auth/login', requireDB, async (req, res) => {
         // Log login
         await db.logAction(user.id, 'login_success', null, clientInfo.ip, clientInfo.userAgent);
 
+        console.log(`Login successful for user: ${username}`);
         res.json({ ok: true, username: user.username });
 
     } catch (error) {
@@ -292,33 +313,43 @@ app.post('/auth/login', requireDB, async (req, res) => {
 app.get('/auth/status', requireDB, async (req, res) => {
     try {
         const sessionId = req.cookies.MAGIC_SESSION;
+        
+        console.log(`Auth status check - Session ID: ${sessionId ? sessionId.substring(0, 8) + '...' : 'none'}`);
+        
         if (!sessionId) {
+            console.log('No session cookie found');
             return res.json({ loggedIn: false });
         }
 
         const session = getSession(sessionId);
         if (!session) {
+            console.log(`Session not found in memory: ${sessionId.substring(0, 8)}...`);
             res.clearCookie('MAGIC_SESSION');
             return res.json({ loggedIn: false });
         }
 
+        console.log(`Session found for user ID: ${session.userId}`);
+        
         const user = await db.getUserById(session.userId);
         if (!user) {
+            console.log(`User not found for ID: ${session.userId}`);
             deleteSession(sessionId);
             res.clearCookie('MAGIC_SESSION');
             return res.json({ loggedIn: false });
         }
 
+        console.log(`Auth status: User ${user.username} is logged in`);
+        
         res.json({ 
             loggedIn: true, 
             username: user.username,
             displayName: user.display_name,
-            isAdmin: !!user.is_admin
+            isAdmin: user.is_admin
         });
 
     } catch (error) {
         console.error('Auth status error:', error);
-        res.json({ loggedIn: false });
+        res.status(500).json({ error: 'Failed to check auth status' });
     }
 });
 
