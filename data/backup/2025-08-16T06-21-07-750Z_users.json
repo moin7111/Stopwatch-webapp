@@ -1,9 +1,0 @@
-{
-  "testuser": {
-    "username": "testuser",
-    "displayName": "Test Magician",
-    "salt": "5464e041c90c85e113b0b526",
-    "passwordHash": "fb649d50610f3ed81bfe05686690fb48fc80e146489d618512b061a88aeae813c0550e7dcebf82b84e3d37c601fb84ad959f49b0c1a4042c8026acdb14469dcb",
-    "createdAt": 1755323753864
-  }
-}

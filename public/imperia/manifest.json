@@ -1,7 +1,7 @@
 {
   "name": "IMPERIA Control System V4",
   "short_name": "IMPERIA Control",
-  "description": "IMPERIA Control System V4 - Login, Dashboard & Tempra",
+  "description": "IMPERIA Control System V4 - Professional Magic Control System",
   "version": "4.0.0",
   "start_url": "/imperia/control/index.html?source=pwa",
   "display": "standalone",

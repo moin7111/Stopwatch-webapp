@@ -4,7 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 class Database {
-    constructor(dbPath = 'database/stopwatch_magic.db') {
+    constructor(dbPath = 'database/imperia_magic.db') {
         this.dbPath = dbPath;
         this.db = null;
         this.isConnected = false;
@@ -550,42 +550,8 @@ class Database {
         await this.run(sql, [historyId]);
     }
 
-    // ============= TICK CONNECTIONS =============
-    
-    async createTickConnection(mainTickTokenId, modulTickTokenId) {
-        const sql = `
-            INSERT INTO tick_connections (maintick_token_id, modultick_token_id)
-            VALUES (?, ?)
-            ON CONFLICT(maintick_token_id, modultick_token_id) DO UPDATE
-            SET connection_status = 'active', last_sync = CURRENT_TIMESTAMP
-        `;
-        const result = await this.run(sql, [mainTickTokenId, modulTickTokenId]);
-        return result.lastID;
-    }
-
-    async getTickConnections(tokenId, role = 'maintick') {
-        const column = role === 'maintick' ? 'maintick_token_id' : 'modultick_token_id';
-        const sql = `
-            SELECT tc.*, 
-                   mt.token as maintick_token, 
-                   modt.token as modultick_token
-            FROM tick_connections tc
-            JOIN tokens mt ON tc.maintick_token_id = mt.id
-            JOIN tokens modt ON tc.modultick_token_id = modt.id
-            WHERE ${column} = ? AND tc.connection_status = 'active'
-        `;
-        return await this.query(sql, [tokenId]);
-    }
-
-    async updateTickConnectionSync(connectionId) {
-        const sql = `UPDATE tick_connections SET last_sync = CURRENT_TIMESTAMP WHERE id = ?`;
-        await this.run(sql, [connectionId]);
-    }
-
-    async disconnectTickConnection(connectionId) {
-        const sql = `UPDATE tick_connections SET connection_status = 'inactive' WHERE id = ?`;
-        await this.run(sql, [connectionId]);
-    }
+    // ============= FUTURE CONNECTIONS =============
+    // Placeholder for future connection methods
 
     // ============= ENHANCED FORCE QUEUE =============
     

@@ -1,288 +1,221 @@
-# 🎩 Stopwatch Magic - Professional Magic Performance PWA
+# 🎩 IMPERIA Magic System - Professional Magic Performance PWA
 
-**Version 2.1.0** | Production-Ready | PWA Enabled
+**Version 4.0.0** | Production-Ready | PWA Enabled
 
-Eine professionelle Progressive Web App für Bühnenzauberer mit geheimer Force-Technologie zur Manipulation von Stoppuhr-Zeiten während Live-Performances.
+IMPERIA ist ein professionelles Magic Control System für Bühnenzauberer und Mentalisten. Das System bietet fortschrittliche Force-Technologie mit Enterprise-Level Backend.
+
+---
 
 ## ✨ Features
 
 ### 🎪 **Magic Performance System**
-- **Secret Force Technology**: Unsichtbare Manipulation von Stoppuhr-Zeiten
-- **Dual Interface**: Magician Dashboard + Spectator Stopwatch
-- **Real-time Control**: Forces werden sofort beim nächsten Button-Klick angewendet
-- **Professional UI**: iOS-like Design für maximale Glaubwürdigkeit
+- **Secret Force Technology**: Unsichtbare Manipulation für magische Effekte
+- **Professional Control Interface**: Modernes, intuitives Design
+- **Real-time Control**: Sofortige Anwendung von Forces
+- **Enterprise Backend**: SQLite-Datenbank mit voller API
+
+### 🔐 **Enterprise Security**
+- **License-Based Registration**: Geschützter Zugang
+- **Token Authentication**: Sichere API-Kommunikation
+- **Session Management**: 30-Tage Cookie-Sessions
+- **Admin Protection**: Umgebungsbasierte Sicherheit
 
 ### 📱 **Progressive Web App**
-- **Vollbild-Modus**: Immersive Performance-Erfahrung
-- **Offline-fähig**: Service Worker für zuverlässige Funktion
-- **Installierbar**: "Zum Homebildschirm hinzufügen" auf allen Geräten
-- **Touch-optimiert**: Perfekt für mobile Performances
+- **Offline-Fähig**: Funktioniert ohne Internetverbindung
+- **Installierbar**: Wie eine native App
+- **Push-Ready**: Vorbereitet für Benachrichtigungen
+- **Responsive**: Perfekt auf allen Geräten
 
-### 🔐 **Enterprise-Level Backend**
-- **SQL Database**: Robuste SQLite-Basis (PostgreSQL-ready)
-- **User Management**: Sichere Registrierung mit Lizenzcodes
-- **Token System**: Automatische Token-Generierung pro Nutzer
-- **Session Management**: Persistent sessions mit UUID-Cookies
-- **Audit Logging**: Vollständige Nachverfolgung aller Aktionen
-
-### ⚡ **Force System (Vereinfacht)**
-- **Sofortige Anwendung**: Forces werden beim nächsten Button-Klick angewendet
-- **Zwei Modi**: 
-  - `ms`: Forciere spezifische Centisekunden (z.B. 42 → 00:15,42)
-  - `total`: Forciere Quersumme der angezeigten Zeit
-- **Stop-Force**: Manipuliert die Hauptzeit
-- **Lap-Force**: Manipuliert nur die aktuelle Runde
+---
 
 ## 🚀 Quick Start
 
 ### **Für Endnutzer (Magier)**
 ```
-1. Öffne: https://stopwatch-webapp-1.onrender.com
+1. Öffne: https://imperia-magic.onrender.com
 2. Registriere dich mit deinem Lizenzcode
 3. Erhalte automatisch deinen Token
-4. Installiere als PWA: "Zum Homebildschirm hinzufügen"
-5. Ready für Live-Performance!
+4. Beginne mit deinen magischen Performances
 ```
 
 ### **Für Entwickler**
 ```bash
 # Repository klonen
-git clone https://github.com/moin7111/Stopwatch-webapp.git
-cd Stopwatch-webapp
+git clone https://github.com/moin7111/Imperia-webapp.git
+cd Imperia-webapp
 
 # Dependencies installieren
 npm install
 
-# Database initialisieren
-npm run db:migrate
+# Datenbank initialisieren
+npm run db:init
 
-# Server starten
-npm start
+# Development Server starten
+npm run dev
+
+# Öffne: http://localhost:3000
 ```
-
-## 📋 API Reference
-
-### **Authentication**
-```bash
-# Registrierung (erstellt automatisch Token)
-POST /auth/register
-{
-  "code": "LICENSE_CODE",
-  "username": "magician",
-  "password": "secret123",
-  "displayName": "Magic Mike"
-}
-
-# Login (stellt Token sicher)
-POST /auth/login
-{
-  "username": "magician",
-  "password": "secret123"
-}
-```
-
-### **Force Management**
-```bash
-# Force erstellen (vereinfacht - sofortige Anwendung)
-POST /api/data/:token
-{
-  "mode": "ms",
-  "target": 42,
-  "app": "stopwatch"
-}
-
-# Queue abrufen
-GET /api/data/:token
-
-# Force bestätigen
-POST /api/ack/:token
-{
-  "forceId": "uuid"
-}
-```
-
-### **Admin Operations**
-```bash
-# Lizenzcode erstellen
-POST /api/license
-Header: x-admin-key: YOUR_ADMIN_KEY
-{
-  "count": 5
-}
-
-# Alle Nutzer anzeigen
-GET /api/users
-Header: x-admin-key: YOUR_ADMIN_KEY
-```
-
-## 🏗️ Architecture
-
-```
-├── 🌐 Frontend (PWA)
-│   ├── 📱 Spectator Stopwatch (public/spectator.html)
-│   ├── 🎩 Magician Dashboard (public/magician/)
-│   └── ⚙️ Service Worker (public/sw.js)
-│
-├── 🔧 Backend (Node.js/Express)
-│   ├── 🗄️ Database Layer (database/)
-│   ├── 🔐 Authentication & Sessions
-│   ├── 🎯 Force Management API
-│   └── 👨‍💼 Admin Operations
-│
-└── 🛠️ Tools & Scripts
-    ├── 🐍 License Creator (tools/license_creator.py)
-    └── 📊 Database Migration (database/migrate.js)
-```
-
-## 🗄️ Database Schema
-
-```sql
--- Benutzer mit sicherer Authentifizierung
-users (id, username, display_name, password_hash, salt, ...)
-
--- Lizenzcode-Management
-licenses (id, code, is_used, used_by_username, ...)
-
--- Token-System (ein Token pro User)
-tokens (id, token, owner_username, created_at, ...)
-
--- Force-Queue für Live-Performances
-force_queue (id, token, force_id, force_data, ...)
-
--- Audit-Logging für Sicherheit
-audit_log (id, user_id, action, details, ip_address, ...)
-```
-
-## 🔧 Scripts
-
-```bash
-# Database Operations
-npm run db:migrate    # JSON → SQL Migration
-npm run db:test      # Database Verbindung testen
-npm run db:backup    # Backup erstellen
-
-# Development
-npm start            # Server starten (Port 3000)
-npm run dev          # Development mit Auto-Reload
-
-# Production
-npm run deploy       # Production Deployment
-```
-
-## 🌐 Deployment (Render.com)
-
-### **Environment Variables**
-```bash
-# Production (Required)
-ADMIN_KEY=your-strong-secret-key-here
-NODE_ENV=production
-
-# Optional
-PORT=3000  # Render setzt automatisch
-```
-
-### **Deployment Steps**
-1. **GitHub Integration**: Repository mit Render verbinden
-2. **Environment Setup**: ADMIN_KEY und NODE_ENV setzen
-3. **Auto-Deploy**: Jeder Git-Push triggert Deployment
-4. **Database**: SQLite wird automatisch initialisiert
-
-## 🔐 Security Features
-
-- **🔒 Password Hashing**: scrypt mit Salt
-- **🛡️ Admin Protection**: ADMIN_KEY für alle Admin-APIs
-- **🍪 Secure Sessions**: UUID-basierte Session-Cookies
-- **📝 Audit Logging**: Alle kritischen Aktionen werden geloggt
-- **🚫 Input Validation**: Sichere API-Parameter-Validierung
-- **🔐 SQL Injection Protection**: Prepared Statements überall
-
-## 📱 PWA Installation
-
-### **iOS (Safari)**
-1. Öffne die App in Safari
-2. Teilen-Button → "Zum Home-Bildschirm"
-3. App startet im Vollbild-Modus
-
-### **Android (Chrome)**
-1. Öffne die App in Chrome
-2. Menü → "App installieren"
-3. Bestätigen und verwenden
-
-## 🎯 Live URLs
-
-- **🌐 Production**: https://stopwatch-webapp-1.onrender.com
-- **🎩 Magician Login**: https://stopwatch-webapp-1.onrender.com/magician/login.html
-- **📱 Spectator**: https://stopwatch-webapp-1.onrender.com/spectator.html?token=YOUR_TOKEN
-
-## 🛠️ Development Setup
-
-### **Requirements**
-- Node.js 18+
-- npm 9+
-- SQLite3 (included)
-
-### **Local Development**
-```bash
-# Environment Setup
-echo "ADMIN_KEY=DevAdmin2025" > .env
-echo "NODE_ENV=development" >> .env
-
-# Database Setup
-npm run db:migrate
-
-# Start Development Server
-npm start
-```
-
-### **Testing**
-```bash
-# Health Check
-curl http://localhost:3000/health
-
-# Create License (Admin)
-curl -X POST http://localhost:3000/api/license \
-  -H "Content-Type: application/json" \
-  -H "x-admin-key: DevAdmin2025" \
-  -d '{"count":1}'
-
-# Test Force
-curl -X POST http://localhost:3000/api/data/TOKEN \
-  -H "Content-Type: application/json" \
-  -d '{"mode":"ms","target":42,"app":"stopwatch"}'
-```
-
-## 📊 Performance
-
-- **⚡ Real-time**: ~400ms Force-Polling-Intervall
-- **📱 PWA**: Offline-fähig, <2s Ladezeit
-- **🔄 Database**: SQLite → PostgreSQL migrierbar
-- **📈 Scalability**: Multi-user ready, session-persistent
-
-## 🔄 Version History
-
-- **v2.1.0**: Vereinfachtes Force-System, sofortige Anwendung
-- **v2.0.0**: SQL Database Migration, Enterprise Features
-- **v1.5.0**: PWA Implementation, Service Worker
-- **v1.0.0**: Initial Magic Stopwatch System
-
-## 🤝 Contributing
-
-1. Fork das Repository
-2. Erstelle Feature Branch (`git checkout -b feature/amazing-feature`)
-3. Commit deine Änderungen (`git commit -m 'Add amazing feature'`)
-4. Push zum Branch (`git push origin feature/amazing-feature`)
-5. Öffne Pull Request
-
-## 📄 License
-
-MIT License - siehe [LICENSE](LICENSE) für Details
-
-## 👨‍💻 Support
-
-- **🐛 Issues**: GitHub Issues
-- **📧 Contact**: [Deine Email]
-- **📚 Docs**: Siehe `DATABASE_GUIDE.md` und `PROJECT_OVERVIEW.md`
 
 ---
 
-**🎩 Magic happens when technology meets performance art.** ✨
+## 🔧 API Documentation
+
+### **Authentication**
+```http
+POST /auth/register
+Content-Type: application/json
+
+{
+  "code": "LICENSE-CODE",
+  "username": "magician",
+  "password": "secret"
+}
+```
+
+### **Force Queue**
+```http
+POST /api/data/YOUR_TOKEN
+Content-Type: application/json
+
+{
+  "mode": "ms",
+  "target": 42,
+  "app": "imperia"
+}
+
+GET /api/data/YOUR_TOKEN
+```
+
+---
+
+## 📁 Project Structure
+
+```
+├── 🌐 Frontend (PWA)
+│   ├── 📱 IMPERIA Control (public/imperia/control/)
+│   ├── ⚙️ Service Worker (public/imperia/sw.js)
+│   └── 📄 Manifest (public/imperia/manifest.json)
+│
+├── 🚀 Backend (Node.js)
+│   ├── 🖥️ Express Server (server.js)
+│   ├── 🗄️ SQLite Database (database/db.js)
+│   └── 🔐 Auth System
+│
+└── 📦 Configuration
+    ├── package.json
+    ├── .env (production)
+    └── .gitignore
+```
+
+---
+
+## 🛡️ Security Features
+
+### **License Management**
+- Eindeutige Lizenzcodes für Registrierung
+- Admin-API für Lizenzverwaltung
+- Automatische Token-Generierung
+
+### **Session Security**
+- HTTPOnly Cookies
+- 30-Tage Gültigkeit
+- Automatische Bereinigung
+
+### **API Protection**
+- Token-basierte Authentifizierung
+- Rate Limiting ready
+- CORS konfiguriert
+
+---
+
+## 🌐 Deployment
+
+### **Render.com Setup**
+1. Fork das Repository
+2. Verbinde mit Render
+3. Setze Umgebungsvariablen:
+   - `NODE_ENV=production`
+   - `ADMIN_KEY=your-secret-key`
+4. Deploy!
+
+### **Environment Variables**
+```env
+NODE_ENV=production
+PORT=3000
+ADMIN_KEY=your-admin-key
+```
+
+---
+
+## 📊 Database Schema
+
+- **users**: Benutzerkonten
+- **licenses**: Lizenzcode-System  
+- **tokens**: API-Authentifizierung
+- **force_queue**: Force-Verwaltung
+- **sessions**: Aktive Sitzungen
+- **settings**: Benutzereinstellungen
+
+---
+
+## 🔨 NPM Scripts
+
+- `npm start` - Production Server
+- `npm run dev` - Development mit Nodemon
+- `npm run db:init` - Datenbank Setup
+- `npm run db:backup` - Datenbank Backup
+- `npm test` - Tests ausführen
+
+---
+
+## 🎯 Live URLs
+
+- **🌐 Production**: https://imperia-magic.onrender.com
+- **🎩 Login**: https://imperia-magic.onrender.com/imperia/control/login.html
+
+## 🛠️ Development Setup
+
+### **Lokale Entwicklung**
+```bash
+# Install dependencies
+npm install
+
+# Setup database
+npm run db:init
+
+# Start dev server
+npm run dev
+
+# Access at http://localhost:3000
+```
+
+### **Production Build**
+```bash
+# Set environment
+export NODE_ENV=production
+export ADMIN_KEY=your-key
+
+# Start server
+npm start
+```
+
+---
+
+## 📈 Version History
+
+- **v4.0.0**: Complete rewrite as IMPERIA Magic System
+- **v3.0.0**: Enhanced Force Types & Presets
+- **v2.0.0**: SQL Database Migration
+- **v1.0.0**: Initial Release
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+MIT License - see LICENSE file for details
+
+---
+
+**Built with ❤️ for the magic community**
