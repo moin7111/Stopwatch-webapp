@@ -416,13 +416,133 @@ def format_uptime(seconds):
     else:
         return f"{minutes}m {int(seconds%60)}s"
 
-# Import existierende Funktionen (gekürzt für Übersicht)
-from license_creator import (
-    list_all_licenses,
-    list_all_users, 
-    list_all_tokens,
-    get_system_status
-)
+def list_all_licenses():
+    """Zeigt alle verfügbaren Lizenzen an"""
+    url = f"{BASE_URL}/api/licenses"
+    headers = {"x-admin-key": ADMIN_KEY}
+    
+    try:
+        print(colored("📋 Lade alle Lizenzen...", Colors.YELLOW))
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            licenses = response.json().get("licenses", [])
+            
+            print(colored(f"\n📋 {len(licenses)} LIZENZEN GEFUNDEN", Colors.BOLD))
+            print("=" * 50)
+            
+            for lic in licenses:
+                code = lic["code"]
+                license_type = lic.get("type", "standard")
+                
+                if lic.get("is_used"):
+                    username = lic.get("used_by_username", "Unknown")
+                    created = format_date(lic.get("created_at"))
+                    print(f"🔴 {code} ({license_type}) - Verwendet von {username} seit {created}")
+                else:
+                    created = format_date(lic.get("created_at"))
+                    print(f"🟢 {code} ({license_type}) - Verfügbar seit {created}")
+                    
+        else:
+            print(colored(f"❌ Fehler {response.status_code}", Colors.RED))
+            
+    except requests.exceptions.RequestException as e:
+        print(colored(f"❌ Netzwerk-Fehler: {e}", Colors.RED))
+
+def list_all_users():
+    """Zeigt alle Benutzer an"""
+    url = f"{BASE_URL}/api/users"
+    headers = {"x-admin-key": ADMIN_KEY}
+    
+    try:
+        print(colored("👥 Lade alle Benutzer...", Colors.YELLOW))
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            users = response.json().get("users", [])
+            
+            print(colored(f"\n👥 {len(users)} BENUTZER GEFUNDEN", Colors.BOLD))
+            print("=" * 50)
+            
+            for user in users:
+                username = user.get("username", "Unknown")
+                user_id = user.get("id", "N/A")
+                is_admin = user.get("is_admin", False)
+                created = format_date(user.get("created_at"))
+                last_seen = format_date(user.get("last_seen"))
+                
+                role = "👑 Admin" if is_admin else "👤 User"
+                print(f"{role} {username} (ID: {user_id})")
+                print(f"    Erstellt: {created}")
+                print(f"    Zuletzt gesehen: {last_seen}")
+                print()
+                    
+        else:
+            print(colored(f"❌ Fehler {response.status_code}", Colors.RED))
+            
+    except requests.exceptions.RequestException as e:
+        print(colored(f"❌ Netzwerk-Fehler: {e}", Colors.RED))
+
+def list_all_tokens():
+    """Zeigt alle aktiven Tokens an"""
+    url = f"{BASE_URL}/api/tokens"
+    headers = {"x-admin-key": ADMIN_KEY}
+    
+    try:
+        print(colored("🔑 Lade alle Tokens...", Colors.YELLOW))
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            tokens = response.json().get("tokens", [])
+            
+            print(colored(f"\n🔑 {len(tokens)} TOKENS GEFUNDEN", Colors.BOLD))
+            print("=" * 50)
+            
+            for token in tokens:
+                token_id = token.get("id", "N/A")
+                username = token.get("username", "Unknown")
+                created = format_date(token.get("created_at"))
+                last_used = format_date(token.get("last_used"))
+                
+                print(f"🔑 Token {token_id} - {username}")
+                print(f"    Erstellt: {created}")
+                print(f"    Zuletzt verwendet: {last_used}")
+                print()
+                    
+        else:
+            print(colored(f"❌ Fehler {response.status_code}", Colors.RED))
+            
+    except requests.exceptions.RequestException as e:
+        print(colored(f"❌ Netzwerk-Fehler: {e}", Colors.RED))
+
+def get_system_status():
+    """Prüft den System-Status"""
+    url = f"{BASE_URL}/api/status"
+    headers = {"x-admin-key": ADMIN_KEY}
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=5)
+        
+        if response.status_code == 200:
+            status = response.json()
+            print(colored("✅ Server ist online", Colors.GREEN))
+            
+            if "uptime" in status:
+                uptime = format_uptime(status["uptime"])
+                print(f"⏰ Uptime: {uptime}")
+                
+            if "version" in status:
+                print(f"📦 Version: {status['version']}")
+                
+            return True
+            
+        else:
+            print(colored(f"❌ Server Fehler {response.status_code}", Colors.RED))
+            return False
+            
+    except requests.exceptions.RequestException:
+        print(colored("❌ Server ist offline", Colors.RED))
+        return False
 
 def main():
     """Hauptfunktion - Erweitertes interaktives Menü"""
