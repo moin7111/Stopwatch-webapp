@@ -287,7 +287,7 @@ def main():
     Hauptfunktion - Interaktives Menü (SQL Database Version)
     """
     
-    print("🎩 Stopwatch Magic v2.0 - License Manager (SQL)")
+    print("🎩 Imperia Magic v2.0 - License Manager (SQL)")
     print("=" * 50)
     
     # Prüfe Admin Key

@@ -555,15 +555,15 @@
             
             moduleUrlsDiv.innerHTML = `
                 <div class="url-container">
-                    <div class="url-label">Tempral (Zuschauer-App)</div>
-                    <div class="url-display" id="tempralUrl">${baseUrl}/imperia-modul/tempral.html?token=${token}</div>
-                    <button class="copy-btn" onclick="copyUrl('tempralUrl')">URL kopieren</button>
+                    <div class="url-label">Remote Zugriff (Zuschauer)</div>
+                    <div class="url-display" id="remoteUrl">${baseUrl}/imperia/remote/index.html?token=${token}</div>
+                    <button class="copy-btn" onclick="copyUrl('remoteUrl')">URL kopieren</button>
                 </div>
                 
                 <div class="url-container">
-                    <div class="url-label">Tempra (Deine Kontrolle)</div>
-                    <div class="url-display" id="tempraUrl">${baseUrl}/imperia/tempra/stopwatch.html?token=${token}</div>
-                    <button class="copy-btn" onclick="copyUrl('tempraUrl')">URL kopieren</button>
+                    <div class="url-label">Module (Kontrolle)</div>
+                    <div class="url-display" id="moduleUrl">${baseUrl}/imperia/modules/index.html?token=${token}</div>
+                    <button class="copy-btn" onclick="copyUrl('moduleUrl')">URL kopieren</button>
                 </div>
             `;
         }
