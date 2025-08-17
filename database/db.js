@@ -101,7 +101,7 @@ class Database {
     async createUser(userData) {
         const { username, displayName, email, password } = userData;
         const salt = crypto.randomBytes(16).toString('hex');
-        const passwordHash = crypto.scryptSync(password, salt, 64).toString('hex');
+        const passwordHash = crypto.scryptSync(String(password), salt, 64).toString('hex');
 
         const sql = `
             INSERT INTO users (username, display_name, email, password_hash, salt)
