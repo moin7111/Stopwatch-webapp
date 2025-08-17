@@ -215,6 +215,105 @@
             border-color: rgba(48, 209, 88, 0.4);
         }
         
+        /* Remote Access URL Styles */
+        .remote-url-container {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .remote-url-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        
+        .remote-url-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        
+        .remote-url-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .remote-url-type {
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .remote-url-display {
+            font-family: 'SF Mono', monospace;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 16px;
+            border-radius: 8px;
+            word-break: break-all;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            line-height: 1.4;
+        }
+        
+        .remote-copy-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .remote-copy-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .remote-copy-btn.copied {
+            background: linear-gradient(135deg, #48d158 0%, #30d158 100%);
+            transform: translateY(-1px);
+        }
+        
+        .remote-warning {
+            background: rgba(255, 149, 0, 0.1);
+            border: 1px solid rgba(255, 149, 0, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 16px;
+            font-size: 13px;
+            color: #ff9500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
         .loading {
             display: none;
             text-align: center;
@@ -359,29 +458,11 @@
                 <h2 class="section-title">Remote-Zugang</h2>
             </div>
             
-            <p style="margin-bottom: 15px; color: #999;">
-                Teilen Sie diesen Link mit dem Zuschauer-Gerät für die Remote-Steuerung:
+            <p style="margin-bottom: 20px; color: #999; line-height: 1.5;">
+                Teilen Sie diese Links für den Remote-Zugriff. Halten Sie diese Links geheim!
             </p>
             
-            <div class="info-card" style="background: rgba(108, 92, 231, 0.1); border: 1px solid rgba(108, 92, 231, 0.3);">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                    <input type="text" id="remoteUrl" readonly style="flex: 1; font-family: monospace; font-size: 14px;" />
-                    <button class="copy-btn" onclick="copyRemoteUrl()">📋 Kopieren</button>
-                </div>
-                <p style="font-size: 12px; color: #fd79a8; margin: 0;">
-                    ⚠️ Halten Sie diesen Link geheim! Jeder mit diesem Link kann die Remote-App öffnen.
-                </p>
-            </div>
-        </div>
-        
-        <!-- Module URLs -->
-        <div class="settings-section">
-            <div class="section-header">
-                <span class="section-icon">🔗</span>
-                <h2 class="section-title">Module URLs</h2>
-            </div>
-            
-            <div id="moduleUrls" class="loading show">
+            <div id="remoteAccessUrls" class="loading show">
                 <div class="spinner"></div>
             </div>
         </div>
@@ -477,9 +558,7 @@
                             </div>
                         `).join('');
                         
-                        // Update module URLs
-                        updateModuleUrls(data.tokens[0]?.value);
-                        // Update remote URL
+                        // Update remote URLs (includes both remote access and module URLs)
                         updateRemoteUrl(data.tokens[0]?.value);
                     }
                 }
@@ -490,80 +569,44 @@
         
         // Update remote URL
         function updateRemoteUrl(token) {
-            const remoteUrlInput = document.getElementById('remoteUrl');
-            if (token) {
-                const baseUrl = window.location.origin;
-                remoteUrlInput.value = `${baseUrl}/imperia/remote/${token}`;
-            } else {
-                remoteUrlInput.value = 'Kein Token verfügbar';
-            }
-        }
-        
-        // Copy remote URL
-        async function copyRemoteUrl() {
-            const remoteUrlInput = document.getElementById('remoteUrl');
-            const urlText = remoteUrlInput.value;
-            
-            try {
-                // Moderne Clipboard API verwenden
-                await navigator.clipboard.writeText(urlText);
-                
-                // Visual feedback
-                const btn = event.currentTarget;
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '✓ Kopiert!';
-                btn.classList.add('copied');
-                
-                setTimeout(() => {
-                    btn.innerHTML = originalText;
-                    btn.classList.remove('copied');
-                }, 2000);
-            } catch (err) {
-                // Fallback für ältere Browser
-                remoteUrlInput.select();
-                remoteUrlInput.setSelectionRange(0, 99999);
-                try {
-                    document.execCommand('copy');
-                    // Visual feedback
-                    const btn = event.currentTarget;
-                    const originalText = btn.innerHTML;
-                    btn.innerHTML = '✓ Kopiert!';
-                    btn.classList.add('copied');
-                    
-                    setTimeout(() => {
-                        btn.innerHTML = originalText;
-                        btn.classList.remove('copied');
-                    }, 2000);
-                } catch (err2) {
-                    console.error('Kopieren fehlgeschlagen:', err2);
-                    alert('Kopieren fehlgeschlagen. Bitte manuell kopieren.');
-                }
-            }
-        }
-        
-        // Update module URLs
-        function updateModuleUrls(token) {
-            const moduleUrlsDiv = document.getElementById('moduleUrls');
-            moduleUrlsDiv.classList.remove('loading', 'show');
+            const remoteAccessUrlsDiv = document.getElementById('remoteAccessUrls');
+            remoteAccessUrlsDiv.classList.remove('loading', 'show');
             
             if (!token) {
-                moduleUrlsDiv.innerHTML = '<p style="text-align: center; opacity: 0.6;">Erstelle zuerst einen Token</p>';
+                remoteAccessUrlsDiv.innerHTML = '<p style="text-align: center; opacity: 0.6;">Erstelle zuerst einen Token</p>';
                 return;
             }
             
             const baseUrl = window.location.origin;
             
-            moduleUrlsDiv.innerHTML = `
-                <div class="url-container">
-                    <div class="url-label">Remote Zugriff (Zuschauer)</div>
-                    <div class="url-display" id="remoteUrl">${baseUrl}/imperia/remote/index.html?token=${token}</div>
-                    <button class="copy-btn" onclick="copyUrl('remoteUrl')">URL kopieren</button>
+            remoteAccessUrlsDiv.innerHTML = `
+                <div class="remote-url-container">
+                    <div class="remote-url-header">
+                        <h3 class="remote-url-title">📺 Remote Zugriff (Zuschauer)</h3>
+                        <span class="remote-url-type">Zuschauer</span>
+                    </div>
+                    <div class="remote-url-display" id="remoteUrl">${baseUrl}/imperia/remote/index.html?token=${token}</div>
+                    <button class="remote-copy-btn" onclick="copyRemoteUrl('remoteUrl')">
+                        <span class="copy-icon">📋</span>
+                        <span class="copy-text">URL kopieren</span>
+                    </button>
                 </div>
                 
-                <div class="url-container">
-                    <div class="url-label">Module (Kontrolle)</div>
-                    <div class="url-display" id="moduleUrl">${baseUrl}/imperia/modules/index.html?token=${token}</div>
-                    <button class="copy-btn" onclick="copyUrl('moduleUrl')">URL kopieren</button>
+                <div class="remote-url-container">
+                    <div class="remote-url-header">
+                        <h3 class="remote-url-title">🎛️ Module (Kontrolle)</h3>
+                        <span class="remote-url-type">Kontrolle</span>
+                    </div>
+                    <div class="remote-url-display" id="moduleUrl">${baseUrl}/imperia/modules/index.html?token=${token}</div>
+                    <button class="remote-copy-btn" onclick="copyRemoteUrl('moduleUrl')">
+                        <span class="copy-icon">📋</span>
+                        <span class="copy-text">URL kopieren</span>
+                    </button>
+                </div>
+                
+                <div class="remote-warning">
+                    <span>⚠️</span>
+                    <span>Diese Links gewähren vollen Zugriff auf die Remote-Steuerung. Teilen Sie sie nur mit vertrauenswürdigen Personen!</span>
                 </div>
             `;
         }
@@ -581,19 +624,56 @@
             }
         };
         
-        // Copy URL
-        window.copyUrl = async function(elementId) {
+        // Copy Remote URL
+        window.copyRemoteUrl = async function(elementId) {
+            const button = event.currentTarget;
+            const copyIcon = button.querySelector('.copy-icon');
+            const copyText = button.querySelector('.copy-text');
+            
             try {
                 const url = document.getElementById(elementId).textContent;
                 await navigator.clipboard.writeText(url);
-                event.target.classList.add('copied');
-                event.target.textContent = 'Kopiert!';
+                
+                // Success feedback
+                button.classList.add('copied');
+                copyIcon.textContent = '✅';
+                copyText.textContent = 'Kopiert!';
+                
                 setTimeout(() => {
-                    event.target.classList.remove('copied');
-                    event.target.textContent = 'URL kopieren';
-                }, 2000);
+                    button.classList.remove('copied');
+                    copyIcon.textContent = '📋';
+                    copyText.textContent = 'URL kopieren';
+                }, 2500);
+                
             } catch (error) {
-                alert('Kopieren fehlgeschlagen');
+                // Error feedback
+                console.error('Copy failed:', error);
+                copyIcon.textContent = '❌';
+                copyText.textContent = 'Fehler!';
+                
+                // Try fallback method
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = document.getElementById(elementId).textContent;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    // Success with fallback
+                    button.classList.add('copied');
+                    copyIcon.textContent = '✅';
+                    copyText.textContent = 'Kopiert!';
+                } catch (fallbackError) {
+                    // Complete failure
+                    alert('Kopieren fehlgeschlagen. Bitte URL manuell markieren und kopieren.');
+                }
+                
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    copyIcon.textContent = '📋';
+                    copyText.textContent = 'URL kopieren';
+                }, 2500);
             }
         };
         
