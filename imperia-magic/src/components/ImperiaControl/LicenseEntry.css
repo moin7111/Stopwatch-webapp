@@ -1,0 +1,80 @@
+.license-entry {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.license-card {
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+}
+
+.license-card h1 {
+  font-size: 36px;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+}
+
+.license-card h2 {
+  font-size: 18px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 30px;
+  font-weight: 400;
+}
+
+.license-form {
+  margin-bottom: 30px;
+}
+
+.license-input {
+  text-align: center;
+  font-size: 18px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.auth-links {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.auth-links p {
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.demo-info {
+  background: var(--bg-light);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.demo-info p {
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.demo-info code {
+  display: block;
+  background: var(--bg-dark);
+  padding: 8px 12px;
+  margin: 5px 0;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  color: var(--accent-color);
+  font-size: 14px;
+}
