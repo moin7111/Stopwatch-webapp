@@ -21,7 +21,7 @@
 </head>
 <body>
   <main style="padding:18px;max-width:900px;margin:28px auto;">
-    <h1>🎩 Dein MainTick Dashboard</h1>
+    <h1>🎩 Dein Tempra Dashboard</h1>
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom:20px;">
       <button id="logoutBtn">Logout</button>
       <div style="color: #8e8e93; font-size: 14px;">Version: Beta 0.3</div>
@@ -37,8 +37,8 @@
     <section style="margin-top:24px;">
       <h2>🔗 Schnellzugriffe</h2>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin:16px 0;">
-        <button id="openModulTick" style="background:#30D058;">🎯 Tempral öffnen</button>
-        <button id="openMainTickStopwatch" style="background:#FF9500;">⏱️ Tempra Stoppuhr öffnen</button>
+        <button id="openTempral" style="background:#30D058;">🎯 Tempral öffnen</button>
+        <button id="openTempraStopwatch" style="background:#FF9500;">⏱️ Tempra Stoppuhr öffnen</button>
       </div>
     </section>
 
@@ -129,12 +129,12 @@ Content-Type: application/json<br><br>
     location.href = '/imperia/tempra/login.html';
   });
 
-  document.getElementById('openModulTick').addEventListener('click', ()=> {
+  document.getElementById('openTempral').addEventListener('click', ()=> {
     if (!currentToken) return alert('Token noch nicht geladen');
     window.open(`/imperia-modul/tempral.html?token=${encodeURIComponent(currentToken)}`, '_blank');
   });
 
-  document.getElementById('openMainTickStopwatch').addEventListener('click', ()=> {
+  document.getElementById('openTempraStopwatch').addEventListener('click', ()=> {
     if (!currentToken) return alert('Token noch nicht geladen');
     window.open(`/imperia/tempra/stopwatch.html?token=${encodeURIComponent(currentToken)}`, '_blank');
   });

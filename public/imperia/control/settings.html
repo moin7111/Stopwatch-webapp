@@ -373,7 +373,7 @@
             
             <div class="url-container">
                 <div class="url-label">Force senden (POST)</div>
-                <div class="url-display">/api/stopwatch/maintick/force/{TOKEN}</div>
+                <div class="url-display">/api/stopwatch/tempra/force/{TOKEN}</div>
             </div>
             
             <div class="url-container">
@@ -383,7 +383,7 @@
             
             <div class="url-container">
                 <div class="url-label">Status prüfen (GET)</div>
-                <div class="url-display">/api/stopwatch/maintick/data/{TOKEN}</div>
+                <div class="url-display">/api/stopwatch/tempra/data/{TOKEN}</div>
             </div>
         </div>
         
@@ -479,14 +479,14 @@
             moduleUrlsDiv.innerHTML = `
                 <div class="url-container">
                     <div class="url-label">Tempral (Zuschauer-App)</div>
-                    <div class="url-display" id="modulTickUrl">${baseUrl}/imperia-modul/tempral.html?token=${token}</div>
-                    <button class="copy-btn" onclick="copyUrl('modulTickUrl')">URL kopieren</button>
+                    <div class="url-display" id="tempralUrl">${baseUrl}/imperia-modul/tempral.html?token=${token}</div>
+                    <button class="copy-btn" onclick="copyUrl('tempralUrl')">URL kopieren</button>
                 </div>
                 
                 <div class="url-container">
                     <div class="url-label">Tempra (Deine Kontrolle)</div>
-                    <div class="url-display" id="mainTickUrl">${baseUrl}/imperia/tempra/stopwatch.html?token=${token}</div>
-                    <button class="copy-btn" onclick="copyUrl('mainTickUrl')">URL kopieren</button>
+                    <div class="url-display" id="tempraUrl">${baseUrl}/imperia/tempra/stopwatch.html?token=${token}</div>
+                    <button class="copy-btn" onclick="copyUrl('tempraUrl')">URL kopieren</button>
                 </div>
             `;
         }

@@ -1,14 +1,14 @@
 {
-  "name": "IMPERIA Tempral V4",
+  "name": "Tempral - IMPERIA Modul",
   "short_name": "Tempral",
-  "description": "IMPERIA Modul System V4 - Tempral",
-  "version": "4.0.0",
-  "start_url": "/imperia-modul/tempral.html?source=pwa",
+  "description": "Tempral Zuschauer-App für IMPERIA Magic System",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#000000",
   "theme_color": "#000000",
-  "orientation": "portrait",
-  "categories": ["entertainment", "utilities"],
+  "start_url": "/imperia-modul/tempral.html?pwa=true",
+  "scope": "/imperia-modul/",
+  "id": "/imperia-modul/",
   "icons": [
     {
       "src": "/icon-192x192.png",
@@ -23,6 +23,6 @@
       "purpose": "any maskable"
     }
   ],
-  "scope": "/imperia-modul/",
+  "categories": ["utilities", "productivity"],
   "prefer_related_applications": false
 }

@@ -14,7 +14,7 @@
     <title>Tempra - Stoppuhr</title>
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="manifest" href="/imperia/manifest.json" />
     
     <!-- Icons -->
     <link rel="apple-touch-icon" href="/icon-192x192.png" />
@@ -28,7 +28,7 @@
     <link rel="apple-touch-startup-image" href="/icon-512x512.png">
     
     <!-- Styles -->
-    <link rel="stylesheet" href="/css/stopwatch-ui.css">
+    <link rel="stylesheet" href="/css/stopwatch-ui.css?v=2024011501">
 </head>
 <body>
     <div class="status-bar">
@@ -114,10 +114,10 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/js/stopwatch-core.js"></script>
-    <script src="/js/manual-input.js"></script>
-    <script src="/js/stopwatch-api.js"></script>
-    <script src="/js/preset-manager.js"></script>
+    <script src="/js/stopwatch-core.js?v=2024011501"></script>
+    <script src="/js/manual-input.js?v=2024011501"></script>
+    <script src="/js/stopwatch-api.js?v=2024011501"></script>
+    <script src="/js/preset-manager.js?v=2024011501"></script>
     <script>
         // Warte bis DOM geladen ist
         document.addEventListener('DOMContentLoaded', function() {
@@ -141,23 +141,23 @@
                 statusText: document.getElementById('statusText')
             });
 
-            // Triple-Click auf Wecker für Presets (nur Tempra)
-            let alarmClickCount = 0;
-            let alarmClickTimer = null;
-                        document.getElementById('alarmNavItem').addEventListener('click', () => {
-                alarmClickCount++;
-                if (alarmClickCount === 3) {
-                    if (window.PresetManager && window.PresetManager.instance) {
-                        window.PresetManager.open(stopwatch, api);
-                    } else {
-                        console.error('PresetManager not found');
-                        stopwatch.updateStatus('Preset Manager nicht verfügbar');
+            // Triple-Click auf Wecker für Presets
+                let alarmClickCount = 0;
+                let alarmClickTimer = null;
+                document.getElementById('alarmNavItem').addEventListener('click', () => {
+                    alarmClickCount++;
+                    if (alarmClickCount === 3) {
+                        if (window.PresetManager && window.PresetManager.instance) {
+                            window.PresetManager.open(stopwatch, api);
+                        } else {
+                            console.error('PresetManager not found');
+                            stopwatch.updateStatus('Preset Manager nicht verfügbar');
+                        }
+                        alarmClickCount = 0;
                     }
-                    alarmClickCount = 0;
-                }
-                clearTimeout(alarmClickTimer);
-                alarmClickTimer = setTimeout(() => alarmClickCount = 0, 500);
-            });
+                    clearTimeout(alarmClickTimer);
+                    alarmClickTimer = setTimeout(() => alarmClickCount = 0, 500);
+                });
 
             // Triple-Click auf Weltuhr für Routinen-Bereich
             let worldClockClickCount = 0;
@@ -184,13 +184,16 @@
             if (dev === '1') panel.classList.add('show');
 
             connectBtn.addEventListener('click', function() {
-            const token = tokenInput.value.trim();
-            if (!token) return alert('Bitte Token eingeben');
-            
-            api = new StopwatchAPI(token, 'maintick');
+                const token = tokenInput.value.trim();
+                if (!token) return alert('Bitte Token eingeben');
+                
+                api = new StopwatchAPI(token, 'tempra');
                 window.api = api; // Update global reference
                 api.startPolling(stopwatch);
                 stopwatch.updateStatus(`Tempra verbunden (${token.substring(0,6)}...)`);
+                
+                // Speichere Token für spätere Verwendung
+                localStorage.setItem('tempra_token', token);
             });
 
             clearBtn.addEventListener('click', function() {
@@ -205,10 +208,13 @@
             // Auto-connect via URL parameter
             const tokenParam = params.get('token') || params.get('t');
             if (tokenParam) {
-            api = new StopwatchAPI(tokenParam, 'maintick');
+                api = new StopwatchAPI(tokenParam, 'tempra');
                 window.api = api; // Update global reference
                 api.startPolling(stopwatch);
                 stopwatch.updateStatus(`Tempra verbunden (${tokenParam.substring(0,6)}...)`);
+                
+                // Speichere Token für spätere Verwendung
+                localStorage.setItem('tempra_token', tokenParam);
             }
 
             // Fullscreen & Anti-Scroll
@@ -244,15 +250,26 @@
                 if (keysToPrevent.includes(e.key)) e.preventDefault(); 
             }, { passive: false });
             
-            // Service Worker Registration
+            // Service Worker Registration with aggressive update checking
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(function(registration) {
+                // First unregister any existing service worker to force update
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for(let registration of registrations) {
+                        registration.unregister();
+                    }
+                }).then(function() {
+                    // Register new service worker
+                    return navigator.serviceWorker.register('/imperia/sw.js', { scope: '/imperia/' });
+                }).then(function(registration) {
                     console.log('ServiceWorker registration successful with scope: ', registration.scope);
                     
-                    // Check for updates every 30 seconds
+                    // Force immediate update check
+                    registration.update();
+                    
+                    // Check for updates every 10 seconds (more aggressive)
                     setInterval(() => {
                         registration.update();
-                    }, 30000);
+                    }, 10000);
                     
                     // Listen for updates
                     registration.addEventListener('updatefound', () => {
@@ -261,18 +278,30 @@
                             if (newWorker.state === 'activated') {
                                 // New service worker activated, reload page
                                 console.log('New service worker activated, reloading...');
-                                if (stopwatch) {
-                                    stopwatch.updateStatus('Update verfügbar - Seite wird neu geladen...');
+                                if (window.stopwatch) {
+                                    window.stopwatch.updateStatus('Update verfügbar - Seite wird neu geladen...');
                                 }
                                 setTimeout(() => {
                                     window.location.reload(true);
-                                }, 1000);
+                                }, 500);
                             }
                         });
                     });
                 }).catch(function(err) {
                     console.log('ServiceWorker registration failed: ', err);
                 });
+            }
+            
+            // Force cache clear on first load after update
+            if (performance.navigation.type === 1) {
+                // Page was reloaded
+                if ('caches' in window) {
+                    caches.keys().then(function(names) {
+                        for (let name of names) {
+                            caches.delete(name);
+                        }
+                    });
+                }
             }
         }); // Ende DOMContentLoaded
     </script>

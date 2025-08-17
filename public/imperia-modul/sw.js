@@ -1,12 +1,15 @@
-// sw.js - Service Worker für IMPERIA Tempral System PWA
+// sw.js - Service Worker für Tempral (IMPERIA Modul) PWA
 // Updated: 2024-01-15
-const CACHE_NAME = 'imperia-tempral-v4-2024';
+const CACHE_NAME = 'tempral-v1-2024-01-15';
 const urlsToCache = [
   '/imperia-modul/',
   '/imperia-modul/tempral.html',
   '/imperia-modul/manifest.json',
-  '/imperia-modul/icon-192x192.png',
-  '/imperia-modul/icon-512x512.png'
+  '/icon-192x192.png',
+  '/icon-512x512.png',
+  '/css/stopwatch-ui.css',
+  '/js/stopwatch-core.js',
+  '/js/stopwatch-api.js'
 ];
 
 // Install Service Worker
@@ -31,6 +34,16 @@ self.addEventListener('fetch', event => {
     event.respondWith(fetch(event.request));
     return;
   }
+  
+  // Bypass cache for JavaScript and CSS files to ensure latest version
+  if (event.request.url.includes('.js') || event.request.url.includes('.css')) {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match(event.request);
+      })
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request)
@@ -48,10 +61,8 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          // Delete all old caches (v1, v2, v3, and old modul caches)
-          if (cacheName !== CACHE_NAME && 
-              (cacheName.includes('imperia-modul-v') || 
-               cacheName.includes('imperia-tempral-v'))) {
+          // Delete all old caches that don't match current version
+          if (cacheName !== CACHE_NAME && cacheName.includes('tempral-')) {
             console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
