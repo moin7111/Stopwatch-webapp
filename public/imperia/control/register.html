@@ -188,6 +188,12 @@
             </div>
             
             <div class="form-group">
+                <label for="email">E-Mail (optional)</label>
+                <input type="email" id="email" placeholder="z.B. magician@example.com" autocomplete="email">
+                <span class="success-indicator">✓</span>
+            </div>
+            
+            <div class="form-group">
                 <label for="password">Passwort</label>
                 <input type="password" id="password" placeholder="Mindestens 6 Zeichen" required>
                 <span class="success-indicator">✓</span>
@@ -228,6 +234,7 @@
         // Form validation
         const form = document.getElementById('registerForm');
         const username = document.getElementById('username');
+        const email = document.getElementById('email');
         const password = document.getElementById('password');
         const passwordConfirm = document.getElementById('passwordConfirm');
         const submitBtn = document.getElementById('submitBtn');
@@ -236,6 +243,8 @@
             const parent = input.closest('.form-group');
             
             if (input.id === 'username' && input.value.length >= 3) {
+                parent.classList.add('valid');
+            } else if (input.id === 'email' && (input.value === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value))) {
                 parent.classList.add('valid');
             } else if (input.id === 'password' && input.value.length >= 6) {
                 parent.classList.add('valid');
@@ -248,12 +257,14 @@
             // Check if form is valid
             const isValid = username.value.length >= 3 && 
                           password.value.length >= 6 && 
-                          passwordConfirm.value === password.value;
+                          passwordConfirm.value === password.value &&
+                          (email.value === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value));
             
             submitBtn.disabled = !isValid;
         }
         
         username.addEventListener('input', () => validateField(username));
+        email.addEventListener('input', () => validateField(email));
         password.addEventListener('input', () => {
             validateField(password);
             validateField(passwordConfirm);
@@ -276,6 +287,7 @@
                     body: JSON.stringify({
                         code: verifiedLicense,
                         username: username.value,
+                        email: email.value || null,
                         password: password.value,
                         displayName: document.getElementById('displayName').value || username.value
                     })

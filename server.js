@@ -169,12 +169,20 @@ app.get('/app', (req, res) => {
 
 app.post('/auth/register', requireDB, async (req, res) => {
     try {
-        const { code, username, password, displayName } = req.body;
+        const { code, username, password, displayName, email } = req.body;
         const clientInfo = getClientInfo(req);
 
         // Validate input
         if (!code || !username || !password) {
             return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        // Validate email format if provided
+        if (email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return res.status(400).json({ error: 'Invalid email format' });
+            }
         }
 
         // Check if user already exists
@@ -196,7 +204,7 @@ app.post('/auth/register', requireDB, async (req, res) => {
         const userId = await db.createUser({
             username,
             displayName: displayName || username,
-            email: null, // for future use
+            email: email || null,
             password
         });
 
@@ -218,6 +226,7 @@ app.post('/auth/register', requireDB, async (req, res) => {
         // Log registration
         await db.logAction(userId, 'user_registered', {
             username,
+            email: email || 'not provided',
             license_code: code,
             token
         }, clientInfo.ip, clientInfo.userAgent);

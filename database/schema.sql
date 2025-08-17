@@ -184,19 +184,7 @@ CREATE TABLE IF NOT EXISTS active_modules (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Module interaction logs
-CREATE TABLE IF NOT EXISTS module_interactions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    module_id VARCHAR(50) NOT NULL,
-    interaction_type VARCHAR(50) NOT NULL,
-    interaction_data JSON,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
 -- Indexes for remote functionality
 CREATE INDEX IF NOT EXISTS idx_remote_sessions_user ON remote_sessions(user_id, last_active);
 CREATE INDEX IF NOT EXISTS idx_remote_sessions_token ON remote_sessions(token);
 CREATE INDEX IF NOT EXISTS idx_active_modules_user ON active_modules(user_id, activated_at);
-CREATE INDEX IF NOT EXISTS idx_module_interactions_user ON module_interactions(user_id, created_at);
