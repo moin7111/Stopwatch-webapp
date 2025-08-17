@@ -198,6 +198,11 @@ class Database {
         `;
         return await this.get(sql, [token]);
     }
+    
+    // Alias for getTokenByValue for consistency
+    async getToken(token) {
+        return await this.getTokenByValue(token);
+    }
 
     async getTokensByUserId(userId) {
         const sql = 'SELECT * FROM tokens WHERE user_id = ? AND is_active = 1';

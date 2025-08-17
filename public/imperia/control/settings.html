@@ -352,6 +352,28 @@
             <button class="add-btn" id="addTokenBtn">Neuen Token erstellen</button>
         </div>
         
+        <!-- Remote Access -->
+        <div class="settings-section">
+            <div class="section-header">
+                <span class="section-icon">📱</span>
+                <h2 class="section-title">Remote-Zugang</h2>
+            </div>
+            
+            <p style="margin-bottom: 15px; color: #999;">
+                Teilen Sie diesen Link mit dem Zuschauer-Gerät für die Remote-Steuerung:
+            </p>
+            
+            <div class="info-card" style="background: rgba(108, 92, 231, 0.1); border: 1px solid rgba(108, 92, 231, 0.3);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <input type="text" id="remoteUrl" readonly style="flex: 1; font-family: monospace; font-size: 14px;" />
+                    <button class="copy-btn" onclick="copyRemoteUrl()">📋 Kopieren</button>
+                </div>
+                <p style="font-size: 12px; color: #fd79a8; margin: 0;">
+                    ⚠️ Halten Sie diesen Link geheim! Jeder mit diesem Link kann die Remote-App öffnen.
+                </p>
+            </div>
+        </div>
+        
         <!-- Module URLs -->
         <div class="settings-section">
             <div class="section-header">
@@ -457,11 +479,42 @@
                         
                         // Update module URLs
                         updateModuleUrls(data.tokens[0]?.value);
+                        // Update remote URL
+                        updateRemoteUrl(data.tokens[0]?.value);
                     }
                 }
             } catch (error) {
                 console.error('Error loading tokens:', error);
             }
+        }
+        
+        // Update remote URL
+        function updateRemoteUrl(token) {
+            const remoteUrlInput = document.getElementById('remoteUrl');
+            if (token) {
+                const baseUrl = window.location.origin;
+                remoteUrlInput.value = `${baseUrl}/imperia/remote/${token}`;
+            } else {
+                remoteUrlInput.value = 'Kein Token verfügbar';
+            }
+        }
+        
+        // Copy remote URL
+        function copyRemoteUrl() {
+            const remoteUrlInput = document.getElementById('remoteUrl');
+            remoteUrlInput.select();
+            document.execCommand('copy');
+            
+            // Visual feedback
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '✓ Kopiert!';
+            btn.style.background = 'rgba(0, 184, 148, 0.2)';
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = '';
+            }, 2000);
         }
         
         // Update module URLs
