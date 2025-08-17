@@ -19,297 +19,56 @@
             color: #fff;
             min-height: 100vh;
             padding: 20px;
-        }
-        
-        .header {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-            margin-bottom: 40px;
+            justify-content: center;
         }
         
-        .back-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 8px 16px;
-            border-radius: 8px;
-            color: #fff;
-            text-decoration: none;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-        
-        .back-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
+        .message {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 600px;
         }
         
         h1 {
             font-size: 32px;
             font-weight: 600;
-        }
-        
-        .content {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        
-        .section {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 24px;
             margin-bottom: 20px;
         }
         
-        .section-title {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .section-icon {
-            font-size: 24px;
-        }
-        
-        .app-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 16px;
-            margin-top: 20px;
-        }
-        
-        .app-card {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            color: #fff;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .app-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .app-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(102, 126, 234, 0.5);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-        }
-        
-        .app-card:hover::before {
-            opacity: 1;
-        }
-        
-        .app-card.selected {
-            background: rgba(0, 184, 148, 0.1);
-            border-color: rgba(0, 184, 148, 0.5);
-            transform: scale(1.02);
-        }
-        
-        .app-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-            filter: grayscale(0.2);
-        }
-        
-        .app-name {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-        
-        .app-status {
-            font-size: 12px;
-            opacity: 0.7;
-        }
-        
-        .status-active {
-            color: #30d158;
-        }
-        
-        .status-inactive {
-            color: #8e8e93;
-        }
-        
-        .coming-soon {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-        
-        .coming-soon:hover {
-            transform: none;
-            border-color: rgba(255, 255, 255, 0.15);
-            box-shadow: none;
-        }
-        
-        .info-box {
-            background: rgba(102, 126, 234, 0.1);
-            border: 1px solid rgba(102, 126, 234, 0.3);
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 20px;
-            font-size: 14px;
+        p {
+            font-size: 18px;
+            opacity: 0.8;
             line-height: 1.6;
         }
         
-        .info-icon {
+        .back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            margin-top: 30px;
             display: inline-block;
-            margin-right: 8px;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <a href="/imperia/control/menu.html" class="back-btn">← Zurück</a>
+    <div class="message">
         <h1>Routinen</h1>
-        <div style="width: 80px;"></div>
+        <p>Der Routinen-Bereich wird komplett neu strukturiert und befindet sich jetzt in einem eigenen Ordner.</p>
+        <a href="/imperia/control/menu.html" class="back-btn">← Zurück zum Menü</a>
     </div>
-    
-    <div class="content">
-        <div class="section">
-            <div class="section-title">
-                <span class="section-icon">⏱️</span>
-                <span>Zeit-basierte Effekte</span>
-            </div>
-            
-            <div class="app-grid">
-                <a href="/imperia/tempra/stopwatch.html" class="app-card" id="tempraCard">
-                    <div class="app-icon">⏱️</div>
-                    <div class="app-name">Tempra</div>
-                    <div class="app-status status-active">Verfügbar</div>
-                </a>
-                
-                <div class="app-card coming-soon">
-                    <div class="app-icon">⏲️</div>
-                    <div class="app-name">Timer Force</div>
-                    <div class="app-status status-inactive">Bald verfügbar</div>
-                </div>
-                
-                <div class="app-card coming-soon">
-                    <div class="app-icon">⏰</div>
-                    <div class="app-name">Alarm Predict</div>
-                    <div class="app-status status-inactive">Bald verfügbar</div>
-                </div>
-            </div>
-            
-            <div class="info-box">
-                <span class="info-icon">ℹ️</span>
-                <strong>Tempra</strong> ist deine professionelle Stoppuhr mit Force-Funktionen. 
-                Perfekt für Zeit-Vorhersagen und kontrollierte Stoppuhr-Effekte.
-            </div>
-        </div>
-        
-        <div class="section">
-            <div class="section-title">
-                <span class="section-icon">🔢</span>
-                <span>Zahlen & Berechnungen</span>
-            </div>
-            
-            <div class="app-grid">
-                <div class="app-card coming-soon">
-                    <div class="app-icon">🧮</div>
-                    <div class="app-name">Calculator Force</div>
-                    <div class="app-status status-inactive">In Entwicklung</div>
-                </div>
-                
-                <div class="app-card coming-soon">
-                    <div class="app-icon">📊</div>
-                    <div class="app-name">Number Predict</div>
-                    <div class="app-status status-inactive">In Entwicklung</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="section">
-            <div class="section-title">
-                <span class="section-icon">🌐</span>
-                <span>Web & Browser</span>
-            </div>
-            
-            <div class="app-grid">
-                <div class="app-card coming-soon">
-                    <div class="app-icon">🌐</div>
-                    <div class="app-name">Fake Browser</div>
-                    <div class="app-status status-inactive">Geplant</div>
-                </div>
-                
-                <div class="app-card coming-soon">
-                    <div class="app-icon">🔍</div>
-                    <div class="app-name">Search Predict</div>
-                    <div class="app-status status-inactive">Geplant</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <script>
-        // Get user token for Tempra
-        async function getTempraUrl() {
-            try {
-                // Versuche zuerst aus localStorage (falls von Tempra gespeichert)
-                const storedToken = localStorage.getItem('tempra_token');
-                if (storedToken) {
-                    return `/imperia/tempra/stopwatch.html?token=${encodeURIComponent(storedToken)}`;
-                }
-                
-                // Sonst von API holen
-                const response = await fetch('/api/tokens', {
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.tokens && data.tokens.length > 0) {
-                        const token = data.tokens[0].value;
-                        // Speichere für spätere Verwendung
-                        localStorage.setItem('tempra_token', token);
-                        return `/imperia/tempra/stopwatch.html?token=${encodeURIComponent(token)}`;
-                    }
-                }
-            } catch (error) {
-                console.error('Error getting token:', error);
-            }
-            
-            // Default - leitet zu Login weiter wenn kein Token
-            return '/imperia/tempra/login.html';
-        }
-        
-        // Update Tempra link with token
-        document.addEventListener('DOMContentLoaded', async () => {
-            const tempraCard = document.getElementById('tempraCard');
-            const url = await getTempraUrl();
-            tempraCard.href = url;
-        });
-        
-        // Add touch feedback
-        document.querySelectorAll('.app-card:not(.coming-soon)').forEach(card => {
-            card.addEventListener('touchstart', () => {
-                card.style.transform = 'scale(0.95)';
-            });
-            
-            card.addEventListener('touchend', () => {
-                setTimeout(() => {
-                    card.style.transform = '';
-                }, 100);
-            });
-        });
-    </script>
 </body>
 </html>

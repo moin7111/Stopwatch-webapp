@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-License Code Creator für Stopwatch Magic Webapp v2.0
+License Code Creator für Imperia Magic Webapp v2.0
 Für Pythonista iOS App - Updated für SQL Database
 
 Erstellt neue License Codes über die Admin API
@@ -12,7 +12,7 @@ import json
 from datetime import datetime
 
 # --- Konfiguration ---
-BASE_URL = "https://stopwatch-webapp-1.onrender.com"
+BASE_URL = "https://imperia-magic.onrender.com"
 ADMIN_KEY = "DevAdmin2025"  # ← Hier deinen Admin Key eintragen
 
 def create_license_codes(count=1):
@@ -287,7 +287,7 @@ def main():
     Hauptfunktion - Interaktives Menü (SQL Database Version)
     """
     
-    print("🎩 Stopwatch Magic v2.0 - License Manager (SQL)")
+    print("🎩 Imperia Magic v2.0 - License Manager (SQL)")
     print("=" * 50)
     
     # Prüfe Admin Key

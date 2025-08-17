@@ -25,6 +25,12 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        body.ready {
+            opacity: 1;
         }
         
         .container {
@@ -180,6 +186,9 @@
     <script>
         // Check for existing session on load
         window.addEventListener('DOMContentLoaded', async () => {
+            // Show loading initially
+            document.getElementById('loading').classList.add('show');
+            
             // Check localStorage for persistent session
             const savedSession = localStorage.getItem('imperiaSession');
             if (savedSession) {
@@ -211,11 +220,16 @@
                     const data = await response.json();
                     if (data.authenticated) {
                         window.location.href = '/imperia/control/menu.html';
+                        return;
                     }
                 }
             } catch (e) {
                 // Not logged in, stay on this page
             }
+            
+            // If we're still here, user is not logged in
+            document.getElementById('loading').classList.remove('show');
+            document.body.classList.add('ready');
         });
         
         // License verification

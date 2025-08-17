@@ -395,17 +395,17 @@
             
             <div class="url-container">
                 <div class="url-label">Force senden (POST)</div>
-                <div class="url-display">/api/stopwatch/tempra/force/{TOKEN}</div>
+                <div class="url-display">/api/data/{TOKEN}</div>
             </div>
             
             <div class="url-container">
                 <div class="url-label">Presets abrufen (GET)</div>
-                <div class="url-display">/api/stopwatch/presets/{TOKEN}</div>
+                <div class="url-display">/api/presets</div>
             </div>
             
             <div class="url-container">
                 <div class="url-label">Status prüfen (GET)</div>
-                <div class="url-display">/api/stopwatch/tempra/data/{TOKEN}</div>
+                <div class="url-display">/api/data/{TOKEN}</div>
             </div>
         </div>
         
@@ -500,21 +500,45 @@
         }
         
         // Copy remote URL
-        function copyRemoteUrl() {
+        async function copyRemoteUrl() {
             const remoteUrlInput = document.getElementById('remoteUrl');
-            remoteUrlInput.select();
-            document.execCommand('copy');
+            const urlText = remoteUrlInput.value;
             
-            // Visual feedback
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '✓ Kopiert!';
-            btn.style.background = 'rgba(0, 184, 148, 0.2)';
-            
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.style.background = '';
-            }, 2000);
+            try {
+                // Moderne Clipboard API verwenden
+                await navigator.clipboard.writeText(urlText);
+                
+                // Visual feedback
+                const btn = event.currentTarget;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✓ Kopiert!';
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            } catch (err) {
+                // Fallback für ältere Browser
+                remoteUrlInput.select();
+                remoteUrlInput.setSelectionRange(0, 99999);
+                try {
+                    document.execCommand('copy');
+                    // Visual feedback
+                    const btn = event.currentTarget;
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '✓ Kopiert!';
+                    btn.classList.add('copied');
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.classList.remove('copied');
+                    }, 2000);
+                } catch (err2) {
+                    console.error('Kopieren fehlgeschlagen:', err2);
+                    alert('Kopieren fehlgeschlagen. Bitte manuell kopieren.');
+                }
+            }
         }
         
         // Update module URLs
@@ -531,15 +555,15 @@
             
             moduleUrlsDiv.innerHTML = `
                 <div class="url-container">
-                    <div class="url-label">Tempral (Zuschauer-App)</div>
-                    <div class="url-display" id="tempralUrl">${baseUrl}/imperia-modul/tempral.html?token=${token}</div>
-                    <button class="copy-btn" onclick="copyUrl('tempralUrl')">URL kopieren</button>
+                    <div class="url-label">Remote Zugriff (Zuschauer)</div>
+                    <div class="url-display" id="remoteUrl">${baseUrl}/imperia/remote/index.html?token=${token}</div>
+                    <button class="copy-btn" onclick="copyUrl('remoteUrl')">URL kopieren</button>
                 </div>
                 
                 <div class="url-container">
-                    <div class="url-label">Tempra (Deine Kontrolle)</div>
-                    <div class="url-display" id="tempraUrl">${baseUrl}/imperia/tempra/stopwatch.html?token=${token}</div>
-                    <button class="copy-btn" onclick="copyUrl('tempraUrl')">URL kopieren</button>
+                    <div class="url-label">Module (Kontrolle)</div>
+                    <div class="url-display" id="moduleUrl">${baseUrl}/imperia/modules/index.html?token=${token}</div>
+                    <button class="copy-btn" onclick="copyUrl('moduleUrl')">URL kopieren</button>
                 </div>
             `;
         }

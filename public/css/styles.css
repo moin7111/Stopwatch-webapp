@@ -79,7 +79,7 @@ hr {
   margin: 20px 0;
 }
 
-/* --- Stopwatch specific styles (from index.html) --- */
+/* --- Timer specific styles (from index.html) --- */
 .status-bar { 
   display: flex; 
   justify-content: flex-end; 
@@ -90,7 +90,7 @@ hr {
   color: #fff; 
 }
 
-.stopwatch-container { 
+.timer-container { 
   position: relative; 
   height: calc(100vh - 116px); 
   padding: 90px 12px 0 12px; 
