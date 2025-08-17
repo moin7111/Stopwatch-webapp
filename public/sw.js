@@ -1,5 +1,6 @@
 // sw.js - Service Worker für IMPERIA Magic System PWA
-const CACHE_NAME = 'imperia-v4';
+// Updated: 2024-01-15
+const CACHE_NAME = 'imperia-v4-2024';
 const urlsToCache = [
   '/',
   '/index.html',

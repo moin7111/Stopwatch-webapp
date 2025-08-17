@@ -1,5 +1,6 @@
 // sw.js - Service Worker für IMPERIA Tempral System PWA
-const CACHE_NAME = 'imperia-tempral-v4';
+// Updated: 2024-01-15
+const CACHE_NAME = 'imperia-tempral-v4-2024';
 const urlsToCache = [
   '/imperia-modul/',
   '/imperia-modul/tempral.html',
