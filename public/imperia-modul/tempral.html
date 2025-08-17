@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="apple-mobile-web-app-title" content="Tempral" />
+    <meta name="application-name" content="Tempral" />
+    <meta name="msapplication-TileColor" content="#000000" />
+    <meta name="msapplication-TileImage" content="/icon-192x192.png" />
+    <title>Tempral - Zuschauer</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/imperia-modul/manifest.json" />
+    
+    <!-- Icons -->
+    <link rel="apple-touch-icon" href="/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512x512.png" />
+    <link rel="icon" type="image/png" href="/icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png" />
+    
+    <!-- iOS Splash Screen -->
+    <link rel="apple-touch-startup-image" href="/icon-512x512.png">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/stopwatch-ui.css?v=2024011501">
+</head>
+<body>
+    <div class="status-bar">
+        <div id="statusText" style="height:20px;">&nbsp;</div>
+    </div>
+
+    <div class="stopwatch-container">
+        <div class="time-display" id="timeDisplay">00:00,00</div>
+
+        <!-- Keine Kontrollen im Tempral-Modus -->
+        <div class="view-only-info" style="text-align: center; color: #8E8E93; margin-top: 20px;">
+            <p>Zuschauer-Modus</p>
+        </div>
+    </div>
+
+    <div class="results-container" id="resultsContainer" style="display: none;">
+        <h2 class="results-title">Runden</h2>
+        <div class="laps-list" id="lapsContainer"></div>
+    </div>
+
+    <nav class="bottom-nav" role="navigation" aria-label="Hauptnavigation">
+        <a href="#" class="nav-item" id="worldClockNav" aria-label="Weltzeituhr">
+            <span class="nav-icon">🌍</span>
+            <span class="nav-label">Weltuhr</span>
+        </a>
+        <a href="#" class="nav-item" id="alarmNavItem" aria-label="Wecker">
+            <span class="nav-icon">⏰</span>
+            <span class="nav-label">Wecker</span>
+        </a>
+        <a href="#" class="nav-item active" id="stopwatchNav" aria-label="Stoppuhr">
+            <span class="nav-icon">⏱️</span>
+            <span class="nav-label">Stoppuhr</span>
+        </a>
+        <a href="#" class="nav-item" id="timerNav" aria-label="Timer">
+            <span class="nav-icon">⏲️</span>
+            <span class="nav-label">Timer</span>
+        </a>
+    </nav>
+
+    <!-- Scripts -->
+    <script src="/js/stopwatch-core.js?v=2024011501"></script>
+    <script src="/js/stopwatch-api.js?v=2024011501"></script>
+    <script>
+        // Warte bis DOM geladen ist
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Tempral starting...');
+            
+            // Initialisierung
+            const stopwatch = new StopwatchCore();
+            let api = null;
+
+            // UI-Elemente initialisieren (nur Anzeige)
+            stopwatch.initUI({
+                timeDisplay: document.getElementById('timeDisplay'),
+                leftButton: null, // Keine Buttons in Tempral
+                rightButton: null,
+                lapsContainer: document.getElementById('lapsContainer'),
+                statusText: document.getElementById('statusText')
+            });
+
+            // Status setzen
+            stopwatch.updateStatus('Tempral - Warte auf Verbindung...');
+
+            // Verbindung aufbauen
+            const params = new URLSearchParams(window.location.search);
+            const tokenParam = params.get('token') || params.get('t');
+            
+            if (tokenParam) {
+                // Als Tempral verbinden (readonly)
+                api = new StopwatchAPI(tokenParam, 'tempral');
+                window.api = api;
+                
+                // Nur Polling starten, keine Kontrollen
+                api.startPolling(stopwatch);
+                stopwatch.updateStatus(`Tempral verbunden (${tokenParam.substring(0,6)}...)`);
+            } else {
+                stopwatch.updateStatus('Kein Token - bitte URL mit ?token=XXX aufrufen');
+            }
+
+            // Navigation deaktivieren
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    stopwatch.updateStatus('Navigation in Tempral nicht verfügbar');
+                });
+            });
+
+            // Prevent zooming and scrolling
+            document.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
+            
+            let lastTouch = 0;
+            document.addEventListener('touchend', function(e) { 
+                const now = Date.now(); 
+                if (now - lastTouch <= 300) e.preventDefault(); 
+                lastTouch = now; 
+            }, { passive: false });
+            
+            document.addEventListener('gesturestart', function(e) { e.preventDefault && e.preventDefault(); });
+            document.addEventListener('dblclick', function(e) { e.preventDefault(); });
+            
+            window.addEventListener('keydown', function(e) { 
+                const keysToPrevent = ['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' ']; 
+                if (keysToPrevent.includes(e.key)) e.preventDefault(); 
+            }, { passive: false });
+            
+            // Service Worker Registration
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/imperia-modul/sw.js', { scope: '/imperia-modul/' }).then(function(registration) {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    
+                    // Check for updates every 30 seconds
+                    setInterval(() => {
+                        registration.update();
+                    }, 30000);
+                    
+                    // Listen for updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'activated') {
+                                // New service worker activated, reload page
+                                console.log('New service worker activated, reloading...');
+                                if (window.stopwatch) {
+                                    window.stopwatch.updateStatus('Update verfügbar - Seite wird neu geladen...');
+                                }
+                                setTimeout(() => {
+                                    window.location.reload(true);
+                                }, 1000);
+                            }
+                        });
+                    });
+                }).catch(function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            }
+        }); // Ende DOMContentLoaded
+    </script>
+</body>
+</html>

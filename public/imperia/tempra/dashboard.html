@@ -37,7 +37,7 @@
     <section style="margin-top:24px;">
       <h2>🔗 Schnellzugriffe</h2>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin:16px 0;">
-        <button id="openTempraRemote" style="background:#30D058;">🎯 Tempra Remote öffnen</button>
+        <button id="openTempral" style="background:#30D058;">🎯 Tempral öffnen</button>
         <button id="openTempraStopwatch" style="background:#FF9500;">⏱️ Tempra Stoppuhr öffnen</button>
       </div>
     </section>
@@ -129,9 +129,9 @@ Content-Type: application/json<br><br>
     location.href = '/imperia/tempra/login.html';
   });
 
-  document.getElementById('openTempraRemote').addEventListener('click', ()=> {
+  document.getElementById('openTempral').addEventListener('click', ()=> {
     if (!currentToken) return alert('Token noch nicht geladen');
-    window.open(`/imperia/tempra/stopwatch.html?token=${encodeURIComponent(currentToken)}&mode=remote`, '_blank');
+    window.open(`/imperia-modul/tempral.html?token=${encodeURIComponent(currentToken)}`, '_blank');
   });
 
   document.getElementById('openTempraStopwatch').addEventListener('click', ()=> {

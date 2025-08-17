@@ -5,7 +5,7 @@
 class StopwatchAPI {
     constructor(token, type = 'tempra') {
         this.token = token;
-        this.type = type; // 'tempra'
+        this.type = type; // 'tempra' oder 'tempral'
         this.polling = false;
         this.pollInterval = 400;
         this.apiBase = '';
@@ -96,7 +96,8 @@ class StopwatchAPI {
      * Sendet Force an Server
      */
     async sendForce(force) {
-        // Alle Tempra-Instanzen können Force senden
+        // Nur Tempra kann Force senden, nicht Tempral
+        if (this.type === 'tempral') return;
 
         try {
             const response = await fetch(`${this.apiBase}/api/stopwatch/tempra/force/${encodeURIComponent(this.token)}`, {
@@ -158,7 +159,8 @@ class StopwatchAPI {
      * Speichert Preset
      */
     async savePreset(preset) {
-        // Alle Tempra-Instanzen können Presets speichern
+        // Nur Tempra kann Presets speichern, nicht Tempral
+        if (this.type === 'tempral') return false;
 
         try {
             const response = await fetch(`${this.apiBase}/api/stopwatch/preset`, {
@@ -280,7 +282,8 @@ class StopwatchAPI {
      * Löscht ein Preset
      */
     async deletePreset(presetName) {
-        // Alle Tempra-Instanzen können Presets löschen
+        // Nur Tempra kann Presets löschen, nicht Tempral
+        if (this.type === 'tempral') return false;
 
         try {
             const response = await fetch(`${this.apiBase}/api/stopwatch/preset/${encodeURIComponent(presetName)}`, {
