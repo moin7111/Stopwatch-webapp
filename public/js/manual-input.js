@@ -197,8 +197,8 @@ class ManualInput {
         // Füge Force lokal hinzu
         this.stopwatch.addForce(force);
         
-        // Sende auch via API wenn verfügbar und es sich um MainTick handelt
-        if (this.api && this.api.type === 'maintick') {
+        // Sende auch via API wenn verfügbar und es sich um MainTick/Tempra handelt
+        if (this.api && (this.api.type === 'maintick' || this.api.type === 'tempra')) {
             try {
                 await this.api.sendManualForce(force);
             } catch (error) {

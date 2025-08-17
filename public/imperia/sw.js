@@ -1,12 +1,14 @@
 // sw.js - Service Worker für IMPERIA Control System PWA
 // Updated: 2024-01-15
-const CACHE_NAME = 'imperia-control-v4-2024';
+const CACHE_NAME = 'imperia-control-v5-2024-01-15';
 const urlsToCache = [
   '/imperia/',
   '/imperia/control/index.html',
   '/imperia/control/login.html',
   '/imperia/control/menu.html',
-  '/imperia/tempra/index.html',
+  '/imperia/tempra/stopwatch.html',
+  '/imperia/tempra/login.html',
+  '/imperia/tempra/dashboard.html',
   '/imperia/manifest.json',
   '/imperia/icon-192x192.png',
   '/imperia/icon-512x512.png'
@@ -32,6 +34,16 @@ self.addEventListener('fetch', event => {
   // Bypass cache for API calls
   if (event.request.url.includes('/api/')) {
     event.respondWith(fetch(event.request));
+    return;
+  }
+  
+  // Bypass cache for JavaScript and CSS files to ensure latest version
+  if (event.request.url.includes('.js') || event.request.url.includes('.css')) {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match(event.request);
+      })
+    );
     return;
   }
 

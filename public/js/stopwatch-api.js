@@ -5,7 +5,7 @@
 class StopwatchAPI {
     constructor(token, type = 'modultick') {
         this.token = token;
-        this.type = type; // 'maintick' oder 'modultick'
+        this.type = type; // 'tempra', 'maintick' oder 'modultick'
         this.polling = false;
         this.pollInterval = 400;
         this.apiBase = '';
@@ -93,10 +93,10 @@ class StopwatchAPI {
     }
 
     /**
-     * Sendet Force an Server (nur MainTick)
+     * Sendet Force an Server (nur MainTick/Tempra)
      */
     async sendForce(force) {
-        if (this.type !== 'maintick') return;
+        if (this.type !== 'maintick' && this.type !== 'tempra') return;
 
         try {
             const response = await fetch(`${this.apiBase}/api/stopwatch/maintick/force/${encodeURIComponent(this.token)}`, {
@@ -155,10 +155,10 @@ class StopwatchAPI {
     }
 
     /**
-     * Speichert Preset (nur MainTick)
+     * Speichert Preset (nur MainTick/Tempra)
      */
     async savePreset(preset) {
-        if (this.type !== 'maintick') return false;
+        if (this.type !== 'maintick' && this.type !== 'tempra') return false;
 
         try {
             const response = await fetch(`${this.apiBase}/api/stopwatch/preset`, {
@@ -195,10 +195,10 @@ class StopwatchAPI {
     }
 
     /**
-     * Verbindet MainTick mit ModulTick
+     * Verbindet MainTick/Tempra mit ModulTick
      */
     async connectToModulTick(modulTickToken) {
-        if (this.type !== 'maintick') return;
+        if (this.type !== 'maintick' && this.type !== 'tempra') return;
 
         try {
             const response = await fetch(`${this.apiBase}/api/stopwatch/connect`, {
@@ -280,7 +280,7 @@ class StopwatchAPI {
      * Löscht ein Preset
      */
     async deletePreset(presetName) {
-        if (this.type !== 'maintick') return false;
+        if (this.type !== 'maintick' && this.type !== 'tempra') return false;
 
         try {
             const response = await fetch(`${this.apiBase}/api/stopwatch/preset/${encodeURIComponent(presetName)}`, {
