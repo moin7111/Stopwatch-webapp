@@ -189,13 +189,12 @@
   if (rightButton) {
     rightButton.addEventListener('click', function() {
       const txt = rightButton.textContent.trim();
-      if ((txt === 'Start') || (txt === 'Weiter' && !isRunning && elapsedTime === 0)) {
+      if (txt === 'Start') {
         startStopwatch();
       } else if (txt === 'Stopp' && isRunning) {
         stopStopwatch();
-      } else if (!isRunning && elapsedTime === 0) {
-        startStopwatch();
-      } else if (!isRunning && elapsedTime > 0) {
+      } else if (txt === 'Weiter' && !isRunning && elapsedTime > 0) {
+        // Resume from paused state - don't reset elapsedTime
         startStopwatch();
       }
     });

@@ -439,7 +439,7 @@ app.get('/api/user/tokens', requireDB, async (req, res) => {
         const baseUrl = `${protocol}://${host}`;
 
         const apiExamples = {
-            spectatorUrl: `${baseUrl}/spectator.html?token=${token.token}`,
+            spectatorUrl: `${baseUrl}/imperia-modul/tempral.html?token=${token.token}`,
             pushForce: {
                 url: `${baseUrl}/api/data/${token.token}`,
                 method: 'POST',

@@ -439,10 +439,13 @@ class StopwatchCore {
      */
     handleRightButton() {
         const txt = this.rightButton.textContent.trim();
-        if (txt === 'Start' || (txt === 'Weiter' && !this.isRunning)) {
+        if (txt === 'Start') {
             this.startStopwatch();
         } else if (txt === 'Stopp' && this.isRunning) {
             this.stopStopwatch();
+        } else if (txt === 'Weiter' && !this.isRunning && this.elapsedTime > 0) {
+            // Resume from paused state
+            this.startStopwatch();
         }
     }
 

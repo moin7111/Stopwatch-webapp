@@ -4,7 +4,7 @@ const Magician = (function(){
     // check login
     const s = await fetch('/auth/status').then(r=>r.json());
     if (!s.loggedIn) {
-      location.href = '/maintick/login.html';
+      location.href = '/imperia/tempra/login.html';
       return;
     }
     // load tokens
@@ -22,7 +22,7 @@ const Magician = (function(){
         el.style.padding='8px'; el.style.borderBottom='1px solid rgba(255,255,255,0.06)';
         el.innerHTML = `<strong>${t.token}</strong> &nbsp; queued: ${t.queued} &nbsp; <button class="btnOpen">Öffnen</button> <button class="btnDel" style="margin-left:8px">Löschen</button>`;
         el.querySelector('.btnOpen').addEventListener('click', ()=> {
-          window.open(`/maintick/stopwatch.html?token=${encodeURIComponent(t.token)}`, '_blank');
+          window.open(`/imperia/tempra/stopwatch.html?token=${encodeURIComponent(t.token)}`, '_blank');
         });
         el.querySelector('.btnDel').addEventListener('click', async ()=> {
           if (!confirm('Token löschen?')) return;
@@ -46,7 +46,7 @@ const Magician = (function(){
 
   async function logout(){
     await fetch('/auth/logout', { method:'POST' });
-    location.href = '/maintick/login.html';
+    location.href = '/imperia/tempra/login.html';
   }
 
   return { init, createToken, logout };

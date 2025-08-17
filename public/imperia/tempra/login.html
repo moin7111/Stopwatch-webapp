@@ -7,10 +7,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#000000" />
-    <title>MainTick - Login</title>
+    <title>Tempra - Login</title>
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/maintick/manifest.json" />
+    <link rel="manifest" href="/imperia/manifest.json" />
     
     <!-- Icons -->
     <link rel="apple-touch-icon" href="/icon-192x192.png" />
@@ -60,7 +60,7 @@
     if (!code || !username || !password) return alert('Bitte Code, Benutzername und Passwort ausfüllen');
     try {
       await postJSON('/auth/register', { code, username, password, displayName });
-      location.href = '/maintick/dashboard.html';
+      location.href = '/imperia/tempra/dashboard.html';
     } catch (e) { alert('Registrierung fehlgeschlagen: ' + (e.error||JSON.stringify(e))); }
   });
 
@@ -70,7 +70,7 @@
     if (!username || !password) return alert('Benutzername und Passwort erforderlich');
     try {
       await postJSON('/auth/login', { username, password });
-      location.href = '/maintick/dashboard.html';
+      location.href = '/imperia/tempra/dashboard.html';
     } catch (e) { alert('Login fehlgeschlagen: ' + (e.error||JSON.stringify(e))); }
   });
 
