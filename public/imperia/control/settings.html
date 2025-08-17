@@ -500,21 +500,45 @@
         }
         
         // Copy remote URL
-        function copyRemoteUrl() {
+        async function copyRemoteUrl() {
             const remoteUrlInput = document.getElementById('remoteUrl');
-            remoteUrlInput.select();
-            document.execCommand('copy');
+            const urlText = remoteUrlInput.value;
             
-            // Visual feedback
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '✓ Kopiert!';
-            btn.style.background = 'rgba(0, 184, 148, 0.2)';
-            
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.style.background = '';
-            }, 2000);
+            try {
+                // Moderne Clipboard API verwenden
+                await navigator.clipboard.writeText(urlText);
+                
+                // Visual feedback
+                const btn = event.currentTarget;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✓ Kopiert!';
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            } catch (err) {
+                // Fallback für ältere Browser
+                remoteUrlInput.select();
+                remoteUrlInput.setSelectionRange(0, 99999);
+                try {
+                    document.execCommand('copy');
+                    // Visual feedback
+                    const btn = event.currentTarget;
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '✓ Kopiert!';
+                    btn.classList.add('copied');
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.classList.remove('copied');
+                    }, 2000);
+                } catch (err2) {
+                    console.error('Kopieren fehlgeschlagen:', err2);
+                    alert('Kopieren fehlgeschlagen. Bitte manuell kopieren.');
+                }
+            }
         }
         
         // Update module URLs
