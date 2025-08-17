@@ -444,7 +444,7 @@ app.get('/api/user/tokens', requireDB, async (req, res) => {
         const baseUrl = `${protocol}://${host}`;
 
         const apiExamples = {
-            spectatorUrl: `${baseUrl}/imperia-modul/tempral.html?token=${token.token}`,
+            remoteUrl: `${baseUrl}/imperia/remote/index.html?token=${token.token}`,
             pushForce: {
                 url: `${baseUrl}/api/data/${token.token}`,
                 method: 'POST',
@@ -455,7 +455,7 @@ app.get('/api/user/tokens', requireDB, async (req, res) => {
                         target: 15,
                         trigger: 'stop',
                         minDurationMs: 3000,
-                        app: 'stopwatch'
+                        app: 'imperia'
                     }
                 })
             },
@@ -830,7 +830,7 @@ app.post('/api/data/:token', requireDB, async (req, res) => {
             force_type: finalForceType,
             target: finalValue,
             value: finalValue,
-            app: app || 'stopwatch',
+            app: app || 'imperia',
             trigger: trigger || conditions?.trigger || 'both',
             minDurationMs: minDurationMs || 0,
             conditions,
@@ -1040,13 +1040,13 @@ initializeDatabase().then(() => {
     app.listen(PORT, () => {
         console.log(`🚀 Server running on port ${PORT}`);
         if (process.env.NODE_ENV === 'production') {
-            console.log(`🌐 Production URL: https://stopwatch-webapp-1.onrender.com`);
+            console.log(`🌐 Production URL: ${process.env.RENDER_EXTERNAL_URL || 'https://imperia-magic.onrender.com'}`);
         } else {
             console.log(`🌐 Local URL: http://localhost:${PORT}`);
         }
         console.log(`🗄️ Database: SQLite (${db.dbPath})`);
         console.log(`🔐 Admin protection: ${process.env.ADMIN_KEY ? 'ENABLED' : 'DISABLED (dev mode)'}`);
-        console.log(`📱 PWA Login: ${process.env.NODE_ENV === 'production' ? 'https://stopwatch-webapp-1.onrender.com/imperia/control/settings.html' : `http://localhost:${PORT}/imperia/control/settings.html`}`);
+        console.log(`📱 PWA Login: ${process.env.NODE_ENV === 'production' ? `${process.env.RENDER_EXTERNAL_URL || 'https://imperia-magic.onrender.com'}/imperia/control/settings.html` : `http://localhost:${PORT}/imperia/control/settings.html`}`);
     });
 }).catch(error => {
     console.error('❌ Failed to start server:', error);

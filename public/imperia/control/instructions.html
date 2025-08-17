@@ -242,7 +242,7 @@
                     <div class="step-number">3</div>
                     <div class="step-title">Module verbinden</div>
                     <div class="step-content">
-                        Öffne ein Modul (z.B. Tempra) und gib deinen Token ein, um es zu verbinden. 
+                        Öffne ein Modul und gib deinen Token ein, um es zu verbinden. 
                         Die Verbindung bleibt bestehen, bis du sie manuell trennst.
                     </div>
                 </div>
@@ -254,112 +254,6 @@
             </div>
         </div>
         
-        <!-- Tempra Tutorial -->
-        <div class="instruction-section collapsed" id="tempra-tutorial">
-            <div class="section-header" onclick="toggleSection('tempra-tutorial')">
-                <span class="section-icon">⏱️</span>
-                <h2 class="section-title">Tempra Stoppuhr</h2>
-                <span class="expand-icon">▼</span>
-            </div>
-            <div class="section-content">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <div class="step-title">Force-Typen verstehen</div>
-                    <div class="step-content">
-                        <div class="feature-grid">
-                            <div class="feature-card">
-                                <div class="feature-icon">🎯</div>
-                                <div class="feature-name">MS-Force</div>
-                                <div class="feature-desc">Forciert die Millisekunden auf einen bestimmten Wert</div>
-                            </div>
-                            <div class="feature-card">
-                                <div class="feature-icon">➕</div>
-                                <div class="feature-name">S-Force (Summe)</div>
-                                <div class="feature-desc">Forciert die Quersumme der Zeit</div>
-                            </div>
-                            <div class="feature-card">
-                                <div class="feature-icon">🕐</div>
-                                <div class="feature-name">FT-Force</div>
-                                <div class="feature-desc">Forciert die komplette Zeit (MM:SS)</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <div class="step-title">Manuelle Eingabe (Triple-Click)</div>
-                    <div class="step-content">
-                        Klicke dreimal schnell auf die Zeitanzeige, um das Manual Input Fenster zu öffnen. 
-                        Hier kannst du spontan Zahlen eingeben, die nacheinander forciert werden.
-                        <div class="code-block">
-                            Beispiel: 42, 17, 89 → Jeder Stop zeigt die nächste Zahl
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <div class="step-title">Presets erstellen (Triple-Click Wecker)</div>
-                    <div class="step-content">
-                        Klicke dreimal auf das Wecker-Symbol, um Presets zu verwalten. 
-                        Presets speichern komplexe Routinen mit Bedingungen:
-                        <ul style="margin-left: 20px; margin-top: 8px;">
-                            <li>Nach X Sekunden aktivieren</li>
-                            <li>Nach Y mal Stoppen aktivieren</li>
-                            <li>Nur bei Stop oder nur bei Runde triggern</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="warning">
-                    <span class="tip-icon">⚠️</span>
-                    <strong>Wichtig:</strong> Forces in der Runde werden nur auf die alte Runde angewendet, 
-                    nicht auf die neue!
-                </div>
-            </div>
-        </div>
-        
-        <!-- Tempral Zuschauer -->
-        <div class="instruction-section collapsed" id="tempra-remote-tutorial">
-            <div class="section-header" onclick="toggleSection('tempra-remote-tutorial')">
-                <span class="section-icon">👥</span>
-                <h2 class="section-title">Tempral für Zuschauer</h2>
-                <span class="expand-icon">▼</span>
-            </div>
-            <div class="section-content">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <div class="step-title">URL generieren</div>
-                    <div class="step-content">
-                        Gehe zu Einstellungen → Module URLs. Dort findest du den Link für Tempral mit deinem Token:
-                        <div class="code-block">
-                            https://deine-domain.com/imperia-modul/tempral.html?token=XXXXXX
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <div class="step-title">Zuschauer-Funktionen</div>
-                    <div class="step-content">
-                        Tempral hat eingeschränkte Funktionen:
-                        <ul style="margin-left: 20px; margin-top: 8px;">
-                            <li>✅ Manuelle Eingabe (Triple-Click Stoppuhr)</li>
-                            <li>✅ Preset-Auswahl (Triple-Click Wecker)</li>
-                            <li>❌ Keine Preset-Erstellung</li>
-                            <li>❌ Keine Bedingungen ändern</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="tip">
-                    <span class="tip-icon">💡</span>
-                    <strong>Performance-Tipp:</strong> Lass den Zuschauer die App als Lesezeichen speichern 
-                    oder zum Homescreen hinzufügen für schnelleren Zugriff.
-                </div>
-            </div>
-        </div>
         
         <!-- Erweiterte Funktionen -->
         <div class="instruction-section collapsed" id="advanced-features">
@@ -375,7 +269,7 @@
                     <div class="step-content">
                         Du kannst Forces auch über die API senden:
                         <div class="code-block">
-POST /api/stopwatch/tempra/force/TOKEN
+POST /api/data/TOKEN
 {
   "force": {
     "mode": "ms",
@@ -393,9 +287,9 @@ POST /api/stopwatch/tempra/force/TOKEN
                     <div class="step-content">
                         Verwende mehrere Geräte gleichzeitig:
                         <ul style="margin-left: 20px; margin-top: 8px;">
-                            <li>Tempra auf deinem Haupt-Gerät</li>
-                            <li>Tempral auf Zuschauer-Geräten</li>
-                            <li>Backup-Tempra auf einem zweiten Gerät</li>
+                            <li>Hauptmodul auf deinem primären Gerät</li>
+                            <li>Remote-Zugriff auf Zuschauer-Geräten</li>
+                            <li>Backup-Modul auf einem zweiten Gerät</li>
                         </ul>
                     </div>
                 </div>

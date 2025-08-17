@@ -4,7 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 class Database {
-    constructor(dbPath = 'database/stopwatch_magic.db') {
+    constructor(dbPath = 'database/imperia_magic.db') {
         this.dbPath = dbPath;
         this.db = null;
         this.isConnected = false;
