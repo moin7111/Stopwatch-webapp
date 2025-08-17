@@ -6,10 +6,24 @@ const path = require('path');
 const crypto = require('crypto');
 const cookieParser = require('cookie-parser');
 const Database = require('./database/db');
+const logger = require('./utils/logger');
 
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
+
+// Request logging middleware
+app.use((req, res, next) => {
+    const start = Date.now();
+    
+    // Log request when it's finished
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        logger.request(req, res, duration);
+    });
+    
+    next();
+});
 
 // Initialize database
 const db = new Database();
@@ -20,12 +34,12 @@ async function initializeDatabase() {
     try {
         await db.init();
         dbInitialized = true;
-        console.log('🗄️ Database initialized successfully');
+        logger.info('🗄️ Database initialized successfully');
         
         // Restore active sessions from database
         await restoreSessionsFromDatabase();
     } catch (error) {
-        console.error('❌ Failed to initialize database:', error);
+        logger.error('❌ Failed to initialize database:', error);
         process.exit(1);
     }
 }
@@ -63,7 +77,7 @@ const sessions = new Map();
 // Restore sessions from database on startup
 async function restoreSessionsFromDatabase() {
     try {
-        console.log('🔄 Restoring sessions from database...');
+        logger.info('🔄 Restoring sessions from database...');
         const activeSessions = await db.getActiveSessions();
         let restoredCount = 0;
         let skippedCount = 0;
@@ -81,16 +95,16 @@ async function restoreSessionsFromDatabase() {
                     userAgent: session.user_agent
                 });
                 restoredCount++;
-                console.log(`✓ Restored session ${session.session_id} for user ${session.user_id}`);
+                logger.debug(`✓ Restored session ${session.session_id} for user ${session.user_id}`);
             } else {
                 skippedCount++;
-                console.log(`✗ Skipped expired session ${session.session_id}`);
+                logger.debug(`✗ Skipped expired session ${session.session_id}`);
             }
         }
         
-        console.log(`✅ Restored ${restoredCount} active sessions from database (${skippedCount} expired sessions skipped)`);
+        logger.info(`✅ Restored ${restoredCount} active sessions from database (${skippedCount} expired sessions skipped)`);
     } catch (error) {
-        console.error('❌ Failed to restore sessions:', error);
+        logger.error('❌ Failed to restore sessions:', error);
     }
 }
 
@@ -108,7 +122,7 @@ function createSession(userId, clientInfo) {
     
     // Store in database for persistence
     db.createSession(userId, sessionId, expiresAt.toISOString(), clientInfo.ip, clientInfo.userAgent)
-        .catch(err => console.error('Failed to store session in DB:', err));
+        .catch(err => logger.error('Failed to store session in DB:', err));
     
     return sessionId;
 }
@@ -124,21 +138,21 @@ function getSession(sessionId) {
     
     // Update last activity
     session.lastActivity = new Date();
-    db.updateSessionActivity(sessionId).catch(err => console.error('Failed to update session activity:', err));
+    db.updateSessionActivity(sessionId).catch(err => logger.error('Failed to update session activity:', err));
     
     return session;
 }
 
 function deleteSession(sessionId) {
     sessions.delete(sessionId);
-    db.invalidateSession(sessionId).catch(err => console.error('Failed to invalidate session in DB:', err));
+    db.invalidateSession(sessionId).catch(err => logger.error('Failed to invalidate session in DB:', err));
 }
 
 // Enhanced admin key check
 function requireAdminKey(req, res, next) {
     const adminKey = process.env.ADMIN_KEY;
     if (!adminKey) {
-        console.warn('⚠️ No ADMIN_KEY set - admin endpoints are unprotected!');
+        logger.warn('⚠️ No ADMIN_KEY set - admin endpoints are unprotected!');
         return next();
     }
     
@@ -254,7 +268,7 @@ app.post('/auth/login', requireDB, async (req, res) => {
         const { username, password } = req.body;
         const clientInfo = getClientInfo(req);
 
-        console.log(`Login attempt for user: ${username}`);
+        logger.auth('login_attempt', username, { ip: clientInfo.ip });
 
         if (!username || !password) {
             return res.status(400).json({ error: 'Username and password required' });
@@ -263,20 +277,20 @@ app.post('/auth/login', requireDB, async (req, res) => {
         // Get user
         const user = await db.getUserByUsername(username);
         if (!user) {
-            console.log(`User not found: ${username}`);
+            logger.auth('login_failed', username, { reason: 'user_not_found', ip: clientInfo.ip });
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        console.log(`User found: ${username}, verifying password...`);
+        logger.debug(`User found: ${username}, verifying password...`);
 
         // Verify password
         if (!verifyPassword(password, user.salt, user.password_hash)) {
-            console.log(`Password verification failed for user: ${username}`);
+            logger.auth('login_failed', username, { reason: 'invalid_password', ip: clientInfo.ip });
             await db.logAction(user.id, 'login_failed', { reason: 'invalid_password' }, clientInfo.ip, clientInfo.userAgent);
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        console.log(`Password verified for user: ${username}`);
+        logger.debug(`Password verified for user: ${username}`);
 
         // Update last login
         await db.updateUserLastLogin(user.id);
@@ -289,7 +303,7 @@ app.post('/auth/login', requireDB, async (req, res) => {
 
         // Create session
         const sessionId = createSession(user.id, clientInfo);
-        console.log(`Session created: ${sessionId} for user: ${username}`);
+        logger.debug(`Session created: ${sessionId} for user: ${username}`);
         
         res.cookie('MAGIC_SESSION', sessionId, { 
             httpOnly: true, 
@@ -301,11 +315,11 @@ app.post('/auth/login', requireDB, async (req, res) => {
         // Log login
         await db.logAction(user.id, 'login_success', null, clientInfo.ip, clientInfo.userAgent);
 
-        console.log(`Login successful for user: ${username}`);
+        logger.auth('login_success', username, { userId: user.id, ip: clientInfo.ip });
         res.json({ ok: true, username: user.username });
 
     } catch (error) {
-        console.error('Login error:', error);
+        logger.error('Login error:', error);
         res.status(500).json({ error: 'Login failed' });
     }
 });
@@ -314,31 +328,31 @@ app.get('/auth/status', requireDB, async (req, res) => {
     try {
         const sessionId = req.cookies.MAGIC_SESSION;
         
-        console.log(`Auth status check - Session ID: ${sessionId ? sessionId.substring(0, 8) + '...' : 'none'}`);
+        logger.debug(`Auth status check - Session ID: ${sessionId ? sessionId.substring(0, 8) + '...' : 'none'}`);
         
         if (!sessionId) {
-            console.log('No session cookie found');
+            logger.debug('No session cookie found');
             return res.json({ loggedIn: false });
         }
 
         const session = getSession(sessionId);
         if (!session) {
-            console.log(`Session not found in memory: ${sessionId.substring(0, 8)}...`);
+            logger.debug(`Session not found in memory: ${sessionId.substring(0, 8)}...`);
             res.clearCookie('MAGIC_SESSION');
             return res.json({ loggedIn: false });
         }
 
-        console.log(`Session found for user ID: ${session.userId}`);
+        logger.debug(`Session found for user ID: ${session.userId}`);
         
         const user = await db.getUserById(session.userId);
         if (!user) {
-            console.log(`User not found for ID: ${session.userId}`);
+            logger.warn(`User not found for ID: ${session.userId}`);
             deleteSession(sessionId);
             res.clearCookie('MAGIC_SESSION');
             return res.json({ loggedIn: false });
         }
 
-        console.log(`Auth status: User ${user.username} is logged in`);
+        logger.debug(`Auth status: User ${user.username} is logged in`);
         
         res.json({ 
             loggedIn: true, 
@@ -1070,17 +1084,21 @@ const PORT = process.env.PORT || 3000;
 
 initializeDatabase().then(() => {
     app.listen(PORT, () => {
-        console.log(`🚀 Server running on port ${PORT}`);
+        logger.info(`🚀 Server running on port ${PORT}`);
         if (process.env.NODE_ENV === 'production') {
-            console.log(`🌐 Production URL: ${process.env.RENDER_EXTERNAL_URL || 'https://imperia-magic.onrender.com'}`);
+            logger.info(`🌐 Production URL: ${process.env.RENDER_EXTERNAL_URL || 'https://imperia-magic.onrender.com'}`);
         } else {
-            console.log(`🌐 Local URL: http://localhost:${PORT}`);
+            logger.info(`🌐 Local URL: http://localhost:${PORT}`);
         }
-        console.log(`🗄️ Database: SQLite (${db.dbPath})`);
-        console.log(`🔐 Admin protection: ${process.env.ADMIN_KEY ? 'ENABLED' : 'DISABLED (dev mode)'}`);
-        console.log(`📱 PWA Login: ${process.env.NODE_ENV === 'production' ? `${process.env.RENDER_EXTERNAL_URL || 'https://imperia-magic.onrender.com'}/imperia/control/settings.html` : `http://localhost:${PORT}/imperia/control/settings.html`}`);
+        logger.info(`🗄️ Database: SQLite (${db.dbPath})`);
+        logger.info(`🔐 Admin protection: ${process.env.ADMIN_KEY ? 'ENABLED' : 'DISABLED (dev mode)'}`);
+        logger.info(`📱 PWA Login: ${process.env.NODE_ENV === 'production' ? `${process.env.RENDER_EXTERNAL_URL || 'https://imperia-magic.onrender.com'}/imperia/control/settings.html` : `http://localhost:${PORT}/imperia/control/settings.html`}`);
+        logger.info('📁 Log files location: ./logs/');
+        logger.info('   - Main log: server-YYYY-MM-DD.log');
+        logger.info('   - Error log: error-YYYY-MM-DD.log');
+        logger.info('   - Auth log: auth-YYYY-MM-DD.log');
     });
 }).catch(error => {
-    console.error('❌ Failed to start server:', error);
+    logger.error('❌ Failed to start server:', error);
     process.exit(1);
 });
