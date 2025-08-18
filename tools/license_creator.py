@@ -20,8 +20,11 @@ import os
 import time
 
 # --- Konfiguration ---
-BASE_URL = "https://imperia-magic.onrender.com"
-ADMIN_KEY = "DevAdmin2025"  # ← Hier deinen Admin Key eintragen
+# Kann per Umgebungsvariablen überschrieben werden:
+#   - IMPERIA_BASE_URL: Basis-URL des Servers
+#   - ADMIN_KEY: Admin-Schlüssel für Admin-Endpunkte
+BASE_URL = os.environ.get("IMPERIA_BASE_URL", "https://imperia-magic.onrender.com")
+ADMIN_KEY = os.environ.get("ADMIN_KEY", "DevAdmin2025")
 
 # Farben für Terminal (optional)
 class Colors:
@@ -77,7 +80,7 @@ def create_license_codes(count=1, license_type="standard"):
                 print(f"  {i}. {colored(code, Colors.BOLD)}")
             
             # Zeige Registrierungs-URL
-            print(f"\n🔗 Registrierung: {colored(BASE_URL + '/imperia/control/', Colors.CYAN)}")
+            print(f"\n🔗 Registrierung: {colored(BASE_URL + '/imperia/control/register.html', Colors.CYAN)}")
             
             # Export Option
             if len(codes) > 5:
@@ -117,60 +120,62 @@ def export_licenses(codes):
         print(colored(f"❌ Export fehlgeschlagen: {e}", Colors.RED))
 
 def get_database_stats():
-    """Zeigt detaillierte Datenbank-Statistiken"""
-    url = f"{BASE_URL}/api/stats"
-    headers = {"x-admin-key": ADMIN_KEY}
-    
+    """Zeigt Basis-Statistiken (abgeleitet), da kein /api/stats Endpoint existiert"""
+    # Aggregiere Daten über vorhandene Admin-Endpoints
     try:
-        print(colored("📊 Lade Datenbank-Statistiken...", Colors.YELLOW))
-        
-        response = requests.get(url, headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            stats = response.json().get("stats", {})
-            
-            print(colored("\n📊 DATENBANK STATISTIKEN", Colors.BOLD))
-            print("=" * 50)
-            
-            # User Statistiken
-            users = stats.get("users", {})
-            print(colored("\n👥 BENUTZER:", Colors.CYAN))
-            print(f"  Gesamt: {users.get('total', 0)}")
-            print(f"  Admins: {users.get('admins', 0)}")
-            print(f"  Regular: {users.get('regular', 0)}")
-            
-            # License Statistiken
-            licenses = stats.get("licenses", {})
-            print(colored("\n🎫 LIZENZEN:", Colors.CYAN))
-            print(f"  Gesamt: {licenses.get('total', 0)}")
-            print(f"  Verwendet: {licenses.get('used', 0)}")
-            print(f"  Verfügbar: {licenses.get('available', 0)}")
-            
-            # Token Statistiken
-            tokens = stats.get("tokens", {})
-            print(colored("\n🔑 TOKENS:", Colors.CYAN))
-            print(f"  Aktiv: {tokens.get('active', 0)}")
-            
-            # Session Statistiken
-            sessions = stats.get("sessions", {})
-            print(colored("\n🌐 SESSIONS:", Colors.CYAN))
-            print(f"  Aktiv: {sessions.get('active', 0)}")
-            
-            # Force Queue Statistiken
-            forces = stats.get("forces", {})
-            print(colored("\n⚡ FORCE QUEUE:", Colors.CYAN))
-            print(f"  In Warteschlange: {forces.get('queued', 0)}")
-            print(f"  Verarbeitet: {forces.get('processed', 0)}")
-            print(f"  Gesamt: {forces.get('total', 0)}")
-            
-            return stats
-            
-        else:
-            print(colored(f"❌ Fehler {response.status_code}", Colors.RED))
-            
+        headers = {"x-admin-key": ADMIN_KEY}
+
+        users_resp = requests.get(f"{BASE_URL}/api/users", headers=headers, timeout=10)
+        users = users_resp.json().get("users", []) if users_resp.status_code == 200 else []
+
+        licenses_resp = requests.get(f"{BASE_URL}/api/licenses", headers=headers, timeout=10)
+        licenses = licenses_resp.json().get("licenses", []) if licenses_resp.status_code == 200 else []
+
+        tokens_resp = requests.get(f"{BASE_URL}/api/tokens", headers=headers, timeout=10)
+        tokens = tokens_resp.json().get("tokens", []) if tokens_resp.status_code == 200 else []
+
+        stats = {
+            "users": {
+                "total": len(users),
+                "admins": sum(1 for u in users if u.get("is_admin")),
+                "regular": sum(1 for u in users if not u.get("is_admin"))
+            },
+            "licenses": {
+                "total": len(licenses),
+                "used": sum(1 for l in licenses if l.get("is_used")),
+                "available": sum(1 for l in licenses if not l.get("is_used"))
+            },
+            "tokens": {
+                "active": len(tokens)
+            },
+            # Sessions/Force Queue werden serverseitig nicht aggregiert angeboten
+            "sessions": {},
+            "forces": {}
+        }
+
+        # Ausgabe
+        print(colored("\n📊 DATENBANK STATISTIKEN", Colors.BOLD))
+        print("=" * 50)
+        print(colored("\n👥 BENUTZER:", Colors.CYAN))
+        print(f"  Gesamt: {stats['users']['total']}")
+        print(f"  Admins: {stats['users']['admins']}")
+        print(f"  Regular: {stats['users']['regular']}")
+
+        print(colored("\n🎫 LIZENZEN:", Colors.CYAN))
+        print(f"  Gesamt: {stats['licenses']['total']}")
+        print(f"  Verwendet: {stats['licenses']['used']}")
+        print(f"  Verfügbar: {stats['licenses']['available']}")
+
+        print(colored("\n🔑 TOKENS:", Colors.CYAN))
+        print(f"  Aktiv: {stats['tokens']['active']}")
+
+        return stats
+
     except requests.exceptions.RequestException as e:
         print(colored(f"❌ Netzwerk-Fehler: {e}", Colors.RED))
-    
+    except Exception as e:
+        print(colored(f"❌ Fehler beim Laden der Statistiken: {e}", Colors.RED))
+
     return None
 
 def view_audit_log(limit=50, user_id=None):
@@ -269,36 +274,12 @@ def manage_user(username):
         print(colored(f"❌ Netzwerk-Fehler: {e}", Colors.RED))
 
 def deactivate_user(user_id):
-    """Deaktiviert einen User"""
-    url = f"{BASE_URL}/api/users/{user_id}"
-    headers = {"x-admin-key": ADMIN_KEY}
-    
-    try:
-        response = requests.delete(url, headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            print(colored("✅ User erfolgreich deaktiviert", Colors.GREEN))
-        else:
-            print(colored(f"❌ Fehler {response.status_code}", Colors.RED))
-            
-    except requests.exceptions.RequestException as e:
-        print(colored(f"❌ Netzwerk-Fehler: {e}", Colors.RED))
+    """Deaktiviert einen User (nicht unterstützt)"""
+    print(colored("❌ User-Deaktivierung wird vom Backend derzeit nicht unterstützt.", Colors.RED))
 
 def revoke_license(code):
-    """Widerruft eine Lizenz"""
-    url = f"{BASE_URL}/api/licenses/{code}"
-    headers = {"x-admin-key": ADMIN_KEY}
-    
-    try:
-        response = requests.delete(url, headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            print(colored(f"✅ Lizenz {code} erfolgreich widerrufen", Colors.GREEN))
-        else:
-            print(colored(f"❌ Fehler {response.status_code}", Colors.RED))
-            
-    except requests.exceptions.RequestException as e:
-        print(colored(f"❌ Netzwerk-Fehler: {e}", Colors.RED))
+    """Widerruft eine Lizenz (nicht unterstützt)"""
+    print(colored("❌ Lizenz-Widerruf wird vom Backend derzeit nicht unterstützt.", Colors.RED))
 
 def search_licenses(search_term):
     """Sucht nach Lizenzen"""
