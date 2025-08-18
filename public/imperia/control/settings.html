@@ -528,32 +528,42 @@
         // Load tokens
         async function loadTokens() {
             try {
-                const response = await fetch('/api/tokens', {
+                const response = await fetch('/api/user/tokens', {
                     credentials: 'include'
                 });
                 
-                if (response.ok) {
-                    const data = await response.json();
-                    const apiTokenDisplay = document.getElementById('apiTokenDisplay');
-                    apiTokenDisplay.classList.remove('loading', 'show');
-                    
-                    if (data.tokens.length === 0) {
-                        apiTokenDisplay.innerHTML = '<p style="text-align: center; opacity: 0.6;">Kein Token vorhanden</p>';
-                    } else {
-                        const token = data.tokens[0].value;
-                        apiTokenDisplay.innerHTML = `
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <span style="font-weight: 600;">API Token =</span>
-                                <span style="font-family: monospace; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 6px;">${token}</span>
-                            </div>
-                        `;
-                        
-                        // Update remote URLs
-                        updateRemoteUrl(token);
-                    }
+                const apiTokenDisplay = document.getElementById('apiTokenDisplay');
+                apiTokenDisplay.classList.remove('loading', 'show');
+                
+                if (!response.ok) {
+                    apiTokenDisplay.innerHTML = '<p style="text-align: center; opacity: 0.6;">Token konnten nicht geladen werden</p>';
+                    return;
                 }
+                
+                const data = await response.json();
+                const token = data && data.token ? data.token : null;
+                
+                if (!token) {
+                    apiTokenDisplay.innerHTML = '<p style="text-align: center; opacity: 0.6;">Kein Token vorhanden</p>';
+                    updateRemoteUrl(null);
+                    return;
+                }
+                
+                apiTokenDisplay.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-weight: 600;">API Token =</span>
+                        <span style="font-family: monospace; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 6px;">${token}</span>
+                    </div>
+                `;
+                
+                // Update remote URL
+                updateRemoteUrl(token);
             } catch (error) {
                 console.error('Error loading tokens:', error);
+                const apiTokenDisplay = document.getElementById('apiTokenDisplay');
+                apiTokenDisplay.classList.remove('loading', 'show');
+                apiTokenDisplay.innerHTML = '<p style="text-align: center; opacity: 0.6;">Fehler beim Laden der Tokens</p>';
+                updateRemoteUrl(null);
             }
         }
         
@@ -568,11 +578,12 @@
             }
             
             const baseUrl = window.location.origin;
+            const remoteUrl = `${baseUrl}/imperia/remote/${token}`;
             
             remoteAccessDisplay.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
                     <span style="font-weight: 600;">Remote-Zugang =</span>
-                    <span style="font-family: monospace; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 6px;">${baseUrl}/imperia/remote/index.html?token=${token}</span>
+                    <span style="font-family: monospace; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 6px;">${remoteUrl}</span>
                 </div>
             `;
         }
