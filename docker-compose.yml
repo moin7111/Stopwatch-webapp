@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  imperia-magic:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      # Persistent data volume for database and logs
+      - imperia-data:/workspace/data
+      - imperia-logs:/workspace/logs
+    restart: unless-stopped
+    command: /workspace/scripts/startup.sh
+
+volumes:
+  imperia-data:
+    driver: local
+  imperia-logs:
+    driver: local
