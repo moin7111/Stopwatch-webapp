@@ -19,56 +19,50 @@
             color: #fff;
             min-height: 100vh;
             padding: 20px;
+        }
+        
+        .header {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
-        }
-        
-        .message {
-            text-align: center;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 40px;
-            max-width: 600px;
-        }
-        
-        h1 {
-            font-size: 32px;
-            font-weight: 600;
-            margin-bottom: 20px;
-        }
-        
-        p {
-            font-size: 18px;
-            opacity: 0.8;
-            line-height: 1.6;
+            justify-content: space-between;
+            margin-bottom: 40px;
         }
         
         .back-btn {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 12px 24px;
+            padding: 8px 16px;
             border-radius: 8px;
             color: #fff;
             text-decoration: none;
-            font-size: 16px;
+            font-size: 14px;
             transition: all 0.3s ease;
-            margin-top: 30px;
-            display: inline-block;
         }
         
         .back-btn:hover {
             background: rgba(255, 255, 255, 0.15);
         }
+        
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+        }
+        
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
-    <div class="message">
+    <div class="header">
+        <a href="/imperia/control/menu.html" class="back-btn">← Zurück</a>
         <h1>Routinen</h1>
-        <p>Der Routinen-Bereich wird komplett neu strukturiert und befindet sich jetzt in einem eigenen Ordner.</p>
-        <a href="/imperia/control/menu.html" class="back-btn">← Zurück zum Menü</a>
+        <div style="width: 80px;"></div>
+    </div>
+    
+    <div class="content">
+        <!-- Content cleared - empty page -->
     </div>
 </body>
 </html>
