@@ -398,6 +398,27 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+        
+        /* Logout Button */
+        .logout-btn {
+            background: rgba(255, 69, 58, 0.1);
+            border: 1px solid rgba(255, 69, 58, 0.3);
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: #ff453a;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 69, 58, 0.2);
+            border-color: rgba(255, 69, 58, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(255, 69, 58, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -446,6 +467,19 @@
             </div>
         </div>
         
+        <!-- Logout Section -->
+        <div class="settings-section">
+            <div class="section-header">
+                <span class="section-icon">🚪</span>
+                <h2 class="section-title">Abmelden</h2>
+            </div>
+            
+            <p style="margin-bottom: 20px; color: #999; line-height: 1.5;">
+                Melden Sie sich von Ihrem Account ab und kehren Sie zur Anmeldeseite zurück.
+            </p>
+            
+            <button class="logout-btn" id="logoutBtn">Abmelden</button>
+        </div>
 
         
         <div class="version-info">
@@ -609,11 +643,30 @@
             }
         };
         
-
-        
-
-        
-
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            if (!confirm('Möchten Sie sich wirklich abmelden?')) {
+                return;
+            }
+            
+            try {
+                await fetch('/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Continue with logout even if request fails
+            }
+            
+            // Clear local storage
+            localStorage.removeItem('imperiaSession');
+            
+            // Redirect to login (corrected path)
+            window.location.href = '/imperia/control/';
+        });
         
         // Initialize
         loadUserInfo();

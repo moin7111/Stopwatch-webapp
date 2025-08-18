@@ -124,25 +124,7 @@
             font-size: 12px;
         }
         
-        .logout-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 8px 16px;
-            border-radius: 8px;
-            color: #fff;
-            text-decoration: none;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-        
-        .logout-btn:hover {
-            background: rgba(255, 69, 58, 0.2);
-            border-color: rgba(255, 69, 58, 0.5);
-        }
-        
+
         /* Gradient animation for icons */
         .gradient-icon {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -152,8 +134,7 @@
     </style>
 </head>
 <body>
-    <a href="#" class="logout-btn" id="logoutBtn">Logout</a>
-    
+
     <div class="header">
         <h1 class="logo">IMPERIA</h1>
         <p class="subtitle">Magic Control System</p>
@@ -188,36 +169,18 @@
                 if (!response.ok) {
                     // Session invalid, redirect to login
                     localStorage.removeItem('imperiaSession');
-                    window.location.href = '/control/';
+                    window.location.href = '/imperia/control/';
                 }
             } catch (error) {
                 // Error checking session
-                window.location.href = '/control/';
+                window.location.href = '/imperia/control/';
             }
         }
         
         // Check session on load
         checkSession();
         
-        // Logout handler
-        document.getElementById('logoutBtn').addEventListener('click', async (e) => {
-            e.preventDefault();
-            
-            try {
-                await fetch('/auth/logout', {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-            } catch (error) {
-                // Ignore errors
-            }
-            
-            // Clear local storage
-            localStorage.removeItem('imperiaSession');
-            
-            // Redirect to login
-            window.location.href = '/control/';
-        });
+
         
         // Add touch feedback for mobile
         document.querySelectorAll('.menu-item').forEach(item => {
