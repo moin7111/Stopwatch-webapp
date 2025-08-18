@@ -5,20 +5,43 @@ const crypto = require('crypto');
 
 class Database {
     constructor(dbPath = null) {
-        // Use persistent storage if available, fallback to local
+        // Determine database path with environment overrides and persistence
+        const envDbPath = process.env.DB_PATH || process.env.DATABASE_PATH || process.env.SQLITE_DB_PATH;
+        if (!dbPath && envDbPath) {
+            dbPath = envDbPath;
+            console.log('📁 Using database path from environment:', dbPath);
+        }
         if (!dbPath) {
-            // Check for persistent storage location first
-            const persistentPath = '/workspace/data/imperia_magic.db';
-            const localPath = 'database/imperia_magic.db';
-            
-            // Use persistent path if the directory exists
-            if (fs.existsSync('/workspace/data')) {
-                dbPath = persistentPath;
-                console.log('📁 Using persistent database storage:', dbPath);
-            } else {
-                dbPath = localPath;
-                console.log('📁 Using local database storage:', dbPath);
+            // Prefer persistent data directory; create if possible
+            const dataDir = process.env.DATA_DIR || '/workspace/data';
+            try {
+                fs.mkdirSync(dataDir, { recursive: true });
+            } catch (e) {
+                // If creation fails (permissions), we'll fall back to local path below
             }
+            const persistentCandidate = fs.existsSync(dataDir)
+                ? path.join(dataDir, 'imperia_magic.db')
+                : path.join(process.cwd(), 'database', 'imperia_magic.db');
+
+            // Attempt one-time migration from legacy local path to persistent path
+            const legacyLocalPath = path.join(process.cwd(), 'database', 'imperia_magic.db');
+            if (persistentCandidate.startsWith(dataDir)) {
+                try {
+                    const persistentExists = fs.existsSync(persistentCandidate);
+                    const legacyExists = fs.existsSync(legacyLocalPath);
+                    if (!persistentExists && legacyExists) {
+                        // Ensure destination directory exists
+                        fs.mkdirSync(path.dirname(persistentCandidate), { recursive: true });
+                        fs.copyFileSync(legacyLocalPath, persistentCandidate);
+                        console.log('🔄 Migrated legacy database to persistent storage:', persistentCandidate);
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Database migration warning:', e.message);
+                }
+            }
+
+            dbPath = persistentCandidate;
+            console.log('📁 Using database storage:', dbPath);
         }
         
         this.dbPath = dbPath;

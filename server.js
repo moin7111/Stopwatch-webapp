@@ -243,8 +243,8 @@ app.post('/auth/register', requireDB, async (req, res) => {
         res.cookie('MAGIC_SESSION', sessionId, { 
             httpOnly: true, 
             maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-            sameSite: 'strict',
-            secure: process.env.NODE_ENV === 'production'
+            sameSite: 'lax',
+            secure: (req.secure || req.headers['x-forwarded-proto'] === 'https')
         });
 
         // Log registration
@@ -308,8 +308,8 @@ app.post('/auth/login', requireDB, async (req, res) => {
         res.cookie('MAGIC_SESSION', sessionId, { 
             httpOnly: true, 
             maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-            sameSite: 'strict',
-            secure: process.env.NODE_ENV === 'production'
+            sameSite: 'lax',
+            secure: (req.secure || req.headers['x-forwarded-proto'] === 'https')
         });
 
         // Log login
@@ -335,11 +335,34 @@ app.get('/auth/status', requireDB, async (req, res) => {
             return res.json({ loggedIn: false });
         }
 
-        const session = getSession(sessionId);
+        let session = getSession(sessionId);
         if (!session) {
-            logger.debug(`Session not found in memory: ${sessionId.substring(0, 8)}...`);
-            res.clearCookie('MAGIC_SESSION');
-            return res.json({ loggedIn: false });
+            logger.debug(`Session not found in memory: ${sessionId.substring(0, 8)}... attempting DB lookup`);
+            try {
+                const dbSession = await db.getSession(sessionId);
+                if (dbSession) {
+                    const expiresAt = new Date(dbSession.expires_at);
+                    if (expiresAt > new Date()) {
+                        const restored = {
+                            userId: dbSession.user_id,
+                            createdAt: new Date(dbSession.created_at),
+                            expiresAt: expiresAt,
+                            lastActivity: new Date(dbSession.last_activity || dbSession.created_at),
+                            ip: dbSession.ip_address,
+                            userAgent: dbSession.user_agent
+                        };
+                        sessions.set(sessionId, restored);
+                        session = restored;
+                        logger.debug(`✓ Restored session ${sessionId.substring(0, 8)}... from DB on-demand`);
+                    }
+                }
+            } catch (e) {
+                logger.error('Failed to restore session from DB:', e);
+            }
+            if (!session) {
+                res.clearCookie('MAGIC_SESSION');
+                return res.json({ loggedIn: false });
+            }
         }
 
         logger.debug(`Session found for user ID: ${session.userId}`);
