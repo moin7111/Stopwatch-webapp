@@ -500,24 +500,22 @@
                 
                 if (response.ok) {
                     const data = await response.json();
-                    const tokensList = document.getElementById('tokensList');
-                    tokensList.classList.remove('loading', 'show');
+                    const apiTokenDisplay = document.getElementById('apiTokenDisplay');
+                    apiTokenDisplay.classList.remove('loading', 'show');
                     
                     if (data.tokens.length === 0) {
-                        tokensList.innerHTML = '<p style="text-align: center; opacity: 0.6;">Keine Tokens vorhanden</p>';
+                        apiTokenDisplay.innerHTML = '<p style="text-align: center; opacity: 0.6;">Kein Token vorhanden</p>';
                     } else {
-                        tokensList.innerHTML = data.tokens.map(token => `
-                            <div class="token-item">
-                                <span class="token-value">${token.value}</span>
-                                <div class="token-actions">
-                                    <button class="token-btn" onclick="copyToken('${token.value}')">Kopieren</button>
-                                    <button class="token-btn delete" onclick="deleteToken('${token.value}')">Löschen</button>
-                                </div>
+                        const token = data.tokens[0].value;
+                        apiTokenDisplay.innerHTML = `
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span style="font-weight: 600;">API Token =</span>
+                                <span style="font-family: monospace; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 6px;">${token}</span>
                             </div>
-                        `).join('');
+                        `;
                         
-                        // Update remote URLs (includes both remote access and module URLs)
-                        updateRemoteUrl(data.tokens[0]?.value);
+                        // Update remote URLs
+                        updateRemoteUrl(token);
                     }
                 }
             } catch (error) {
@@ -527,44 +525,20 @@
         
         // Update remote URL
         function updateRemoteUrl(token) {
-            const remoteAccessUrlsDiv = document.getElementById('remoteAccessUrls');
-            remoteAccessUrlsDiv.classList.remove('loading', 'show');
+            const remoteAccessDisplay = document.getElementById('remoteAccessDisplay');
+            remoteAccessDisplay.classList.remove('loading', 'show');
             
             if (!token) {
-                remoteAccessUrlsDiv.innerHTML = '<p style="text-align: center; opacity: 0.6;">Erstelle zuerst einen Token</p>';
+                remoteAccessDisplay.innerHTML = '<p style="text-align: center; opacity: 0.6;">Kein Token vorhanden</p>';
                 return;
             }
             
             const baseUrl = window.location.origin;
             
-            remoteAccessUrlsDiv.innerHTML = `
-                <div class="remote-url-container">
-                    <div class="remote-url-header">
-                        <h3 class="remote-url-title">📺 Remote Zugriff (Zuschauer)</h3>
-                        <span class="remote-url-type">Zuschauer</span>
-                    </div>
-                    <div class="remote-url-display" id="remoteUrl">${baseUrl}/imperia/remote/index.html?token=${token}</div>
-                    <button class="remote-copy-btn" onclick="copyRemoteUrl('remoteUrl')">
-                        <span class="copy-icon">📋</span>
-                        <span class="copy-text">URL kopieren</span>
-                    </button>
-                </div>
-                
-                <div class="remote-url-container">
-                    <div class="remote-url-header">
-                        <h3 class="remote-url-title">🎛️ Module (Kontrolle)</h3>
-                        <span class="remote-url-type">Kontrolle</span>
-                    </div>
-                    <div class="remote-url-display" id="moduleUrl">${baseUrl}/imperia/modules/index.html?token=${token}</div>
-                    <button class="remote-copy-btn" onclick="copyRemoteUrl('moduleUrl')">
-                        <span class="copy-icon">📋</span>
-                        <span class="copy-text">URL kopieren</span>
-                    </button>
-                </div>
-                
-                <div class="remote-warning">
-                    <span>⚠️</span>
-                    <span>Diese Links gewähren vollen Zugriff auf die Remote-Steuerung. Teilen Sie sie nur mit vertrauenswürdigen Personen!</span>
+            remoteAccessDisplay.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                    <span style="font-weight: 600;">Remote-Zugang =</span>
+                    <span style="font-family: monospace; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 6px;">${baseUrl}/imperia/remote/index.html?token=${token}</span>
                 </div>
             `;
         }
@@ -635,41 +609,9 @@
             }
         };
         
-        // Delete token
-        window.deleteToken = async function(token) {
-            if (!confirm('Token wirklich löschen?')) return;
-            
-            try {
-                const response = await fetch(`/api/token/${token}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    loadTokens();
-                }
-            } catch (error) {
-                console.error('Error deleting token:', error);
-            }
-        };
+
         
-        // Add new token
-        document.getElementById('addTokenBtn').addEventListener('click', async () => {
-            try {
-                const response = await fetch('/api/token', {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({})
-                });
-                
-                if (response.ok) {
-                    loadTokens();
-                }
-            } catch (error) {
-                console.error('Error creating token:', error);
-            }
-        });
+
         
 
         
