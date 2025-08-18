@@ -419,22 +419,7 @@
                 <div class="spinner"></div>
             </div>
             
-            <div class="password-change" style="display: none;" id="passwordSection">
-                <h3 style="font-size: 18px; margin-bottom: 16px;">Passwort ändern</h3>
-                <div class="input-group">
-                    <label for="currentPassword">Aktuelles Passwort</label>
-                    <input type="password" id="currentPassword">
-                </div>
-                <div class="input-group">
-                    <label for="newPassword">Neues Passwort</label>
-                    <input type="password" id="newPassword">
-                </div>
-                <div class="input-group">
-                    <label for="confirmPassword">Passwort bestätigen</label>
-                    <input type="password" id="confirmPassword">
-                </div>
-                <button class="save-btn" id="changePasswordBtn">Passwort ändern</button>
-            </div>
+
         </div>
         
         <!-- API Tokens -->
@@ -467,28 +452,7 @@
             </div>
         </div>
         
-        <!-- API Dokumentation -->
-        <div class="settings-section">
-            <div class="section-header">
-                <span class="section-icon">📡</span>
-                <h2 class="section-title">API Dokumentation</h2>
-            </div>
-            
-            <div class="url-container">
-                <div class="url-label">Force senden (POST)</div>
-                <div class="url-display">/api/data/{TOKEN}</div>
-            </div>
-            
-            <div class="url-container">
-                <div class="url-label">Presets abrufen (GET)</div>
-                <div class="url-display">/api/presets</div>
-            </div>
-            
-            <div class="url-container">
-                <div class="url-label">Status prüfen (GET)</div>
-                <div class="url-display">/api/data/{TOKEN}</div>
-            </div>
-        </div>
+
         
         <div class="version-info">
             IMPERIA Magic System v0.3 (Beta)
@@ -526,7 +490,7 @@
                         </div>
                     `;
                     
-                    document.getElementById('passwordSection').style.display = 'block';
+
                 }
             } catch (error) {
                 console.error('Error loading user info:', error);
@@ -713,51 +677,7 @@
             }
         });
         
-        // Change password
-        document.getElementById('changePasswordBtn').addEventListener('click', async () => {
-            const currentPassword = document.getElementById('currentPassword').value;
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            
-            if (!currentPassword || !newPassword || !confirmPassword) {
-                alert('Bitte alle Felder ausfüllen');
-                return;
-            }
-            
-            if (newPassword !== confirmPassword) {
-                alert('Neue Passwörter stimmen nicht überein');
-                return;
-            }
-            
-            if (newPassword.length < 6) {
-                alert('Neues Passwort muss mindestens 6 Zeichen lang sein');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/auth/change-password', {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        currentPassword,
-                        newPassword
-                    })
-                });
-                
-                if (response.ok) {
-                    alert('Passwort erfolgreich geändert');
-                    document.getElementById('currentPassword').value = '';
-                    document.getElementById('newPassword').value = '';
-                    document.getElementById('confirmPassword').value = '';
-                } else {
-                    const data = await response.json();
-                    alert(data.error || 'Fehler beim Ändern des Passworts');
-                }
-            } catch (error) {
-                alert('Fehler beim Ändern des Passworts');
-            }
-        });
+
         
         // Initialize
         loadUserInfo();
