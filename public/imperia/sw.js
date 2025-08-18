@@ -1,6 +1,6 @@
 // sw.js - Service Worker für IMPERIA Control System PWA
 // Updated: 2024-01-15
-const CACHE_NAME = 'imperia-control-v7-2024-01-15';
+const CACHE_NAME = 'imperia-control-v8-2025-08-18';
 const urlsToCache = [
   '/imperia/',
   '/imperia/control/index.html',
