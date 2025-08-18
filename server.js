@@ -498,7 +498,7 @@ app.get('/api/user/tokens', requireDB, async (req, res) => {
         const baseUrl = `${protocol}://${host}`;
 
         const apiExamples = {
-            remoteUrl: `${baseUrl}/imperia/remote/index.html?token=${token.token}`,
+            remoteUrl: `${baseUrl}/imperia/remote/${token.token}`,
             pushForce: {
                 url: `${baseUrl}/api/data/${token.token}`,
                 method: 'POST',
