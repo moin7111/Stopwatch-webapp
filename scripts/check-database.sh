@@ -7,11 +7,12 @@ echo "=== Database Persistence Check Script ==="
 echo "$(date '+%Y-%m-%d %H:%M:%S')"
 echo "========================================="
 
-# Define database paths
-DB_PATH="/workspace/database/imperia_magic.db"
+# Define database paths (unify on persistent path)
+DB_PATH="/workspace/data/imperia_magic.db"
 BACKUP_DIR="/workspace/data/backups"
 PERSISTENT_DB="/workspace/data/imperia_magic.db"
 LOG_FILE="/workspace/data/database-check.log"
+LEGACY_DB="/workspace/database/imperia_magic.db"
 
 # Create necessary directories
 mkdir -p "$BACKUP_DIR"
@@ -25,50 +26,36 @@ log() {
 
 log "Starting database persistence check..."
 
-# Check if persistent database exists
+# Migrate from legacy location if needed
+if [ -f "$LEGACY_DB" ] && [ ! -f "$PERSISTENT_DB" ]; then
+    log "🔄 Migrating legacy database from $LEGACY_DB to $PERSISTENT_DB"
+    mkdir -p "$(dirname "$PERSISTENT_DB")"
+    cp "$LEGACY_DB" "$PERSISTENT_DB"
+fi
+
+# Ensure database presence at persistent path
 if [ -f "$PERSISTENT_DB" ]; then
     log "✅ Persistent database found at $PERSISTENT_DB"
-    
-    # Check if working database exists
-    if [ -f "$DB_PATH" ]; then
-        log "⚠️  Working database also exists at $DB_PATH"
-        
-        # Compare sizes to determine which is newer/larger
-        PERSISTENT_SIZE=$(stat -c%s "$PERSISTENT_DB" 2>/dev/null || stat -f%z "$PERSISTENT_DB" 2>/dev/null)
-        WORKING_SIZE=$(stat -c%s "$DB_PATH" 2>/dev/null || stat -f%z "$DB_PATH" 2>/dev/null)
-        
-        log "Persistent DB size: $PERSISTENT_SIZE bytes"
-        log "Working DB size: $WORKING_SIZE bytes"
-        
-        # Backup both databases
-        TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
-        cp "$PERSISTENT_DB" "$BACKUP_DIR/persistent_backup_$TIMESTAMP.db"
-        cp "$DB_PATH" "$BACKUP_DIR/working_backup_$TIMESTAMP.db"
-        log "✅ Created backups in $BACKUP_DIR"
-        
-        # Use the larger database (likely has more data)
-        if [ "$WORKING_SIZE" -gt "$PERSISTENT_SIZE" ]; then
-            log "📋 Working database is larger, copying to persistent location"
-            cp "$DB_PATH" "$PERSISTENT_DB"
-        else
-            log "📋 Persistent database is larger, copying to working location"
-            mkdir -p "$(dirname "$DB_PATH")"
-            cp "$PERSISTENT_DB" "$DB_PATH"
-        fi
-    else
-        log "📋 No working database found, copying persistent to working location"
-        mkdir -p "$(dirname "$DB_PATH")"
-        cp "$PERSISTENT_DB" "$DB_PATH"
-    fi
 else
     log "⚠️  No persistent database found"
-    
-    if [ -f "$DB_PATH" ]; then
-        log "✅ Working database exists, copying to persistent location"
-        cp "$DB_PATH" "$PERSISTENT_DB"
+    if [ -f "$LEGACY_DB" ]; then
+        log "📋 Found legacy database at $LEGACY_DB, copying to persistent location"
+        cp "$LEGACY_DB" "$PERSISTENT_DB"
         log "✅ Database backed up to persistent storage"
     else
         log "❌ No database found at all - will be created on first run"
+    fi
+fi
+
+# If both exist and differ in size, prefer the larger one for persistence
+if [ -f "$LEGACY_DB" ] && [ -f "$PERSISTENT_DB" ]; then
+    PERSISTENT_SIZE=$(stat -c%s "$PERSISTENT_DB" 2>/dev/null || stat -f%z "$PERSISTENT_DB" 2>/dev/null)
+    LEGACY_SIZE=$(stat -c%s "$LEGACY_DB" 2>/dev/null || stat -f%z "$LEGACY_DB" 2>/dev/null)
+    log "Persistent DB size: $PERSISTENT_SIZE bytes"
+    log "Legacy DB size: $LEGACY_SIZE bytes"
+    if [ "$LEGACY_SIZE" -gt "$PERSISTENT_SIZE" ]; then
+        log "📋 Legacy database is larger, copying to persistent location"
+        cp "$LEGACY_DB" "$PERSISTENT_DB"
     fi
 fi
 
