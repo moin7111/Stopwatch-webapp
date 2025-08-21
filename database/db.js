@@ -12,16 +12,19 @@ class Database {
             console.log('📁 Using database path from environment:', dbPath);
         }
         if (!dbPath) {
-            // Prefer persistent data directory; create if possible
+            // ALWAYS use persistent data directory
             const dataDir = process.env.DATA_DIR || '/workspace/data';
+            
+            // Ensure the data directory exists
             try {
                 fs.mkdirSync(dataDir, { recursive: true });
+                console.log('✅ Created data directory:', dataDir);
             } catch (e) {
-                // If creation fails (permissions), we'll fall back to local path below
+                console.error('⚠️ Failed to create data directory:', e.message);
             }
-            const persistentCandidate = fs.existsSync(dataDir)
-                ? path.join(dataDir, 'imperia_magic.db')
-                : path.join(process.cwd(), 'database', 'imperia_magic.db');
+            
+            // Always use the persistent path
+            const persistentCandidate = path.join(dataDir, 'imperia_magic.db');
 
             // Attempt one-time migration from legacy local path to persistent path
             const legacyLocalPath = path.join(process.cwd(), 'database', 'imperia_magic.db');
