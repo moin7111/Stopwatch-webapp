@@ -6,8 +6,9 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA_DIR="/workspace/data"
 BACKUP_DIR="$DATA_DIR/backups"
-DB_PATH="/workspace/database/imperia_magic.db"
+DB_PATH="/workspace/data/imperia_magic.db"
 PERSISTENT_DB="$DATA_DIR/imperia_magic.db"
+LEGACY_DB="/workspace/database/imperia_magic.db"
 
 # Create necessary directories
 mkdir -p "$BACKUP_DIR"
@@ -35,13 +36,13 @@ usage() {
 backup() {
     echo -e "${GREEN}Creating database backup...${NC}"
     
-    # Determine which database to backup
-    if [ -f "$PERSISTENT_DB" ]; then
-        SOURCE_DB="$PERSISTENT_DB"
-        echo "Backing up persistent database..."
-    elif [ -f "$DB_PATH" ]; then
+    # Determine which database to backup (prefer unified persistent path)
+    if [ -f "$DB_PATH" ]; then
         SOURCE_DB="$DB_PATH"
-        echo "Backing up working database..."
+        echo "Backing up database at $DB_PATH..."
+    elif [ -f "$LEGACY_DB" ]; then
+        SOURCE_DB="$LEGACY_DB"
+        echo "Backing up legacy database at $LEGACY_DB..."
     else
         echo -e "${RED}Error: No database found to backup!${NC}"
         exit 1
@@ -142,9 +143,12 @@ restore() {
     backup
     
     # Restore the database
-    echo "Restoring database..."
-    cp "$RESTORE_FILE" "$PERSISTENT_DB"
+    echo "Restoring database to persistent path..."
     cp "$RESTORE_FILE" "$DB_PATH"
+    
+    # Backward-compatibility: also update legacy path if present/needed
+    mkdir -p "$(dirname "$LEGACY_DB")"
+    cp "$RESTORE_FILE" "$LEGACY_DB" 2>/dev/null || true
     
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✅ Database restored successfully!${NC}"
@@ -161,8 +165,8 @@ auto_backup() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting automatic backup..." >> "$LOG_FILE"
     
     # Only backup if database exists and has been modified in last 24 hours
-    if [ -f "$PERSISTENT_DB" ]; then
-        if [ $(find "$PERSISTENT_DB" -mtime -1 | wc -l) -gt 0 ]; then
+    if [ -f "$DB_PATH" ]; then
+        if [ $(find "$DB_PATH" -mtime -1 | wc -l) -gt 0 ]; then
             backup >> "$LOG_FILE" 2>&1
             echo "[$(date '+%Y-%m-%d %H:%M:%S')] Automatic backup completed" >> "$LOG_FILE"
         else
