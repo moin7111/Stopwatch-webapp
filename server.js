@@ -1000,25 +1000,89 @@ app.get('/api/remote/validate/:token', requireDB, async (req, res) => {
 
 // New: Get remote settings by token (public for remote client)
 app.get('/api/remote/settings/:token', requireDB, async (req, res) => {
-    try {
-        const { token } = req.params;
-        const userToken = await db.getTokenByValue(token);
-        if (!userToken) {
-            return res.status(404).json({ error: 'Token not found' });
-        }
+	try {
+		const { token } = req.params;
+		const userToken = await db.getTokenByValue(token);
+		if (!userToken) {
+			return res.status(404).json({ error: 'Token not found' });
+		}
 
-        // Load settings stored under appType 'remote'
-        const settings = await db.getWebappSettings(userToken.user_id, 'remote');
+		// Load settings stored under appType 'remote'
+		const settings = await db.getWebappSettings(userToken.user_id, 'remote');
 
-        // Shape response with sensible defaults; ensure arrays/strings
-        const links = Array.isArray(settings.links) ? settings.links : [];
-        const installedFallbackUrl = typeof settings.installedFallbackUrl === 'string' ? settings.installedFallbackUrl : '';
+		// Shape response with sensible defaults; ensure arrays/strings
+		const links = Array.isArray(settings.links) ? settings.links : [];
+		const installedFallbackUrl = typeof settings.installedFallbackUrl === 'string' ? settings.installedFallbackUrl : '';
+		const appName = typeof settings.appName === 'string' ? settings.appName : 'IMPERIA Remote';
+		const appIconUrl = typeof settings.appIconUrl === 'string' ? settings.appIconUrl : '';
 
-        res.json({ settings: { links, installedFallbackUrl } });
-    } catch (error) {
-        console.error('Get remote settings error:', error);
-        res.status(500).json({ error: 'Failed to get remote settings' });
-    }
+		res.json({ settings: { links, installedFallbackUrl, appName, appIconUrl } });
+	} catch (error) {
+		console.error('Get remote settings error:', error);
+		res.status(500).json({ error: 'Failed to get remote settings' });
+	}
+});
+
+// New: Dynamic Remote manifest based on user settings
+app.get('/api/remote/manifest/:token', requireDB, async (req, res) => {
+	try {
+		const { token } = req.params;
+		const userToken = await db.getTokenByValue(token);
+		if (!userToken) {
+			return res.status(404).json({ error: 'Token not found' });
+		}
+		const settings = await db.getWebappSettings(userToken.user_id, 'remote');
+		const appName = typeof settings.appName === 'string' && settings.appName ? settings.appName : 'IMPERIA Remote';
+		const appIconUrl = typeof settings.appIconUrl === 'string' && settings.appIconUrl ? settings.appIconUrl : '';
+		const icons = appIconUrl ? [
+			{ src: appIconUrl, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+			{ src: appIconUrl, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+		] : [
+			{ src: '/icon-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+			{ src: '/icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+		];
+
+		const manifest = {
+			name: appName,
+			short_name: appName,
+			description: 'IMPERIA Remote - Magic System Remote',
+			start_url: `/imperia/remote/${token}`,
+			display: 'standalone',
+			background_color: '#000000',
+			theme_color: '#000000',
+			orientation: 'portrait',
+			categories: ['utilities', 'entertainment'],
+			icons,
+			scope: '/imperia/remote/'
+		};
+
+		res.set('Content-Type', 'application/manifest+json');
+		res.set('Cache-Control', 'no-store');
+		res.send(JSON.stringify(manifest, null, 2));
+	} catch (error) {
+		console.error('Remote manifest error:', error);
+		res.status(500).json({ error: 'Failed to generate manifest' });
+	}
+});
+
+// New: Dynamic apple-touch-icon redirect for Remote
+app.get('/api/remote/apple-icon/:token', requireDB, async (req, res) => {
+	try {
+		const { token } = req.params;
+		const userToken = await db.getTokenByValue(token);
+		if (!userToken) {
+			return res.status(404).sendFile(path.join(__dirname, 'public/icon-192x192.png'));
+		}
+		const settings = await db.getWebappSettings(userToken.user_id, 'remote');
+		const appIconUrl = typeof settings.appIconUrl === 'string' && settings.appIconUrl ? settings.appIconUrl : '';
+		if (appIconUrl) {
+			return res.redirect(302, appIconUrl);
+		}
+		return res.sendFile(path.join(__dirname, 'public/icon-192x192.png'));
+	} catch (error) {
+		console.error('Remote apple icon error:', error);
+		return res.sendFile(path.join(__dirname, 'public/icon-192x192.png'));
+	}
 });
 
 // Get active module for remote

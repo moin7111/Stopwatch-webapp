@@ -504,6 +504,25 @@
             <div id="remoteLinksStatus" style="display:none; margin-top: 10px; font-size: 14px;"></div>
         </div>
         
+        <!-- Remote App (Home Screen) -->
+        <div class="settings-section">
+            <div class="section-header">
+                <span class="section-icon">🏠</span>
+                <h2 class="section-title">Remote App (Home Screen)</h2>
+            </div>
+            <p style="margin-bottom: 12px; color: #999;">Customize the name and icon used when adding the IMPERIA Remote to the home screen.</p>
+            <div class="input-group">
+                <label for="remoteAppName">Remote app name</label>
+                <input id="remoteAppName" type="text" placeholder="IMPERIA Remote">
+            </div>
+            <div class="input-group">
+                <label for="remoteAppIconUrl">Remote app icon URL</label>
+                <input id="remoteAppIconUrl" type="url" placeholder="https://example.com/icon.png">
+            </div>
+            <button id="saveRemoteAppMetaBtn" class="save-btn" style="margin-top: 12px;">Save</button>
+            <div id="remoteAppMetaStatus" style="display:none; margin-top: 10px; font-size: 14px;"></div>
+        </div>
+        
         <!-- Logout Section -->
         <div class="settings-section">
             <div class="section-header">
@@ -737,6 +756,9 @@
                 document.getElementById('remoteLink2').value = links[1] || '';
                 document.getElementById('remoteLink3').value = links[2] || '';
                 document.getElementById('installedFallbackUrl').value = settings.installedFallbackUrl || '';
+                // New: Remote App meta
+                document.getElementById('remoteAppName').value = settings.appName || '';
+                document.getElementById('remoteAppIconUrl').value = settings.appIconUrl || '';
             } catch (e) {
                 console.error('Failed to load remote links settings', e);
             }
@@ -764,6 +786,23 @@
 
             const ok1 = await saveRemoteSetting('links', links);
             const ok2 = await saveRemoteSetting('installedFallbackUrl', installedFallbackUrl);
+            if (ok1 && ok2) {
+                statusEl.textContent = 'Saved successfully';
+                statusEl.style.color = '#30d158';
+            } else {
+                statusEl.textContent = 'Save failed';
+                statusEl.style.color = '#ff453a';
+            }
+            statusEl.style.display = 'block';
+        });
+
+        document.getElementById('saveRemoteAppMetaBtn').addEventListener('click', async () => {
+            const statusEl = document.getElementById('remoteAppMetaStatus');
+            statusEl.style.display = 'none';
+            const appName = document.getElementById('remoteAppName').value.trim();
+            const appIconUrl = document.getElementById('remoteAppIconUrl').value.trim();
+            const ok1 = await saveRemoteSetting('appName', appName);
+            const ok2 = await saveRemoteSetting('appIconUrl', appIconUrl);
             if (ok1 && ok2) {
                 statusEl.textContent = 'Saved successfully';
                 statusEl.style.color = '#30d158';
