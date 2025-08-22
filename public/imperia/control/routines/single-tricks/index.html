@@ -5,13 +5,13 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
 	<meta name="apple-mobile-web-app-capable" content="yes"/>
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-	<title>Imperia - Routines</title>
+	<title>Imperia - Single Tricks</title>
 	<style>
 		* { margin: 0; padding: 0; box-sizing: border-box; }
 		body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif; background: #000; color: #fff; min-height: 100vh; padding: 20px; }
 		.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-		.back-btn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px 16px; border-radius: 8px; color: #fff; text-decoration: none; font-size: 14px; transition: all 0.3s ease; }
-		.back-btn:hover { background: rgba(255, 255, 255, 0.15); }
+		.back-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 8px; color: #fff; text-decoration: none; font-size: 14px; transition: all 0.3s ease; }
+		.back-btn:hover { background: rgba(255,255,255,0.15); }
 		h1 { font-size: 28px; font-weight: 600; }
 		.tabs { display: flex; gap: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 6px; margin-bottom: 16px; }
 		.tab { flex: 1; text-align: center; padding: 10px 12px; border-radius: 8px; color: #fff; text-decoration: none; font-size: 14px; transition: all 0.2s ease; }
@@ -24,23 +24,18 @@
 <body>
 	<div class="header">
 		<a href="/imperia/control/menu.html" class="back-btn" aria-label="Back">←</a>
-		<h1>Routines</h1>
-		<div style="width: 80px;"></div>
+		<h1>Single Tricks</h1>
+		<div style="width:80px;"></div>
 	</div>
 	
 	<div class="tabs">
-		<a class="tab active" href="/imperia/control/routines/setups/">Setups</a>
+		<a class="tab" href="/imperia/control/routines/setups/">Setups</a>
 		<a class="tab" href="/imperia/control/routines/modules/">Modules</a>
-		<a class="tab" href="/imperia/control/routines/single-tricks/">Single Tricks</a>
+		<a class="tab active" href="/imperia/control/routines/single-tricks/">Single Tricks</a>
 	</div>
 	
 	<div class="content">
-		<div class="empty">Choose a category to get started.</div>
+		<div class="empty">No single tricks yet. Add your first single trick soon.</div>
 	</div>
-	
-	<script>
-		// Optional: Auto-redirect to Setups for now
-		window.location.replace('/imperia/control/routines/setups/');
-	</script>
 </body>
 </html>

@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
     <meta name="apple-mobile-web-app-capable" content="yes"/>
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-    <title>Imperia - Einstellungen</title>
+    <title>Imperia - Settings</title>
     <style>
         * {
             margin: 0;
@@ -263,15 +263,18 @@
         
         .remote-url-display {
             font-family: 'SF Mono', monospace;
-            font-size: 14px;
+            font-size: 12px;
             background: rgba(0, 0, 0, 0.4);
-            padding: 16px;
+            padding: 12px 14px;
             border-radius: 8px;
-            word-break: break-all;
+            white-space: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
             margin-bottom: 16px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #fff;
-            line-height: 1.4;
+            line-height: 1.2;
+            max-width: 100%;
         }
         
         .remote-copy-btn {
@@ -423,8 +426,8 @@
 </head>
 <body>
     <div class="header">
-        <a href="/imperia/control/menu.html" class="back-btn">← Zurück</a>
-        <h1>Einstellungen</h1>
+        <a href="/imperia/control/menu.html" class="back-btn" aria-label="Back">←</a>
+        <h1>Settings</h1>
         <div style="width: 80px;"></div>
     </div>
     
@@ -433,7 +436,7 @@
         <div class="settings-section">
             <div class="section-header">
                 <span class="section-icon">👤</span>
-                <h2 class="section-title">Benutzer-Informationen</h2>
+                <h2 class="section-title">User Information</h2>
             </div>
             
             <div id="userInfo" class="loading show">
@@ -459,7 +462,7 @@
         <div class="settings-section">
             <div class="section-header">
                 <span class="section-icon">📱</span>
-                <h2 class="section-title">Remote-Zugang</h2>
+                <h2 class="section-title">Remote Access</h2>
             </div>
             
             <div id="remoteAccessDisplay" class="loading show">
@@ -471,14 +474,14 @@
         <div class="settings-section">
             <div class="section-header">
                 <span class="section-icon">🚪</span>
-                <h2 class="section-title">Abmelden</h2>
+                <h2 class="section-title">Log out</h2>
             </div>
             
             <p style="margin-bottom: 20px; color: #999; line-height: 1.5;">
-                Melden Sie sich von Ihrem Account ab und kehren Sie zur Anmeldeseite zurück.
+                Sign out of your account and return to the login page.
             </p>
             
-            <button class="logout-btn" id="logoutBtn">Abmelden</button>
+            <button class="logout-btn" id="logoutBtn">Log out</button>
         </div>
 
         
@@ -505,16 +508,16 @@
                     userInfoDiv.classList.remove('loading', 'show');
                     userInfoDiv.innerHTML = `
                         <div class="info-row">
-                            <span class="info-label">Benutzername</span>
+                            <span class="info-label">Username</span>
                             <span class="info-value">${data.username}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Anzeigename</span>
+                            <span class="info-label">Display name</span>
                             <span class="info-value">${data.displayName || data.username}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Status</span>
-                            <span class="info-value" style="color: #30d158;">Aktiv</span>
+                            <span class="info-value" style="color: #30d158;">Active</span>
                         </div>
                     `;
                     
@@ -538,8 +541,8 @@
                 if (!response.ok) {
                     apiTokenDisplay.classList.remove('loading', 'show');
                     remoteAccessDisplay.classList.remove('loading', 'show');
-                    apiTokenDisplay.innerHTML = '<p style="text-align: center; opacity: 0.6;">Nicht autorisiert</p>';
-                    remoteAccessDisplay.innerHTML = '<p style="text-align: center; opacity: 0.6;">Nicht autorisiert</p>';
+                    apiTokenDisplay.innerHTML = '<p style="text-align: center; opacity: 0.6;">Not authorized</p>';
+                    remoteAccessDisplay.innerHTML = '<p style="text-align: center; opacity: 0.6;">Not authorized</p>';
                     return;
                 }
                 
@@ -548,7 +551,7 @@
                 
                 const token = data && data.token;
                 if (!token) {
-                    apiTokenDisplay.innerHTML = '<p style="text-align: center; opacity: 0.6;">Kein Token vorhanden</p>';
+                    apiTokenDisplay.innerHTML = '<p style="text-align: center; opacity: 0.6;">No token available</p>';
                 } else {
                     apiTokenDisplay.innerHTML = `
                         <div style="display: flex; align-items: center; gap: 12px;">
@@ -571,7 +574,7 @@
             remoteAccessDisplay.classList.remove('loading', 'show');
             
             if (!token) {
-                remoteAccessDisplay.innerHTML = '<p style="text-align: center; opacity: 0.6;">Kein Token vorhanden</p>';
+                remoteAccessDisplay.innerHTML = '<p style="text-align: center; opacity: 0.6;">No token available</p>';
                 return;
             }
             
@@ -579,7 +582,7 @@
             
             remoteAccessDisplay.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-                    <span style="font-weight: 600;">Remote-Zugang =</span>
+                    <span style="font-weight: 600;">Remote Access =</span>
                     <span style="font-family: monospace; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 6px;">${baseUrl}/imperia/remote/${token}</span>
                 </div>
             `;
@@ -589,12 +592,12 @@
         window.copyToken = async function(token) {
             try {
                 await navigator.clipboard.writeText(token);
-                event.target.textContent = 'Kopiert!';
+                event.target.textContent = 'Copied!';
                 setTimeout(() => {
-                    event.target.textContent = 'Kopieren';
+                    event.target.textContent = 'Copy';
                 }, 2000);
             } catch (error) {
-                alert('Kopieren fehlgeschlagen');
+                alert('Copy failed');
             }
         };
         
@@ -611,19 +614,19 @@
                 // Success feedback
                 button.classList.add('copied');
                 copyIcon.textContent = '✅';
-                copyText.textContent = 'Kopiert!';
+                copyText.textContent = 'Copied!';
                 
                 setTimeout(() => {
                     button.classList.remove('copied');
                     copyIcon.textContent = '📋';
-                    copyText.textContent = 'URL kopieren';
+                    copyText.textContent = 'Copy URL';
                 }, 2500);
                 
             } catch (error) {
                 // Error feedback
                 console.error('Copy failed:', error);
                 copyIcon.textContent = '❌';
-                copyText.textContent = 'Fehler!';
+                copyText.textContent = 'Error!';
                 
                 // Try fallback method
                 try {
@@ -637,16 +640,16 @@
                     // Success with fallback
                     button.classList.add('copied');
                     copyIcon.textContent = '✅';
-                    copyText.textContent = 'Kopiert!';
+                    copyText.textContent = 'Copied!';
                 } catch (fallbackError) {
                     // Complete failure
-                    alert('Kopieren fehlgeschlagen. Bitte URL manuell markieren und kopieren.');
+                    alert('Copy failed. Please select and copy URL manually.');
                 }
                 
                 setTimeout(() => {
                     button.classList.remove('copied');
                     copyIcon.textContent = '📋';
-                    copyText.textContent = 'URL kopieren';
+                    copyText.textContent = 'Copy URL';
                 }, 2500);
             }
         };
@@ -655,7 +658,7 @@
         document.getElementById('logoutBtn').addEventListener('click', async (e) => {
             e.preventDefault();
             
-            if (!confirm('Möchten Sie sich wirklich abmelden?')) {
+            if (!confirm('Are you sure you want to log out?')) {
                 return;
             }
             
