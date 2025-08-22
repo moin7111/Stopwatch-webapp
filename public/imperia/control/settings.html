@@ -348,6 +348,68 @@
             margin-top: 40px;
         }
         
+        /* Collapsible Section Styles */
+        .collapsible-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .collapsible-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .collapsible-header:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        .collapsible-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .collapsible-icon {
+            font-size: 24px;
+        }
+        
+        .collapsible-name {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .collapsible-toggle {
+            font-size: 20px;
+            transition: transform 0.3s ease;
+            color: #667eea;
+        }
+        
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+        }
+        
+        .collapsible-section.expanded .collapsible-content {
+            max-height: 3000px;
+            transition: max-height 0.5s ease-in;
+        }
+        
+        .collapsible-section.expanded .collapsible-toggle {
+            transform: rotate(180deg);
+        }
+        
+        .collapsible-inner {
+            padding: 0 24px 24px;
+        }
+        
         .password-change {
             margin-top: 20px;
         }
@@ -458,69 +520,84 @@
             </div>
         </div>
         
-        <!-- Remote Access -->
-        <div class="settings-section">
-            <div class="section-header">
-                <span class="section-icon">📱</span>
-                <h2 class="section-title">Remote Access</h2>
+        <!-- Imperia Remote Settings (Collapsible) -->
+        <div class="collapsible-section" id="remoteSettingsSection">
+            <div class="collapsible-header" onclick="toggleCollapsible('remoteSettingsSection')">
+                <div class="collapsible-title">
+                    <span class="collapsible-icon">🌐</span>
+                    <h2 class="collapsible-name">Imperia Remote Settings</h2>
+                </div>
+                <span class="collapsible-toggle">▼</span>
             </div>
             
-            <div id="remoteAccessDisplay" class="loading show">
-                <div class="spinner"></div>
-            </div>
-        </div>
-        
-        <!-- Remote Links & Fallback -->
-        <div class="settings-section">
-            <div class="section-header">
-                <span class="section-icon">🔗</span>
-                <h2 class="section-title">Remote Links & Fallback</h2>
-            </div>
+            <div class="collapsible-content">
+                <div class="collapsible-inner">
+                    <!-- Remote Access -->
+                    <div class="settings-section" style="margin-bottom: 20px;">
+                        <div class="section-header">
+                            <span class="section-icon">📱</span>
+                            <h2 class="section-title">Remote Access</h2>
+                        </div>
+                        
+                        <div id="remoteAccessDisplay" class="loading show">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Remote Links & Fallback -->
+                    <div class="settings-section" style="margin-bottom: 20px;">
+                        <div class="section-header">
+                            <span class="section-icon">🔗</span>
+                            <h2 class="section-title">Remote Links & Fallback</h2>
+                        </div>
 
-            <p style="margin-bottom: 12px; color: #999;">Configure up to three links shown to remote users when opened in a browser, and an optional fallback URL used when the remote is installed to home screen and no instructions are active.</p>
+                        <p style="margin-bottom: 12px; color: #999;">Configure up to three links shown to remote users when opened in a browser, and an optional fallback URL used when the remote is installed to home screen and no instructions are active.</p>
 
-            <div id="remoteLinksForm">
-                <div class="input-group">
-                    <label for="remoteLink1">Link 1</label>
-                    <input id="remoteLink1" type="url" placeholder="https://example.com">
+                        <div id="remoteLinksForm">
+                            <div class="input-group">
+                                <label for="remoteLink1">Link 1</label>
+                                <input id="remoteLink1" type="url" placeholder="https://example.com">
+                            </div>
+                            <div class="input-group">
+                                <label for="remoteLink2">Link 2</label>
+                                <input id="remoteLink2" type="url" placeholder="https://example.com">
+                            </div>
+                            <div class="input-group">
+                                <label for="remoteLink3">Link 3</label>
+                                <input id="remoteLink3" type="url" placeholder="https://example.com">
+                            </div>
+
+                            <div class="input-group" style="margin-top: 20px;">
+                                <label for="installedFallbackUrl">Installed-mode fallback URL (optional)</label>
+                                <input id="installedFallbackUrl" type="url" placeholder="https://example.com">
+                            </div>
+
+                            <button id="saveRemoteLinksBtn" class="save-btn" style="margin-top: 12px;">Save</button>
+                        </div>
+
+                        <div id="remoteLinksStatus" style="display:none; margin-top: 10px; font-size: 14px;"></div>
+                    </div>
+                    
+                    <!-- Remote App (Home Screen) -->
+                    <div class="settings-section">
+                        <div class="section-header">
+                            <span class="section-icon">🏠</span>
+                            <h2 class="section-title">Remote App (Home Screen)</h2>
+                        </div>
+                        <p style="margin-bottom: 12px; color: #999;">Customize the name and icon used when adding the IMPERIA Remote to the home screen.</p>
+                        <div class="input-group">
+                            <label for="remoteAppName">Remote app name</label>
+                            <input id="remoteAppName" type="text" placeholder="IMPERIA Remote">
+                        </div>
+                        <div class="input-group">
+                            <label for="remoteAppIconUrl">Remote app icon URL</label>
+                            <input id="remoteAppIconUrl" type="url" placeholder="https://example.com/icon.png">
+                        </div>
+                        <button id="saveRemoteAppMetaBtn" class="save-btn" style="margin-top: 12px;">Save</button>
+                        <div id="remoteAppMetaStatus" style="display:none; margin-top: 10px; font-size: 14px;"></div>
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label for="remoteLink2">Link 2</label>
-                    <input id="remoteLink2" type="url" placeholder="https://example.com">
-                </div>
-                <div class="input-group">
-                    <label for="remoteLink3">Link 3</label>
-                    <input id="remoteLink3" type="url" placeholder="https://example.com">
-                </div>
-
-                <div class="input-group" style="margin-top: 20px;">
-                    <label for="installedFallbackUrl">Installed-mode fallback URL (optional)</label>
-                    <input id="installedFallbackUrl" type="url" placeholder="https://example.com">
-                </div>
-
-                <button id="saveRemoteLinksBtn" class="save-btn" style="margin-top: 12px;">Save</button>
             </div>
-
-            <div id="remoteLinksStatus" style="display:none; margin-top: 10px; font-size: 14px;"></div>
-        </div>
-        
-        <!-- Remote App (Home Screen) -->
-        <div class="settings-section">
-            <div class="section-header">
-                <span class="section-icon">🏠</span>
-                <h2 class="section-title">Remote App (Home Screen)</h2>
-            </div>
-            <p style="margin-bottom: 12px; color: #999;">Customize the name and icon used when adding the IMPERIA Remote to the home screen.</p>
-            <div class="input-group">
-                <label for="remoteAppName">Remote app name</label>
-                <input id="remoteAppName" type="text" placeholder="IMPERIA Remote">
-            </div>
-            <div class="input-group">
-                <label for="remoteAppIconUrl">Remote app icon URL</label>
-                <input id="remoteAppIconUrl" type="url" placeholder="https://example.com/icon.png">
-            </div>
-            <button id="saveRemoteAppMetaBtn" class="save-btn" style="margin-top: 12px;">Save</button>
-            <div id="remoteAppMetaStatus" style="display:none; margin-top: 10px; font-size: 14px;"></div>
         </div>
         
         <!-- Logout Section -->
@@ -812,6 +889,12 @@
             }
             statusEl.style.display = 'block';
         });
+        
+        // Collapsible functionality
+        function toggleCollapsible(sectionId) {
+            const section = document.getElementById(sectionId);
+            section.classList.toggle('expanded');
+        }
     </script>
 </body>
 </html>
