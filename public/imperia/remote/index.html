@@ -1,427 +1,497 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#1a0033">
-    <title>Imperia Remote</title>
-    <link rel="stylesheet" href="/css/styles.css">
-    <style>
-        body {
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a0033 100%);
-            min-height: 100vh;
-            overflow: hidden;
-        }
-        
-        .remote-container {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .remote-header {
-            background: rgba(26, 26, 26, 0.9);
-            padding: 15px 20px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(108, 92, 231, 0.1);
-        }
-        
-        .remote-header h1 {
-            font-size: 24px;
-            background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin: 0;
-        }
-        
-        .connection-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: #00b894;
-        }
-        
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background: #00b894;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(1.2); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-        
-        .remote-content {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-        .links-list { max-width: 600px; width: 100%; }
-        .link-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); padding: 14px 16px; border-radius: 10px; margin: 8px 0; }
-        .link-item a { color: #a5b4fc; text-decoration: none; word-break: break-all; }
-        .link-item a:hover { text-decoration: underline; }
-        
-        .waiting-screen {
-            text-align: center;
-            animation: fadeIn 0.5s ease-out;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .magic-icon {
-            font-size: 80px;
-            margin-bottom: 30px;
-            animation: float 3s ease-in-out infinite;
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
-        
-        .waiting-screen h2 {
-            font-size: 28px;
-            margin-bottom: 10px;
-            color: #f0f0f0;
-        }
-        
-        .waiting-screen p {
-            font-size: 16px;
-            color: #999;
-            margin-bottom: 30px;
-        }
-        
-        .pulse-ring {
-            width: 60px;
-            height: 60px;
-            margin: 0 auto;
-            position: relative;
-        }
-        
-        .pulse-ring::before {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(108, 92, 231, 0.4) 0%, transparent 70%);
-            border-radius: 50%;
-            animation: expand 2s ease-out infinite;
-        }
-        
-        @keyframes expand {
-            0% { transform: scale(0.8); opacity: 1; }
-            100% { transform: scale(2.5); opacity: 0; }
-        }
-        
-        .module-container {
-            background: rgba(26, 26, 26, 0.9);
-            border-radius: 20px;
-            padding: 30px;
-            max-width: 600px;
-            width: 100%;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            display: none;
-            animation: fadeIn 0.5s ease-out;
-        }
-        
-        .module-container.active {
-            display: block;
-        }
-        
-        .module-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .module-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-        }
-        
-        .module-content {
-            margin-top: 20px;
-        }
-        
-        .error-screen {
-            text-align: center;
-            color: #d63031;
-        }
-        
-        .error-screen h2 {
-            color: #d63031;
-            margin-bottom: 20px;
-        }
-        
-        .error-screen button {
-            background: #d63031;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: all 0.3s ease;
-        }
-        
-        .error-screen button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(214, 48, 49, 0.4);
-        }
-        
-        .remote-footer {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-            font-size: 12px;
-        }
-    </style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="theme-color" content="#1a0033">
+	<title>Imperia Remote</title>
+	<link rel="stylesheet" href="/css/styles.css">
+	<style>
+		body {
+			background: linear-gradient(135deg, #0a0a0a 0%, #1a0033 100%);
+			min-height: 100vh;
+			overflow: hidden;
+		}
+		
+		.remote-container {
+			display: flex;
+			flex-direction: column;
+			min-height: 100vh;
+			padding: 20px;
+		}
+		
+		.remote-header {
+			background: rgba(26, 26, 26, 0.9);
+			padding: 15px 20px;
+			border-radius: 12px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+			backdrop-filter: blur(10px);
+			box-shadow: 0 4px 20px rgba(108, 92, 231, 0.1);
+		}
+		
+		.remote-header h1 {
+			font-size: 24px;
+			background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			margin: 0;
+		}
+		
+		.connection-status {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-size: 14px;
+			color: #00b894;
+		}
+		
+		.status-dot {
+			width: 8px;
+			height: 8px;
+			background: #00b894;
+			border-radius: 50%;
+			animation: pulse 2s infinite;
+		}
+		
+		@keyframes pulse {
+			0% { opacity: 1; transform: scale(1); }
+			50% { opacity: 0.6; transform: scale(1.2); }
+			100% { opacity: 1; transform: scale(1); }
+		}
+		
+		.remote-content {
+			flex: 1;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			position: relative;
+		}
+		.links-list { max-width: 600px; width: 100%; }
+		.link-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); padding: 14px 16px; border-radius: 10px; margin: 8px 0; }
+		.link-item a { color: #a5b4fc; text-decoration: none; word-break: break-all; }
+		.link-item a:hover { text-decoration: underline; }
+		
+		.waiting-screen {
+			text-align: center;
+			animation: fadeIn 0.5s ease-out;
+		}
+		
+		@keyframes fadeIn {
+			from { opacity: 0; transform: translateY(20px); }
+			to { opacity: 1; transform: translateY(0); }
+		}
+		
+		.magic-icon {
+			font-size: 80px;
+			margin-bottom: 30px;
+			animation: float 3s ease-in-out infinite;
+		}
+		
+		@keyframes float {
+			0%, 100% { transform: translateY(0); }
+			50% { transform: translateY(-15px); }
+		}
+		
+		.waiting-screen h2 {
+			font-size: 28px;
+			margin-bottom: 10px;
+			color: #f0f0f0;
+		}
+		
+		.waiting-screen p {
+			font-size: 16px;
+			color: #999;
+			margin-bottom: 30px;
+		}
+		
+		.pulse-ring {
+			width: 60px;
+			height: 60px;
+			margin: 0 auto;
+			position: relative;
+		}
+		
+		.pulse-ring::before {
+			content: '';
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			background: radial-gradient(circle, rgba(108, 92, 231, 0.4) 0%, transparent 70%);
+			border-radius: 50%;
+			animation: expand 2s ease-out infinite;
+		}
+		
+		@keyframes expand {
+			0% { transform: scale(0.8); opacity: 1; }
+			100% { transform: scale(2.5); opacity: 0; }
+		}
+		
+		.module-container {
+			background: rgba(26, 26, 26, 0.9);
+			border-radius: 20px;
+			padding: 30px;
+			max-width: 600px;
+			width: 100%;
+			backdrop-filter: blur(10px);
+			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+			display: none;
+			animation: fadeIn 0.5s ease-out;
+		}
+		
+		.module-container.active {
+			display: block;
+		}
+		
+		.module-header {
+			text-align: center;
+			margin-bottom: 30px;
+		}
+		
+		.module-icon {
+			font-size: 48px;
+			margin-bottom: 15px;
+		}
+		
+		.module-content {
+			margin-top: 20px;
+		}
+		
+		.error-screen {
+			text-align: center;
+			color: #d63031;
+		}
+		
+		.error-screen h2 {
+			color: #d63031;
+			margin-bottom: 20px;
+		}
+		
+		.error-screen button {
+			background: #d63031;
+			color: white;
+			border: none;
+			padding: 12px 24px;
+			border-radius: 8px;
+			font-size: 16px;
+			cursor: pointer;
+			margin-top: 20px;
+			transition: all 0.3s ease;
+		}
+		
+		.error-screen button:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 15px rgba(214, 48, 49, 0.4);
+		}
+		
+		.remote-footer {
+			text-align: center;
+			padding: 20px;
+			color: #666;
+			font-size: 12px;
+		}
+		
+		/* Browser mode: simpler, no animations, show links immediately */
+		body.browser-mode {
+			background: #000;
+			min-height: 100vh;
+			overflow: auto;
+		}
+		body.browser-mode * {
+			animation: none !important;
+			transition: none !important;
+		}
+		body.browser-mode .remote-header,
+		body.browser-mode .remote-footer,
+		body.browser-mode #loadingScreen,
+		body.browser-mode #waitingScreen,
+		body.browser-mode #moduleContainer {
+			display: none !important;
+		}
+		body.browser-mode #linksScreen {
+			display: block !important;
+		}
+		body.browser-mode #linksScreen .module-container {
+			background: transparent;
+			box-shadow: none;
+			padding: 0;
+			animation: none !important;
+		}
+	</style>
+	<script>
+		// Inject dynamic manifest and apple icon using token
+		(function() {
+			try {
+				var parts = location.pathname.split('/');
+				var token = parts[parts.length - 1];
+				if (token && token !== 'remote') {
+					var m = document.createElement('link');
+					m.rel = 'manifest';
+					m.href = '/api/remote/manifest/' + encodeURIComponent(token);
+					document.head.appendChild(m);
+					var a = document.createElement('link');
+					a.rel = 'apple-touch-icon';
+					a.href = '/api/remote/apple-icon/' + encodeURIComponent(token);
+					document.head.appendChild(a);
+					var meta = document.createElement('meta');
+					meta.name = 'apple-mobile-web-app-title';
+					meta.content = 'IMPERIA Remote';
+					document.head.appendChild(meta);
+				}
+			} catch (e) {}
+		})();
+	</script>
 </head>
 <body>
-    <div class="remote-container">
-        <div class="remote-header">
-            <h1>Imperia Remote</h1>
-            <div class="connection-status" id="connectionStatus" style="display: none;">
-                <span class="status-dot"></span>
-                <span>Verbunden</span>
-            </div>
-        </div>
-        
-        <div class="remote-content">
-            <!-- Ladebildschirm -->
-            <div id="loadingScreen" style="display: none;">
-                <div class="waiting-screen">
-                    <div class="magic-icon">⏳</div>
-                    <h2>Verbindung wird hergestellt...</h2>
-                    <div class="pulse-ring"></div>
-                </div>
-            </div>
-            
-            <!-- Wartebildschirm -->
-            <div id="waitingScreen" style="display: none;">
-                <div class="waiting-screen">
-                    <div class="magic-icon">✨</div>
-                    <h2>Bereit für Magie</h2>
-                    <p>Warten auf Anweisungen vom Zauberer...</p>
-                    <div class="pulse-ring"></div>
-                </div>
-            </div>
-            <!-- Links screen (browser mode) -->
-            <div id="linksScreen" style="display:none;">
-                <div class="module-container active">
-                    <div class="module-header">
-                        <div class="module-icon">🔗</div>
-                        <h2>Nützliche Links</h2>
-                        <p>Vom Control konfiguriert</p>
-                    </div>
-                    <div id="linksList" class="links-list"></div>
-                </div>
-            </div>
-            
-            <!-- Fehlerbildschirm -->
-            <div id="errorScreen" style="display: none;">
-                <div class="error-screen">
-                    <div class="magic-icon">❌</div>
-                    <h2>Ungültiger Zugangslink</h2>
-                    <p>Dieser Link ist nicht gültig oder abgelaufen.</p>
-                    <p>Bitte fordern Sie einen neuen Link vom Zauberer an.</p>
-                    <button onclick="window.location.href='/imperia'">Zur Startseite</button>
-                </div>
-            </div>
-            
-            <!-- Modul-Container (wird dynamisch gefüllt) -->
-            <div id="moduleContainer" class="module-container">
-                <!-- Module content will be inserted here -->
-            </div>
-        </div>
-        
-        <div class="remote-footer">
-            <p>Powered by Imperia Magic System</p>
-        </div>
-    </div>
-    
-    <script>
-        // Token aus URL extrahieren
-        const pathParts = window.location.pathname.split('/');
-        const token = pathParts[pathParts.length - 1];
-        
-        // Screens
-        const loadingScreen = document.getElementById('loadingScreen');
-        const waitingScreen = document.getElementById('waitingScreen');
-        const errorScreen = document.getElementById('errorScreen');
-        const moduleContainer = document.getElementById('moduleContainer');
-        const connectionStatus = document.getElementById('connectionStatus');
-        
-        // Token validieren und Session starten
-        async function initializeRemote() {
-            loadingScreen.style.display = 'block';
-            
-            try {
-                // Validiere Token beim Server
-                const response = await fetch(`/api/remote/validate/${token}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    loadingScreen.style.display = 'none';
-                    waitingScreen.style.display = 'block';
-                    connectionStatus.style.display = 'flex';
-                    
-                    // Load remote settings (links & fallback)
-                    await loadRemoteSettings();
-                    // In installed mode with no active module and a fallback URL, auto-open it
-                    maybeOpenInstalledFallback();
-                    
-                    // Starte Polling für Module
-                    startModulePolling();
-                } else {
-                    throw new Error('Invalid token');
-                }
-            } catch (error) {
-                console.error('Initialization error:', error);
-                loadingScreen.style.display = 'none';
-                errorScreen.style.display = 'block';
-            }
-        }
-        
-        // Polling für aktive Module
-        let pollingInterval;
-        function startModulePolling() {
-            // Poll every 2 seconds
-            pollingInterval = setInterval(async () => {
-                try {
-                    const response = await fetch(`/api/remote/module/${token}`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.activeModule) {
-                            displayModule(data.activeModule);
-                        } else {
-                            hideModule();
-                            // When there is no active module, decide what to show
-                            maybeShowLinksOrFallback();
-                        }
-                    }
-                } catch (error) {
-                    console.error('Polling error:', error);
-                }
-            }, 2000);
-        }
-        
-        // Modul anzeigen
-        function displayModule(moduleData) {
-            waitingScreen.style.display = 'none';
-            moduleContainer.classList.add('active');
-            
-            // Beispiel Module Content
-            moduleContainer.innerHTML = `
-                <div class="module-header">
-                    <div class="module-icon">${moduleData.icon || '🎭'}</div>
-                    <h2>${moduleData.name || 'Modul'}</h2>
-                    <p>${moduleData.description || ''}</p>
-                </div>
-                <div class="module-content">
-                    ${getModuleContent(moduleData)}
-                </div>
-            `;
-        }
-        
-        // Modul verstecken
-        function hideModule() {
-            moduleContainer.classList.remove('active');
-            moduleContainer.innerHTML = '';
-            waitingScreen.style.display = 'block';
-        }
-        
-        // Module Content basierend auf Typ
-        function getModuleContent(moduleData) {
-            // Aktuell leer - Module werden später implementiert
-            return `<p style="text-align: center;">Modul-Inhalt wird angezeigt...</p>`;
-        }
-        
-        // Cleanup beim Verlassen
-        window.addEventListener('beforeunload', () => {
-            if (pollingInterval) {
-                clearInterval(pollingInterval);
-            }
-        });
-        // Settings state
-        let remoteSettings = { links: [], installedFallbackUrl: '' };
-        function isStandalone() {
-            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-        }
-        async function loadRemoteSettings() {
-            try {
-                const res = await fetch(`/api/remote/settings/${token}`);
-                if (!res.ok) return;
-                const { settings } = await res.json();
-                remoteSettings.links = Array.isArray(settings.links) ? settings.links.slice(0,3) : [];
-                remoteSettings.installedFallbackUrl = typeof settings.installedFallbackUrl === 'string' ? settings.installedFallbackUrl : '';
-                renderLinks();
-            } catch (e) {
-                console.error('Failed to load remote settings', e);
-            }
-        }
-        function renderLinks() {
-            const list = document.getElementById('linksList');
-            list.innerHTML = '';
-            remoteSettings.links.forEach((href, idx) => {
-                const item = document.createElement('div');
-                item.className = 'link-item';
-                const a = document.createElement('a');
-                a.href = href;
-                a.textContent = href;
-                a.target = '_blank';
-                a.rel = 'noopener noreferrer';
-                item.appendChild(a);
-                list.appendChild(item);
-            });
-        }
-        function maybeShowLinksOrFallback() {
-            if (remoteSettings.links.length > 0 && !isStandalone()) {
-                waitingScreen.style.display = 'none';
-                document.getElementById('linksScreen').style.display = 'block';
-            } else if (isStandalone()) {
-                maybeOpenInstalledFallback();
-            }
-        }
-        let fallbackOpened = false;
-        function maybeOpenInstalledFallback() {
-            if (fallbackOpened) return;
-            const url = remoteSettings.installedFallbackUrl;
-            if (isStandalone() && url) {
-                fallbackOpened = true;
-                window.location.replace(url);
-            }
-        }
-        
-        // Initialisierung starten
-        if (token && token !== 'remote') {
-            initializeRemote();
-        } else {
-            errorScreen.style.display = 'block';
-        }
-    </script>
+	<div class="remote-container">
+		<div class="remote-header">
+			<h1>Imperia Remote</h1>
+			<div class="connection-status" id="connectionStatus" style="display: none;">
+				<span class="status-dot"></span>
+				<span>Verbunden</span>
+			</div>
+		</div>
+		
+		<div class="remote-content">
+			<!-- Ladebildschirm -->
+			<div id="loadingScreen" style="display: none;">
+				<div class="waiting-screen">
+					<div class="magic-icon">⏳</div>
+					<h2>Verbindung wird hergestellt...</h2>
+					<div class="pulse-ring"></div>
+				</div>
+			</div>
+			
+			<!-- Wartebildschirm -->
+			<div id="waitingScreen" style="display: none;">
+				<div class="waiting-screen">
+					<div class="magic-icon">✨</div>
+					<h2>Bereit für Magie</h2>
+					<p>Warten auf Anweisungen vom Zauberer...</p>
+					<div class="pulse-ring"></div>
+				</div>
+			</div>
+			<!-- Links screen (browser mode) -->
+			<div id="linksScreen" style="display:none;">
+				<div class="module-container active">
+					<div class="module-header">
+						<div class="module-icon">🔗</div>
+						<h2>Nützliche Links</h2>
+						<p>Vom Control konfiguriert</p>
+					</div>
+					<div id="linksList" class="links-list"></div>
+				</div>
+			</div>
+			
+			<!-- Fehlerbildschirm -->
+			<div id="errorScreen" style="display: none;">
+				<div class="error-screen">
+					<div class="magic-icon">❌</div>
+					<h2>Ungültiger Zugangslink</h2>
+					<p>Dieser Link ist nicht gültig oder abgelaufen.</p>
+					<p>Bitte fordern Sie einen neuen Link vom Zauberer an.</p>
+					<button onclick="window.location.href='/imperia'">Zur Startseite</button>
+				</div>
+			</div>
+			
+			<!-- Modul-Container (wird dynamisch gefüllt) -->
+			<div id="moduleContainer" class="module-container">
+				<!-- Module content will be inserted here -->
+			</div>
+		</div>
+		
+		<div class="remote-footer">
+			<p>Powered by Imperia Magic System</p>
+		</div>
+	</div>
+	
+	<script>
+		// Token aus URL extrahieren
+		const pathParts = window.location.pathname.split('/');
+		const token = pathParts[pathParts.length - 1];
+		
+		// Screens
+		const loadingScreen = document.getElementById('loadingScreen');
+		const waitingScreen = document.getElementById('waitingScreen');
+		const errorScreen = document.getElementById('errorScreen');
+		const moduleContainer = document.getElementById('moduleContainer');
+		const connectionStatus = document.getElementById('connectionStatus');
+		
+		// Settings state
+		let remoteSettings = { links: [], installedFallbackUrl: '', appName: 'IMPERIA Remote', appIconUrl: '' };
+		
+		function isStandalone() {
+			return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+		}
+		
+		function applyBrowserModeStyles() {
+			document.body.classList.add('browser-mode');
+		}
+		
+		async function loadRemoteSettings() {
+			try {
+				const res = await fetch(`/api/remote/settings/${token}`);
+				if (!res.ok) {
+					throw new Error('Failed to load settings');
+				}
+				const { settings } = await res.json();
+				remoteSettings.links = Array.isArray(settings.links) ? settings.links.slice(0,3) : [];
+				remoteSettings.installedFallbackUrl = typeof settings.installedFallbackUrl === 'string' ? settings.installedFallbackUrl : '';
+				remoteSettings.appName = typeof settings.appName === 'string' && settings.appName ? settings.appName : 'IMPERIA Remote';
+				remoteSettings.appIconUrl = typeof settings.appIconUrl === 'string' ? settings.appIconUrl : '';
+				// Update iOS web app title if present
+				const titleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+				if (titleMeta) titleMeta.content = remoteSettings.appName;
+				renderLinks();
+			} catch (e) {
+				console.error('Failed to load remote settings', e);
+				errorScreen.style.display = 'block';
+			}
+		}
+		
+		function renderLinks() {
+			const list = document.getElementById('linksList');
+			list.innerHTML = '';
+			remoteSettings.links.forEach((href) => {
+				const item = document.createElement('div');
+				item.className = 'link-item';
+				const a = document.createElement('a');
+				a.href = href;
+				a.textContent = href;
+				a.target = '_blank';
+				a.rel = 'noopener noreferrer';
+				item.appendChild(a);
+				list.appendChild(item);
+			});
+		}
+		
+		// Modul anzeigen
+		function displayModule(moduleData) {
+			waitingScreen.style.display = 'none';
+			moduleContainer.classList.add('active');
+			moduleContainer.innerHTML = `
+				<div class="module-header">
+					<div class="module-icon">${moduleData.icon || '🎭'}</div>
+					<h2>${moduleData.name || 'Modul'}</h2>
+					<p>${moduleData.description || ''}</p>
+				</div>
+				<div class="module-content">
+					${getModuleContent(moduleData)}
+				</div>
+			`;
+		}
+		
+		// Modul verstecken
+		function hideModule() {
+			moduleContainer.classList.remove('active');
+			moduleContainer.innerHTML = '';
+			waitingScreen.style.display = 'block';
+		}
+		
+		// Module Content basierend auf Typ
+		function getModuleContent(moduleData) {
+			return `<p style="text-align: center;">Modul-Inhalt wird angezeigt...</p>`;
+		}
+		
+		// Cleanup beim Verlassen
+		let pollingInterval;
+		window.addEventListener('beforeunload', () => {
+			if (pollingInterval) {
+				clearInterval(pollingInterval);
+			}
+		});
+		
+		function startModulePolling() {
+			pollingInterval = setInterval(async () => {
+				try {
+					const response = await fetch(`/api/remote/module/${token}`);
+					if (response.ok) {
+						const data = await response.json();
+						if (data.activeModule) {
+							displayModule(data.activeModule);
+						} else {
+							hideModule();
+							maybeShowLinksOrFallback();
+						}
+					}
+				} catch (error) {
+					console.error('Polling error:', error);
+				}
+			}, 2000);
+		}
+		
+		function maybeShowLinksOrFallback() {
+			if (remoteSettings.links.length > 0 && !isStandalone()) {
+				waitingScreen.style.display = 'none';
+				document.getElementById('linksScreen').style.display = 'block';
+			} else if (isStandalone()) {
+				maybeOpenInstalledFallback();
+			}
+		}
+		
+		let fallbackOpened = false;
+		function maybeOpenInstalledFallback() {
+			if (fallbackOpened) return;
+			const url = remoteSettings.installedFallbackUrl;
+			if (isStandalone() && url) {
+				fallbackOpened = true;
+				window.location.replace(url);
+			}
+		}
+		
+		// Token validieren und Session starten (standalone)
+		async function initializeRemote() {
+			loadingScreen.style.display = 'block';
+			try {
+				const response = await fetch(`/api/remote/validate/${token}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+				if (response.ok) {
+					loadingScreen.style.display = 'none';
+					waitingScreen.style.display = 'block';
+					connectionStatus.style.display = 'flex';
+					await loadRemoteSettings();
+					maybeOpenInstalledFallback();
+					startModulePolling();
+				} else {
+					throw new Error('Invalid token');
+				}
+			} catch (error) {
+				console.error('Initialization error:', error);
+				loadingScreen.style.display = 'none';
+				errorScreen.style.display = 'block';
+			}
+		}
+		
+		// Start logic
+		(async function bootstrap() {
+			if (!token || token === 'remote') {
+				errorScreen.style.display = 'block';
+				return;
+			}
+			if (isStandalone()) {
+				// Hide UI to avoid flicker while we check fallback
+				document.body.style.visibility = 'hidden';
+				try {
+					await loadRemoteSettings();
+					if (remoteSettings.installedFallbackUrl) {
+						window.location.replace(remoteSettings.installedFallbackUrl);
+						return; // stop here; page will unload
+					}
+				} catch (e) {
+					// ignore, show UI
+				}
+				// No fallback -> proceed with normal remote flow
+				document.body.style.visibility = 'visible';
+				initializeRemote();
+			} else {
+				// Browser mode: show links immediately, simple UI
+				applyBrowserModeStyles();
+				document.getElementById('linksScreen').style.display = 'block';
+				await loadRemoteSettings();
+			}
+		})();
+	</script>
 </body>
 </html>
