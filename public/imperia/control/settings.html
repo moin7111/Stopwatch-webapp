@@ -581,9 +581,15 @@
             const baseUrl = window.location.origin;
             
             remoteAccessDisplay.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-                    <span style="font-weight: 600;">Remote Access =</span>
-                    <span style="font-family: monospace; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 6px;">${baseUrl}/imperia/remote/${token}</span>
+                <div class="remote-url-container">
+                    <div class="remote-url-header">
+                        <div class="remote-url-title">Remote IMPERIA URL</div>
+                    </div>
+                    <div id="remoteUrlValue" class="remote-url-display">${baseUrl}/imperia/remote/${token}</div>
+                    <button class="remote-copy-btn" onclick="copyRemoteUrl('remoteUrlValue')">
+                        <span class="copy-icon">📋</span>
+                        <span class="copy-text">Copy URL</span>
+                    </button>
                 </div>
             `;
         }
