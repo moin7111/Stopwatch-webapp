@@ -10,6 +10,7 @@
 			this.forceQueue = [];
 			this.processedForceIds = new Set(this._loadProcessedIds());
 			this._bindedTick = this._tick.bind(this);
+			this.readOnly = false;
 			window.stopwatch = this;
 		}
 
@@ -236,16 +237,21 @@
 					const targetSum = Number(force.target ?? force.value);
 					if (!Number.isFinite(targetSum)) return false;
 					const total = this._currentElapsedMs();
-					const mm = Math.floor(total / 60000);
-					const ss = Math.floor((total % 60000) / 1000);
+					const curMm = Math.floor(total / 60000);
+					const curSs = Math.floor((total % 60000) / 1000);
 					const digitsSum = (n)=>String(n).split('').reduce((a,b)=>a+Number(b),0);
-					const baseSum = digitsSum(mm) + digitsSum(ss);
-					let found = null;
-					for (let cs = 0; cs < 100; cs++) {
-						if (baseSum + digitsSum(cs) === targetSum) { found = cs; break; }
+					let result = null;
+					for (let secOffset = 0; secOffset <= 5 && !result; secOffset++) {
+						const nextSsTotal = curSs + secOffset;
+						const mm = curMm + Math.floor(nextSsTotal / 60);
+						const ss = nextSsTotal % 60;
+						const baseSum = digitsSum(mm) + digitsSum(ss);
+						for (let cs = 0; cs < 100; cs++) {
+							if (baseSum + digitsSum(cs) === targetSum) { result = { mm, ss, cs }; break; }
+						}
 					}
-					if (found === null) return false;
-					this.baseElapsedMs = mm * 60000 + ss * 1000 + found * 10;
+					if (!result) return false;
+					this.baseElapsedMs = result.mm * 60000 + result.ss * 1000 + result.cs * 10;
 					this._renderTime(this.baseElapsedMs);
 					return true;
 				}
