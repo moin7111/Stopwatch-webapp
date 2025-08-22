@@ -70,6 +70,10 @@
             justify-content: center;
             position: relative;
         }
+        .links-list { max-width: 600px; width: 100%; }
+        .link-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); padding: 14px 16px; border-radius: 10px; margin: 8px 0; }
+        .link-item a { color: #a5b4fc; text-decoration: none; word-break: break-all; }
+        .link-item a:hover { text-decoration: underline; }
         
         .waiting-screen {
             text-align: center;
@@ -220,6 +224,17 @@
                     <div class="pulse-ring"></div>
                 </div>
             </div>
+            <!-- Links screen (browser mode) -->
+            <div id="linksScreen" style="display:none;">
+                <div class="module-container active">
+                    <div class="module-header">
+                        <div class="module-icon">🔗</div>
+                        <h2>Nützliche Links</h2>
+                        <p>Vom Control konfiguriert</p>
+                    </div>
+                    <div id="linksList" class="links-list"></div>
+                </div>
+            </div>
             
             <!-- Fehlerbildschirm -->
             <div id="errorScreen" style="display: none;">
@@ -274,6 +289,11 @@
                     waitingScreen.style.display = 'block';
                     connectionStatus.style.display = 'flex';
                     
+                    // Load remote settings (links & fallback)
+                    await loadRemoteSettings();
+                    // In installed mode with no active module and a fallback URL, auto-open it
+                    maybeOpenInstalledFallback();
+                    
                     // Starte Polling für Module
                     startModulePolling();
                 } else {
@@ -299,6 +319,8 @@
                             displayModule(data.activeModule);
                         } else {
                             hideModule();
+                            // When there is no active module, decide what to show
+                            maybeShowLinksOrFallback();
                         }
                     }
                 } catch (error) {
@@ -344,6 +366,55 @@
                 clearInterval(pollingInterval);
             }
         });
+        // Settings state
+        let remoteSettings = { links: [], installedFallbackUrl: '' };
+        function isStandalone() {
+            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        }
+        async function loadRemoteSettings() {
+            try {
+                const res = await fetch(`/api/remote/settings/${token}`);
+                if (!res.ok) return;
+                const { settings } = await res.json();
+                remoteSettings.links = Array.isArray(settings.links) ? settings.links.slice(0,3) : [];
+                remoteSettings.installedFallbackUrl = typeof settings.installedFallbackUrl === 'string' ? settings.installedFallbackUrl : '';
+                renderLinks();
+            } catch (e) {
+                console.error('Failed to load remote settings', e);
+            }
+        }
+        function renderLinks() {
+            const list = document.getElementById('linksList');
+            list.innerHTML = '';
+            remoteSettings.links.forEach((href, idx) => {
+                const item = document.createElement('div');
+                item.className = 'link-item';
+                const a = document.createElement('a');
+                a.href = href;
+                a.textContent = href;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                item.appendChild(a);
+                list.appendChild(item);
+            });
+        }
+        function maybeShowLinksOrFallback() {
+            if (remoteSettings.links.length > 0 && !isStandalone()) {
+                waitingScreen.style.display = 'none';
+                document.getElementById('linksScreen').style.display = 'block';
+            } else if (isStandalone()) {
+                maybeOpenInstalledFallback();
+            }
+        }
+        let fallbackOpened = false;
+        function maybeOpenInstalledFallback() {
+            if (fallbackOpened) return;
+            const url = remoteSettings.installedFallbackUrl;
+            if (isStandalone() && url) {
+                fallbackOpened = true;
+                window.location.replace(url);
+            }
+        }
         
         // Initialisierung starten
         if (token && token !== 'remote') {

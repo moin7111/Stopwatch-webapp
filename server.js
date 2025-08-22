@@ -980,8 +980,7 @@ app.get('/api/remote/validate/:token', requireDB, async (req, res) => {
     try {
         const { token } = req.params;
         
-        // Find user by token
-        const userToken = await db.getToken(token);
+        const userToken = await db.getTokenByValue(token);
         if (!userToken) {
             return res.status(401).json({ error: 'Invalid token' });
         }
@@ -991,12 +990,34 @@ app.get('/api/remote/validate/:token', requireDB, async (req, res) => {
         
         res.json({ 
             success: true, 
-            userId: userToken.user_id,
-            message: 'Remote session established' 
+            user: { id: userToken.user_id, username: userToken.username, displayName: userToken.display_name }
         });
     } catch (error) {
         console.error('Remote validation error:', error);
         res.status(500).json({ error: 'Failed to validate remote access' });
+    }
+});
+
+// New: Get remote settings by token (public for remote client)
+app.get('/api/remote/settings/:token', requireDB, async (req, res) => {
+    try {
+        const { token } = req.params;
+        const userToken = await db.getTokenByValue(token);
+        if (!userToken) {
+            return res.status(404).json({ error: 'Token not found' });
+        }
+
+        // Load settings stored under appType 'remote'
+        const settings = await db.getWebappSettings(userToken.user_id, 'remote');
+
+        // Shape response with sensible defaults; ensure arrays/strings
+        const links = Array.isArray(settings.links) ? settings.links : [];
+        const installedFallbackUrl = typeof settings.installedFallbackUrl === 'string' ? settings.installedFallbackUrl : '';
+
+        res.json({ settings: { links, installedFallbackUrl } });
+    } catch (error) {
+        console.error('Get remote settings error:', error);
+        res.status(500).json({ error: 'Failed to get remote settings' });
     }
 });
 
@@ -1005,26 +1026,23 @@ app.get('/api/remote/module/:token', requireDB, async (req, res) => {
     try {
         const { token } = req.params;
         
-        // Verify token
-        const userToken = await db.getToken(token);
+        const userToken = await db.getTokenByValue(token);
         if (!userToken) {
             return res.status(401).json({ error: 'Invalid token' });
         }
         
-        // Get active module for user
-        const result = await db.getActiveModule(userToken.user_id);
+        // Get user's currently active module
+        const activeModule = await db.getActiveModule(userToken.user_id);
         
-        if (result) {
-            res.json({ 
-                activeModule: {
-                    id: result.module_id,
-                    name: result.module_name,
-                    type: result.module_type,
-                    icon: result.module_icon,
-                    description: result.module_description,
-                    data: result.module_data ? JSON.parse(result.module_data) : null
-                }
-            });
+        if (activeModule) {
+            res.json({ activeModule: {
+                id: activeModule.module_id,
+                name: activeModule.module_name,
+                type: activeModule.module_type,
+                icon: activeModule.module_icon,
+                description: activeModule.module_description,
+                data: activeModule.module_data ? JSON.parse(activeModule.module_data) : null
+            }});
         } else {
             res.json({ activeModule: null });
         }
@@ -1040,26 +1058,19 @@ app.post('/api/remote/module/:token', requireDB, async (req, res) => {
         const { token } = req.params;
         const { moduleId, moduleName, moduleType, moduleIcon, moduleDescription, moduleData } = req.body;
         
-        // Verify token
-        const userToken = await db.getToken(token);
+        const userToken = await db.getTokenByValue(token);
         if (!userToken) {
             return res.status(401).json({ error: 'Invalid token' });
         }
         
-        if (moduleId) {
-            // Activate module
-            await db.activateModule(userToken.user_id, {
-                moduleId,
-                moduleName,
-                moduleType,
-                moduleIcon,
-                moduleDescription,
-                moduleData
-            });
-        } else {
-            // Deactivate module
-            await db.deactivateModule(userToken.user_id);
-        }
+        await db.activateModule(userToken.user_id, {
+            moduleId,
+            moduleName,
+            moduleType,
+            moduleIcon,
+            moduleDescription,
+            moduleData
+        });
         
         res.json({ success: true });
     } catch (error) {
