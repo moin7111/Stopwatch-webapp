@@ -7,6 +7,7 @@
 	<meta name="theme-color" content="#1a0033">
 	<title>Imperia Remote</title>
 	<link rel="stylesheet" href="/css/styles.css">
+	<link rel="stylesheet" href="/css/stopwatch-ui.css?v=2024011501">
 	<style>
 		body {
 			background: linear-gradient(135deg, #0a0a0a 0%, #1a0033 100%);
@@ -382,6 +383,30 @@
 					${getModuleContent(moduleData)}
 				</div>
 			`;
+			if ((moduleData.type||'').toLowerCase()==='tempral') {
+				// Load assets once
+				(function ensureScript(src){ if (!document.querySelector('script[src="'+src+'"]')) { var s=document.createElement('script'); s.src=src; document.body.appendChild(s);} })('/js/stopwatch-core.js?v=2024011501');
+				(function ensureScript(src){ if (!document.querySelector('script[src="'+src+'"]')) { var s=document.createElement('script'); s.src=src; document.body.appendChild(s);} })('/js/stopwatch-api.js?v=2024011501');
+				(function ensureScript(src){ if (!document.querySelector('script[src="'+src+'"]')) { var s=document.createElement('script'); s.src=src; document.body.appendChild(s);} })('/js/manual-input.js?v=2024011501');
+				(function ensureScript(src){ if (!document.querySelector('script[src="'+src+'"]')) { var s=document.createElement('script'); s.src=src; document.body.appendChild(s);} })('/js/preset-manager.js?v=2024011501');
+				// Initialize after small delay to ensure scripts loaded
+				setTimeout(function initTempral(){
+					try {
+						var sw = new window.StopwatchCore();
+						sw.initUI({ timeDisplay: document.getElementById('timeDisplay'), leftButton: document.getElementById('leftButton'), rightButton: document.getElementById('rightButton'), lapsContainer: document.getElementById('lapsContainer'), statusText: document.getElementById('statusText') });
+						var api = new window.StopwatchAPI(token, 'tempral'); window.api = api; api.startPolling(sw);
+						sw.updateStatus('Tempral verbunden ('+String(token).substring(0,6)+'...)');
+						// Controls
+						var leftBtn = document.getElementById('leftButton'); var rightBtn = document.getElementById('rightButton');
+						function syncButtons(){ if (!sw.isRunning && sw.baseElapsedMs===0){ leftBtn.disabled=true; leftBtn.textContent='Runde'; leftBtn.className='control-button left left-idle'; rightBtn.textContent='Start'; rightBtn.className='control-button right right-start'; return; } if (sw.isRunning){ leftBtn.disabled=false; leftBtn.textContent='Runde'; leftBtn.className='control-button left left-lap'; rightBtn.textContent='Stop'; rightBtn.className='control-button right right-stop'; return; } leftBtn.disabled=false; leftBtn.textContent='Löschen'; leftBtn.className='control-button left left-reset'; rightBtn.textContent='Weiter'; rightBtn.className='control-button right right-resume'; }
+						setInterval(syncButtons, 120);
+						leftBtn.addEventListener('click', async function(){ if (sw.isRunning) { await api.sendForce({ mode:'control', value:'lap', trigger:'egal' }); sw.lap(); } else { await api.sendForce({ mode:'control', value:'reset', trigger:'egal' }); sw.reset(); } });
+						rightBtn.addEventListener('click', async function(){ if (!sw.isRunning) { await api.sendForce({ mode:'control', value:(sw.baseElapsedMs===0?'start':'resume'), trigger:'egal' }); sw[sw.baseElapsedMs===0?'start':'resume'](); } else { await api.sendForce({ mode:'control', value:'stop', trigger:'egal' }); sw.stop(); } });
+						// Preset trigger
+						var alarm = document.getElementById('alarmNavItem'); var c=0, t=null; alarm.addEventListener('click', async function(e){ e.preventDefault(); c++; if (c===3){ var name=prompt('Preset Name starten (genau):'); if (name){ try { window.PresetManager.runSequence(sw, api, name); } catch(e){} } c=0; } clearTimeout(t); t=setTimeout(function(){c=0;},500); });
+					} catch (e) {}
+				}, 150);
+			}
 		}
 		
 		// Modul verstecken
@@ -393,6 +418,25 @@
 		
 		// Module Content basierend auf Typ
 		function getModuleContent(moduleData) {
+			if ((moduleData.type||'').toLowerCase()==='tempral') {
+				return `
+					<div class="stopwatch-container">
+						<div class="time-display" id="timeDisplay">00:00,00</div>
+						<div class="controls" aria-hidden="false">
+							<button id="leftButton" class="control-button left left-idle" disabled>Runde</button>
+							<button id="rightButton" class="control-button right right-start">Start</button>
+						</div>
+						<div class="separator-line" aria-hidden="true"></div>
+						<div class="laps-container" id="lapsContainer"></div>
+					</div>
+					<div class="bottom-nav" role="navigation" aria-label="Hauptnavigation">
+						<a href="#" class="nav-item" id="worldClockNav" aria-label="Weltzeituhr"><span class="nav-icon">🌍</span><span class="nav-label">Weltuhr</span></a>
+						<a href="#" class="nav-item" id="alarmNavItem" aria-label="Wecker"><span class="nav-icon">⏰</span><span class="nav-label">Wecker</span></a>
+						<a href="#" class="nav-item active" id="stopwatchNav" aria-label="Stoppuhr"><span class="nav-icon">⏱️</span><span class="nav-label">Stoppuhr</span></a>
+						<a href="#" class="nav-item" id="timerNav" aria-label="Timer"><span class="nav-icon">⏲️</span><span class="nav-label">Timer</span></a>
+					</div>
+				`;
+			}
 			return `<p style="text-align: center;">Modul-Inhalt wird angezeigt...</p>`;
 		}
 		
