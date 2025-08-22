@@ -470,6 +470,40 @@
             </div>
         </div>
         
+        <!-- Remote Links & Fallback -->
+        <div class="settings-section">
+            <div class="section-header">
+                <span class="section-icon">🔗</span>
+                <h2 class="section-title">Remote Links & Fallback</h2>
+            </div>
+
+            <p style="margin-bottom: 12px; color: #999;">Configure up to three links shown to remote users when opened in a browser, and an optional fallback URL used when the remote is installed to home screen and no instructions are active.</p>
+
+            <div id="remoteLinksForm">
+                <div class="input-group">
+                    <label for="remoteLink1">Link 1</label>
+                    <input id="remoteLink1" type="url" placeholder="https://example.com">
+                </div>
+                <div class="input-group">
+                    <label for="remoteLink2">Link 2</label>
+                    <input id="remoteLink2" type="url" placeholder="https://example.com">
+                </div>
+                <div class="input-group">
+                    <label for="remoteLink3">Link 3</label>
+                    <input id="remoteLink3" type="url" placeholder="https://example.com">
+                </div>
+
+                <div class="input-group" style="margin-top: 20px;">
+                    <label for="installedFallbackUrl">Installed-mode fallback URL (optional)</label>
+                    <input id="installedFallbackUrl" type="url" placeholder="https://example.com">
+                </div>
+
+                <button id="saveRemoteLinksBtn" class="save-btn" style="margin-top: 12px;">Save</button>
+            </div>
+
+            <div id="remoteLinksStatus" style="display:none; margin-top: 10px; font-size: 14px;"></div>
+        </div>
+        
         <!-- Logout Section -->
         <div class="settings-section">
             <div class="section-header">
@@ -592,6 +626,9 @@
                     </button>
                 </div>
             `;
+
+           // Load existing remote links & fallback for this user
+           loadRemoteLinksSettings();
         }
         
         // Copy token
@@ -688,6 +725,54 @@
         // Initialize
         loadUserInfo();
         loadTokens();
+
+        // Load and Save Remote Links & Fallback
+        async function loadRemoteLinksSettings() {
+            try {
+                const res = await fetch('/api/webapp/remote/settings', { credentials: 'include' });
+                if (!res.ok) return;
+                const { settings } = await res.json();
+                const links = Array.isArray(settings.links) ? settings.links : [];
+                document.getElementById('remoteLink1').value = links[0] || '';
+                document.getElementById('remoteLink2').value = links[1] || '';
+                document.getElementById('remoteLink3').value = links[2] || '';
+                document.getElementById('installedFallbackUrl').value = settings.installedFallbackUrl || '';
+            } catch (e) {
+                console.error('Failed to load remote links settings', e);
+            }
+        }
+
+        async function saveRemoteSetting(key, value) {
+            const res = await fetch('/api/webapp/remote/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ key, value })
+            });
+            return res.ok;
+        }
+
+        document.getElementById('saveRemoteLinksBtn').addEventListener('click', async () => {
+            const statusEl = document.getElementById('remoteLinksStatus');
+            statusEl.style.display = 'none';
+            const links = [
+                document.getElementById('remoteLink1').value.trim(),
+                document.getElementById('remoteLink2').value.trim(),
+                document.getElementById('remoteLink3').value.trim()
+            ].filter(Boolean).slice(0, 3);
+            const installedFallbackUrl = document.getElementById('installedFallbackUrl').value.trim();
+
+            const ok1 = await saveRemoteSetting('links', links);
+            const ok2 = await saveRemoteSetting('installedFallbackUrl', installedFallbackUrl);
+            if (ok1 && ok2) {
+                statusEl.textContent = 'Saved successfully';
+                statusEl.style.color = '#30d158';
+            } else {
+                statusEl.textContent = 'Save failed';
+                statusEl.style.color = '#ff453a';
+            }
+            statusEl.style.display = 'block';
+        });
     </script>
 </body>
 </html>
