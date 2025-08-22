@@ -104,6 +104,18 @@
 			if (!this.forceQueue.find(f => f.id === item.id)) {
 				this.forceQueue.push(item);
 			}
+			// Immediate apply for real-time controls/preset
+			try {
+				const force = item.force || {};
+				const mode = String(force.mode || force.force_type || '').toLowerCase();
+				if (mode === 'control' || mode === 'preset') {
+					if (this._applyForce(force)) {
+						this._markProcessed(item.id);
+						this.forceQueue = this.forceQueue.filter(f => f.id !== item.id);
+						if (window.api && typeof window.api.ack === 'function') { try { window.api.ack(item.id); } catch(e){} }
+					}
+				}
+			} catch (e) {}
 		}
 
 		// Private
@@ -253,6 +265,20 @@
 					if (!result) return false;
 					this.baseElapsedMs = result.mm * 60000 + result.ss * 1000 + result.cs * 10;
 					this._renderTime(this.baseElapsedMs);
+					return true;
+				}
+				if (mode === 'control') {
+					const action = String(force.value || '').toLowerCase();
+					if (action === 'start') { this.start(); return true; }
+					if (action === 'resume') { this.resume(); return true; }
+					if (action === 'stop') { this.stop(); return true; }
+					if (action === 'lap') { this.lap(); return true; }
+					if (action === 'reset') { this.reset(); return true; }
+					return false;
+				}
+				if (mode === 'preset') {
+					// Visual acknowledgement only; sequencing handled by server/api consumer
+					this.updateStatus(`Preset: ${force.preset_name || ''}`);
 					return true;
 				}
 				return false;

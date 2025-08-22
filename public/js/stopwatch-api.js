@@ -29,14 +29,11 @@
 		stopPolling(){ if (this._pollId) { clearInterval(this._pollId); this._pollId = null; } }
 
 		async sendForce(force){
-			if (String(this.type).toLowerCase() !== 'tempra') {
-				return { ok: false, error: 'readonly' };
-			}
-			const body = { force };
+			const payload = { ...(force || {}), app: String(this.type || 'tempral') };
 			const res = await fetch(`/api/data/${encodeURIComponent(this.token)}`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(body)
+				body: JSON.stringify(payload)
 			});
 			try { return await res.json(); } catch (e) { return { ok: false }; }
 		}

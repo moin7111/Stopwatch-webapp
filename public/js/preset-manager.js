@@ -31,6 +31,37 @@
 			this._overlay = overlay;
 		}
 
+		runSequence(stopwatch, api, presetName){
+			try {
+				const sequences = this._loadPresets();
+				const name = String(presetName || '').trim();
+				const steps = sequences[name] || sequences['Lotterie-Vorhersage'] || [];
+				if (!Array.isArray(steps) || steps.length === 0) { stopwatch.updateStatus('Preset nicht gefunden'); return; }
+				(async () => {
+					for (const step of steps) {
+						const payload = { mode: step.mode, target: step.target, trigger: step.trigger || 'egal' };
+						try { await api.sendForce(payload); } catch (e) {}
+					}
+					stopwatch.updateStatus(`Preset gestartet: ${name}`);
+				})();
+			} catch (e) { try { stopwatch.updateStatus('Preset Fehler'); } catch(_){} }
+		}
+
+		_loadPresets(){
+			try {
+				const raw = localStorage.getItem('tempra_presets');
+				if (raw) return JSON.parse(raw);
+			} catch (e) {}
+			// Default sample
+			return {
+				'Lotterie-Vorhersage': [
+					{ mode: 'ms', target: 43, trigger: 'egal' },
+					{ mode: 's', target: 20, trigger: 'stop' },
+					{ mode: 'ft', target: '2443', trigger: 'lap' }
+				]
+			};
+		}
+
 		_close(){ try { document.body.removeChild(this._overlay); } catch(e){} this._overlay = null; }
 	}
 
