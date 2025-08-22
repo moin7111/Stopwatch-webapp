@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
     <meta name="apple-mobile-web-app-capable" content="yes"/>
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-    <title>Imperia - Anleitungen</title>
+    <title>Imperia - Instructions</title>
     <style>
         * {
             margin: 0;
@@ -31,12 +31,18 @@
         .back-btn {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 8px 16px;
+            padding: 8px 12px;
             border-radius: 8px;
             color: #fff;
             text-decoration: none;
-            font-size: 14px;
+            font-size: 16px;
             transition: all 0.3s ease;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 36px;
         }
         
         .back-btn:hover {
@@ -206,8 +212,8 @@
 </head>
 <body>
     <div class="header">
-        <a href="/imperia/control/menu.html" class="back-btn">← Zurück</a>
-        <h1>Anleitungen</h1>
+        <a href="/imperia/control/menu.html" class="back-btn" aria-label="Back">←</a>
+        <h1>Instructions</h1>
         <div style="width: 80px;"></div>
     </div>
     
