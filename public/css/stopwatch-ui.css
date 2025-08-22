@@ -1,0 +1,153 @@
+/* Stopwatch UI Styles */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+	margin: 0;
+	font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+	background: #000;
+	color: #fff;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.status-bar {
+	height: 20px;
+	padding: 4px 10px;
+	color: #9BA1A6;
+	font-size: 12px;
+	background: rgba(255,255,255,0.04);
+	border-bottom: 1px solid rgba(255,255,255,0.06);
+	backdrop-filter: blur(10px);
+	position: sticky;
+	top: 0;
+	z-index: 100;
+}
+
+.stopwatch-container {
+	max-width: 720px;
+	margin: 0 auto;
+	padding: 24px 16px 32px;
+}
+
+.time-display {
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+	font-size: 64px;
+	letter-spacing: 2px;
+	text-align: center;
+	margin: 24px 0 16px;
+}
+
+.controls {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 14px;
+	margin: 12px 0 6px;
+}
+
+.control-button {
+	min-width: 120px;
+	height: 48px;
+	padding: 0 16px;
+	border-radius: 24px;
+	border: 1px solid rgba(255,255,255,0.12);
+	background: rgba(255,255,255,0.06);
+	color: #fff;
+	font-size: 16px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: transform 0.08s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.control-button:active { transform: scale(0.98); }
+.control-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.control-button.right-start { background: linear-gradient(135deg, #0ea5e9 0%, #22d3ee 100%); border-color: transparent; }
+.control-button.right-stop { background: linear-gradient(135deg, #ef4444 0%, #f97316 100%); border-color: transparent; }
+.control-button.right-resume { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); border-color: transparent; }
+.control-button.left-idle { }
+.control-button.left-lap { background: rgba(255,255,255,0.08); }
+.control-button.left-reset { background: rgba(255,255,255,0.08); }
+
+.dots { display:none; }
+
+.separator-line {
+	height: 1px;
+	background: linear-gradient(to right, transparent, rgba(255,255,255,0.06), transparent);
+	margin: 16px 0 8px;
+}
+
+.laps-container { padding: 8px 0; }
+.lap-item {
+	display: flex;
+	justify-content: space-between;
+	padding: 10px 12px;
+	border-radius: 10px;
+	border: 1px solid rgba(255,255,255,0.06);
+	background: rgba(255,255,255,0.03);
+	margin: 6px 0;
+	font-variant-numeric: tabular-nums;
+}
+
+.bottom-nav {
+	position: fixed;
+	left: 0; right: 0; bottom: 0;
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 2px;
+	padding: 8px 10px calc(env(safe-area-inset-bottom) + 8px);
+	background: rgba(0,0,0,0.7);
+	border-top: 1px solid rgba(255,255,255,0.08);
+	backdrop-filter: blur(10px);
+}
+.bottom-nav .nav-item {
+	text-align: center;
+	color: #aaa;
+	font-size: 12px;
+	text-decoration: none;
+}
+.bottom-nav .nav-item.active { color: #fff; }
+.bottom-nav .nav-icon { margin-bottom: 4px; }
+
+.home-indicator {
+	height: 6px;
+	width: 140px;
+	border-radius: 999px;
+	background: rgba(255,255,255,0.1);
+	margin: 12px auto calc(env(safe-area-inset-bottom) + 12px);
+}
+
+.dev-panel {
+	position: fixed;
+	left: 12px;
+	bottom: calc(env(safe-area-inset-bottom) + 80px);
+	background: rgba(17,17,17,0.92);
+	border: 1px solid rgba(255,255,255,0.12);
+	border-radius: 12px;
+	padding: 10px;
+	box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+	display: none;
+	z-index: 1000;
+}
+.dev-panel.show { display: block; }
+.dev-panel input {
+	flex: 1;
+	min-width: 180px;
+	background: rgba(255,255,255,0.06);
+	border: 1px solid rgba(255,255,255,0.14);
+	border-radius: 8px;
+	padding: 8px 10px;
+	color: #fff;
+}
+.dev-panel button {
+	appearance: none;
+	border: 0;
+	border-radius: 8px;
+	padding: 8px 12px;
+	background: #2DD4BF;
+	color: #000;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.view-only-info { color: #8E8E93; }

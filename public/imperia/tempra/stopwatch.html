@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+	<meta name="mobile-web-app-capable" content="yes" />
+	<meta name="theme-color" content="#000000" />
+	<meta name="apple-mobile-web-app-title" content="Tempra" />
+	<meta name="application-name" content="Tempra" />
+	<title>Tempra - Stoppuhr</title>
+	<link rel="manifest" href="/imperia/manifest.json" />
+	<link rel="apple-touch-icon" href="/icon-192x192.png" />
+	<link rel="icon" type="image/png" href="/icon-192x192.png" />
+	<link rel="stylesheet" href="/css/stopwatch-ui.css?v=2024011501">
+</head>
+<body>
+	<div class="status-bar">
+		<div id="statusText" style="height:20px;">&nbsp;</div>
+	</div>
+
+	<div class="stopwatch-container">
+		<div class="time-display" id="timeDisplay">00:00,00</div>
+
+		<div class="controls" aria-hidden="false">
+			<button id="leftButton" class="control-button left left-idle" disabled>Runde</button>
+			<button id="rightButton" class="control-button right right-start">Start</button>
+			<div class="dots" aria-hidden="true">
+				<div class="dot active"></div>
+				<div class="dot"></div>
+			</div>
+		</div>
+
+		<div class="separator-line" aria-hidden="true"></div>
+		<div class="laps-container" id="lapsContainer"></div>
+	</div>
+
+	<div class="bottom-nav" role="navigation" aria-label="Uhr Navigation">
+		<div class="nav-item" id="worldClockNavItem">
+			<div class="nav-icon" aria-hidden="true">🌍</div>
+			<div>Weltuhr</div>
+		</div>
+		<div class="nav-item" id="alarmNavItem">
+			<div class="nav-icon">⏰</div>
+			<div>Wecker</div>
+		</div>
+		<div class="nav-item active">
+			<div class="nav-icon">⏱️</div>
+			<div>Stoppuhr</div>
+		</div>
+		<div class="nav-item">
+			<div class="nav-icon">⏲️</div>
+			<div>Timer</div>
+		</div>
+	</div>
+
+	<div class="home-indicator" aria-hidden="true"></div>
+
+	<div class="dev-panel" id="devPanel">
+		<input id="tokenInput" placeholder="Token (z.B. CZVOVZ)" />
+		<div style="display:flex; gap:8px;">
+			<button id="connectBtn">Verbinden</button>
+			<button id="clearBtn" style="background:#FF6B6B">Trennen</button>
+		</div>
+		<div style="font-size:13px; opacity:0.8; margin-top:6px;">Tempra - Professionelle Stoppuhr-Steuerung</div>
+	</div>
+
+	<script src="/js/stopwatch-core.js?v=2024011501"></script>
+	<script src="/js/manual-input.js?v=2024011501"></script>
+	<script src="/js/stopwatch-api.js?v=2024011501"></script>
+	<script src="/js/preset-manager.js?v=2024011501"></script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			const stopwatch = new StopwatchCore();
+			let api = null; window.api = null;
+
+			stopwatch.initUI({
+				timeDisplay: document.getElementById('timeDisplay'),
+				leftButton: document.getElementById('leftButton'),
+				rightButton: document.getElementById('rightButton'),
+				lapsContainer: document.getElementById('lapsContainer'),
+				statusText: document.getElementById('statusText')
+			});
+
+			// Triple-click Alarm -> Preset Manager
+			let alarmClickCount = 0; let alarmClickTimer = null;
+			document.getElementById('alarmNavItem').addEventListener('click', () => {
+				alarmClickCount++;
+				if (alarmClickCount === 3) {
+					if (window.PresetManager) { window.PresetManager.open(stopwatch, api); }
+					alarmClickCount = 0;
+				}
+				clearTimeout(alarmClickTimer);
+				alarmClickTimer = setTimeout(() => alarmClickCount = 0, 500);
+			});
+
+			// Triple-click Weltuhr -> Routines
+			let worldClockClickCount = 0; let worldClockClickTimer = null;
+			document.getElementById('worldClockNavItem').addEventListener('click', () => {
+				worldClockClickCount++;
+				if (worldClockClickCount === 3) {
+					window.location.href = '/imperia/control/index.html';
+					worldClockClickCount = 0;
+				}
+				clearTimeout(worldClockClickTimer);
+				worldClockClickTimer = setTimeout(() => worldClockClickCount = 0, 500);
+			});
+
+			// Dev panel
+			const params = new URLSearchParams(location.search);
+			const dev = params.get('dev');
+			const panel = document.getElementById('devPanel');
+			const tokenInput = document.getElementById('tokenInput');
+			const connectBtn = document.getElementById('connectBtn');
+			const clearBtn = document.getElementById('clearBtn');
+			if (dev === '1') panel.classList.add('show');
+
+			connectBtn.addEventListener('click', function() {
+				const token = tokenInput.value.trim();
+				if (!token) return alert('Bitte Token eingeben');
+				api = new StopwatchAPI(token, 'tempra'); window.api = api;
+				api.startPolling(stopwatch);
+				stopwatch.updateStatus(`Tempra verbunden (${token.substring(0,6)}...)`);
+				localStorage.setItem('tempra_token', token);
+			});
+			clearBtn.addEventListener('click', function(){ if (api) { api.stopPolling(); api = null; window.api = null; } stopwatch.updateStatus('Getrennt'); });
+
+			const tokenParam = params.get('token') || params.get('t') || localStorage.getItem('tempra_token');
+			if (tokenParam) {
+				api = new StopwatchAPI(tokenParam, 'tempra'); window.api = api;
+				api.startPolling(stopwatch);
+				stopwatch.updateStatus(`Tempra verbunden (${tokenParam.substring(0,6)}...)`);
+				localStorage.setItem('tempra_token', tokenParam);
+			}
+
+			// Fullscreen & prevent accidental scroll/zoom
+			function tryEnterFullscreen() {
+				const el = document.documentElement;
+				if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) return;
+				const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen; if (fn) { try { fn.call(el); } catch(e){} }
+			}
+			const enterOnce = () => { tryEnterFullscreen(); document.removeEventListener('click', enterOnce); document.removeEventListener('touchstart', enterOnce); };
+			document.addEventListener('click', enterOnce, { once: true });
+			document.addEventListener('touchstart', enterOnce, { once: true });
+			document.addEventListener('touchmove', function(e){ e.preventDefault(); }, { passive: false });
+			let lastTouch = 0;
+			document.addEventListener('touchend', function(e){ const now = Date.now(); if (now - lastTouch <= 300) e.preventDefault(); lastTouch = now; }, { passive: false });
+			document.addEventListener('gesturestart', function(e){ e.preventDefault && e.preventDefault(); });
+			document.addEventListener('dblclick', function(e){ e.preventDefault(); });
+			window.addEventListener('keydown', function(e){ const keys = ['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' ']; if (keys.includes(e.key)) e.preventDefault(); }, { passive: false });
+
+			// Service Worker: ensure latest
+			if ('serviceWorker' in navigator) {
+				navigator.serviceWorker.getRegistrations().then(function(regs){ for (let r of regs) { r.unregister(); } }).then(function(){
+					return navigator.serviceWorker.register('/imperia/sw.js', { scope: '/imperia/' });
+				}).then(function(reg){ reg.update(); setInterval(()=>reg.update(), 10000); }).catch(function(err){ console.log('SW failed', err); });
+			}
+
+			if (performance && performance.navigation && performance.navigation.type === 1) {
+				if ('caches' in window) { caches.keys().then(function(names){ for (let name of names) { caches.delete(name); } }); }
+			}
+		});
+	</script>
+</body>
+</html>
