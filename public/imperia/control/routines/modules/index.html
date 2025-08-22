@@ -8,34 +8,238 @@
 	<title>Imperia - Routines</title>
 	<style>
 		* { margin: 0; padding: 0; box-sizing: border-box; }
-		body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif; background: #000; color: #fff; min-height: 100vh; padding: 20px; }
-		.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-		.back-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 8px; color: #fff; text-decoration: none; font-size: 16px; transition: all 0.3s ease; width: 40px; height: 36px; display: inline-flex; align-items: center; justify-content: center; }
-		.back-btn:hover { background: rgba(255,255,255,0.15); }
-		h1 { font-size: 28px; font-weight: 600; }
-		.tabs { display: flex; gap: 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 8px; margin-bottom: 16px; backdrop-filter: blur(8px); }
-		.tab { flex: 1; text-align: center; padding: 12px 14px; border-radius: 10px; color: #fff; text-decoration: none; font-size: 15px; transition: all 0.2s ease; border: 1px solid transparent; }
-		.tab:hover { background: rgba(255,255,255,0.06); }
-		.tab.active { background: linear-gradient(135deg, rgba(102,126,234,0.18) 0%, rgba(118,75,162,0.18) 100%); border: 1px solid rgba(102,126,234,0.45); box-shadow: 0 6px 18px rgba(102,126,234,0.25); }
-		.content { max-width: 900px; margin: 0 auto; }
-		.empty { opacity: 0.6; text-align: center; padding: 40px 0; }
+		body { 
+			font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif; 
+			background: #000; 
+			color: #fff; 
+			min-height: 100vh; 
+			padding: 0;
+			position: relative;
+			overflow-x: hidden;
+		}
+		
+		/* Background gradient effect */
+		body::before {
+			content: '';
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: radial-gradient(ellipse at top, rgba(102,126,234,0.1) 0%, transparent 50%),
+						radial-gradient(ellipse at bottom left, rgba(118,75,162,0.08) 0%, transparent 50%);
+			pointer-events: none;
+			z-index: 0;
+		}
+		
+		.container {
+			position: relative;
+			z-index: 1;
+			padding: 20px;
+			min-height: 100vh;
+		}
+		
+		.header { 
+			display: flex; 
+			align-items: center; 
+			justify-content: center;
+			margin-bottom: 40px; 
+			position: relative;
+			padding: 20px 0;
+		}
+		
+		.back-btn { 
+			position: absolute;
+			left: 0;
+			background: rgba(255,255,255,0.05); 
+			border: 1px solid rgba(255,255,255,0.1); 
+			padding: 12px;
+			width: 48px;
+			height: 48px;
+			border-radius: 16px; 
+			color: rgba(255,255,255,0.8); 
+			text-decoration: none; 
+			font-size: 20px; 
+			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+			display: inline-flex; 
+			align-items: center; 
+			justify-content: center;
+			backdrop-filter: blur(10px);
+			-webkit-backdrop-filter: blur(10px);
+		}
+		
+		.back-btn:hover { 
+			background: rgba(255,255,255,0.1); 
+			border-color: rgba(255,255,255,0.2);
+			transform: translateX(-2px);
+		}
+		
+		.back-btn:active {
+			transform: scale(0.95) translateX(-2px);
+		}
+		
+		h1 { 
+			font-size: 36px; 
+			font-weight: 700;
+			letter-spacing: -0.5px;
+			background: linear-gradient(to right, #fff 0%, rgba(255,255,255,0.85) 100%);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
+		}
+		
+		.tabs-container {
+			max-width: 600px;
+			margin: 0 auto 40px;
+		}
+		
+		.tabs { 
+			display: flex; 
+			gap: 4px;
+			background: rgba(255,255,255,0.03); 
+			border: 1px solid rgba(255,255,255,0.08); 
+			border-radius: 20px; 
+			padding: 4px;
+			backdrop-filter: blur(20px);
+			-webkit-backdrop-filter: blur(20px);
+			box-shadow: 0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+		}
+		
+		.tab { 
+			flex: 1; 
+			text-align: center; 
+			padding: 14px 20px; 
+			border-radius: 16px; 
+			color: rgba(255,255,255,0.7); 
+			text-decoration: none; 
+			font-size: 15px; 
+			font-weight: 500;
+			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+			position: relative;
+			overflow: hidden;
+		}
+		
+		.tab::before {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: rgba(255,255,255,0.05);
+			opacity: 0;
+			transition: opacity 0.3s ease;
+		}
+		
+		.tab:hover::before { 
+			opacity: 1;
+		}
+		
+		.tab:hover {
+			color: rgba(255,255,255,0.9);
+		}
+		
+		.tab.active { 
+			background: linear-gradient(135deg, rgba(102,126,234,0.25) 0%, rgba(118,75,162,0.25) 100%);
+			color: #fff;
+			box-shadow: 0 4px 20px rgba(102,126,234,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+			font-weight: 600;
+		}
+		
+		.tab.active::before {
+			display: none;
+		}
+		
+		.content { 
+			max-width: 900px; 
+			margin: 0 auto;
+			animation: fadeIn 0.5s ease-out;
+		}
+		
+		.empty { 
+			text-align: center; 
+			padding: 80px 20px;
+			background: rgba(255,255,255,0.02);
+			border: 1px solid rgba(255,255,255,0.06);
+			border-radius: 24px;
+			backdrop-filter: blur(10px);
+			-webkit-backdrop-filter: blur(10px);
+		}
+		
+		.empty-icon {
+			font-size: 48px;
+			margin-bottom: 20px;
+			opacity: 0.3;
+		}
+		
+		.empty-text {
+			font-size: 18px;
+			color: rgba(255,255,255,0.5);
+			font-weight: 400;
+			line-height: 1.5;
+		}
+		
+		.empty-subtext {
+			font-size: 16px;
+			color: rgba(255,255,255,0.3);
+			margin-top: 8px;
+		}
+		
+		@keyframes fadeIn {
+			from {
+				opacity: 0;
+				transform: translateY(10px);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+		
+		/* Mobile responsiveness */
+		@media (max-width: 600px) {
+			h1 {
+				font-size: 28px;
+			}
+			
+			.tabs {
+				gap: 2px;
+				padding: 3px;
+			}
+			
+			.tab {
+				padding: 12px 10px;
+				font-size: 14px;
+			}
+			
+			.header {
+				margin-bottom: 30px;
+			}
+		}
 	</style>
 </head>
 <body>
-	<div class="header">
-		<a href="/imperia/control/menu.html" class="back-btn" aria-label="Back">←</a>
-		<h1>Routines</h1>
-		<div style="width:80px;"></div>
-	</div>
-	
-	<div class="tabs">
-		<a class="tab" href="/imperia/control/routines/setups/">Setups</a>
-		<a class="tab active" href="/imperia/control/routines/modules/">Modules</a>
-		<a class="tab" href="/imperia/control/routines/single-tricks/">Single Tricks</a>
-	</div>
-	
-	<div class="content">
-		<div class="empty">No modules yet. Add your first module soon.</div>
+	<div class="container">
+		<div class="header">
+			<a href="/imperia/control/menu.html" class="back-btn" aria-label="Back">←</a>
+			<h1>Routines</h1>
+		</div>
+		
+		<div class="tabs-container">
+			<div class="tabs">
+				<a class="tab" href="/imperia/control/routines/setups/">Setups</a>
+				<a class="tab active" href="/imperia/control/routines/modules/">Modules</a>
+				<a class="tab" href="/imperia/control/routines/tricks/">Tricks</a>
+			</div>
+		</div>
+		
+		<div class="content">
+			<div class="empty">
+				<div class="empty-icon">🔧</div>
+				<div class="empty-text">No modules yet</div>
+				<div class="empty-subtext">Add your first module soon</div>
+			</div>
+		</div>
 	</div>
 </body>
 </html>

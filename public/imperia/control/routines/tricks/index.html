@@ -166,11 +166,23 @@
 			-webkit-backdrop-filter: blur(10px);
 		}
 		
+		.empty-icon {
+			font-size: 48px;
+			margin-bottom: 20px;
+			opacity: 0.3;
+		}
+		
 		.empty-text {
 			font-size: 18px;
 			color: rgba(255,255,255,0.5);
 			font-weight: 400;
 			line-height: 1.5;
+		}
+		
+		.empty-subtext {
+			font-size: 16px;
+			color: rgba(255,255,255,0.3);
+			margin-top: 8px;
 		}
 		
 		@keyframes fadeIn {
@@ -215,22 +227,19 @@
 		
 		<div class="tabs-container">
 			<div class="tabs">
-				<a class="tab active" href="/imperia/control/routines/setups/">Setups</a>
+				<a class="tab" href="/imperia/control/routines/setups/">Setups</a>
 				<a class="tab" href="/imperia/control/routines/modules/">Modules</a>
-				<a class="tab" href="/imperia/control/routines/tricks/">Tricks</a>
+				<a class="tab active" href="/imperia/control/routines/tricks/">Tricks</a>
 			</div>
 		</div>
 		
 		<div class="content">
 			<div class="empty">
-				<div class="empty-text">Choose a category to get started</div>
+				<div class="empty-icon">✨</div>
+				<div class="empty-text">No tricks yet</div>
+				<div class="empty-subtext">Add your first trick soon</div>
 			</div>
 		</div>
-		
-		<script>
-			// Optional: Auto-redirect to Setups for now
-			window.location.replace('/imperia/control/routines/setups/');
-		</script>
 	</div>
 </body>
 </html>
