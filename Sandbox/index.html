@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stoppuhr</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <div class="time-display" id="display">00:00,00</div>
+    <div class="controls">
+      <button id="leftBtn" class="btn secondary" disabled>Runde</button>
+      <button id="rightBtn" class="btn primary">Start</button>
+    </div>
+    <ul id="laps" class="laps" aria-live="polite"></ul>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
