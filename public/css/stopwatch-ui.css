@@ -77,7 +77,7 @@ body {
 	margin: 16px 0 8px;
 }
 
-.laps-container { padding: 8px 0; }
+.laps-container { padding: 8px 0; max-height: 40vh; overflow-y: auto; }
 .lap-item {
 	display: flex;
 	justify-content: space-between;

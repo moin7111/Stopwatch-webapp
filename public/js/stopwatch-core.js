@@ -168,10 +168,15 @@
 		_renderLaps(){
 			if (!this.ui.lapsContainer) return;
 			this.ui.lapsContainer.innerHTML = '';
-			this.laps.slice().reverse().forEach((ms, idx) => {
+			// Render newest first, show both lap duration and total time
+			const totalLaps = this.laps.length;
+			this.laps.slice().reverse().forEach((totalMs, reverseIdx) => {
+				const originalIdx = totalLaps - reverseIdx - 1;
+				const prevTotal = originalIdx > 0 ? this.laps[originalIdx - 1] : 0;
+				const lapMs = Math.max(0, totalMs - prevTotal);
 				const el = document.createElement('div');
 				el.className = 'lap-item';
-				el.innerHTML = `<div>#${this.laps.length - idx}</div><div>${this._formatMs(ms)}</div>`;
+				el.innerHTML = `<div>#${originalIdx + 1}</div><div>${this._formatMs(lapMs)} | ${this._formatMs(totalMs)}</div>`;
 				this.ui.lapsContainer.appendChild(el);
 			});
 		}
