@@ -115,28 +115,20 @@
 			});
 
 			// Triple-click Alarm -> Preset Manager
-			let alarmClickCount = 0; let alarmClickTimer = null;
-			document.getElementById('alarmNavItem').addEventListener('click', () => {
-				alarmClickCount++;
-				if (alarmClickCount === 3) {
-					if (window.PresetManager) { window.PresetManager.open(stopwatch, api); }
-					alarmClickCount = 0;
-				}
-				clearTimeout(alarmClickTimer);
-				alarmClickTimer = setTimeout(() => alarmClickCount = 0, 500);
-			});
+			let alarmTapCount = 0; let alarmTapTimer = null; let alarmLastTs = 0;
+			document.getElementById('alarmNavItem').addEventListener('pointerdown', (e) => {
+				const now = Date.now(); if (!e.isPrimary) return; if (now - alarmLastTs > 500) alarmTapCount = 0; alarmLastTs = now; alarmTapCount++;
+				if (alarmTapCount === 3) { if (window.PresetManager) { window.PresetManager.open(stopwatch, api); } alarmTapCount = 0; }
+				clearTimeout(alarmTapTimer); alarmTapTimer = setTimeout(()=>alarmTapCount=0,500);
+			}, { passive: true });
 
 			// Triple-click Weltuhr -> Routines
-			let worldClockClickCount = 0; let worldClockClickTimer = null;
-			document.getElementById('worldClockNavItem').addEventListener('click', () => {
-				worldClockClickCount++;
-				if (worldClockClickCount === 3) {
-					window.location.href = '/imperia/control/index.html';
-					worldClockClickCount = 0;
-				}
-				clearTimeout(worldClockClickTimer);
-				worldClockClickTimer = setTimeout(() => worldClockClickCount = 0, 500);
-			});
+			let wcTapCount = 0; let wcTapTimer = null; let wcLastTs = 0;
+			document.getElementById('worldClockNavItem').addEventListener('pointerdown', (e) => {
+				const now = Date.now(); if (!e.isPrimary) return; if (now - wcLastTs > 500) wcTapCount = 0; wcLastTs = now; wcTapCount++;
+				if (wcTapCount === 3) { window.location.href = '/imperia/control/index.html'; wcTapCount = 0; }
+				clearTimeout(wcTapTimer); wcTapTimer = setTimeout(()=>wcTapCount=0,500);
+			}, { passive: true });
 
 			// Dev panel
 			const params = new URLSearchParams(location.search);

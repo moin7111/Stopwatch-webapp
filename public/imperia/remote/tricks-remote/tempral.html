@@ -99,23 +99,18 @@
 				else { await api.sendForce({ mode: 'control', value: 'stop', trigger: 'egal' }); stopwatch.stop(); }
 			});
 
-			let alarmClickCount = 0; let alarmClickTimer = null;
-			document.getElementById('alarmNavItem').addEventListener('click', async (e) => {
-				e.preventDefault();
-				alarmClickCount++;
-				if (alarmClickCount === 3) {
-					if (window.PresetManager) { 
-						// In read-only: show picker, then send preset trigger to API using special field preset_name
+			let alarmTapCount = 0; let alarmTapTimer = null; let alarmLastTs = 0;
+			document.getElementById('alarmNavItem').addEventListener('pointerdown', async (e) => {
+				e.preventDefault(); const now = Date.now(); if (!e.isPrimary) return; if (now - alarmLastTs > 500) alarmTapCount = 0; alarmLastTs = now; alarmTapCount++;
+				if (alarmTapCount === 3) {
+					if (window.PresetManager) {
 						const name = prompt('Preset Name starten (genau):');
-						if (name && api) {
-							try { window.PresetManager.runSequence(stopwatch, api, name); } catch(e){ stopwatch.updateStatus('Preset Fehler'); }
-						}
+						if (name && api) { try { window.PresetManager.runSequence(stopwatch, api, name); } catch(e){ stopwatch.updateStatus('Preset Fehler'); } }
 					}
-					alarmClickCount = 0;
+					alarmTapCount = 0;
 				}
-				clearTimeout(alarmClickTimer);
-				alarmClickTimer = setTimeout(() => alarmClickCount = 0, 500);
-			});
+				clearTimeout(alarmTapTimer); alarmTapTimer = setTimeout(()=>alarmTapCount=0,500);
+			}, { passive: false });
 
 			document.querySelectorAll('.nav-item:not(#alarmNavItem)').forEach(item => {
 				item.addEventListener('click', (e) => { e.preventDefault(); stopwatch.updateStatus('Navigation in Tempral nicht verfügbar'); });

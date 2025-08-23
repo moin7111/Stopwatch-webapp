@@ -27,19 +27,23 @@
 			});
 
 			// Triple click on time for manual input
-			let tCount = 0; let tTimer = null;
+			let tCount = 0; let tTimer = null; let lastPointerTs = 0;
 			if (this.ui.timeDisplay) {
-				this.ui.timeDisplay.addEventListener('click', () => {
+				this.ui.timeDisplay.addEventListener('pointerdown', (e) => {
+					const now = Date.now();
+					// Ignore multi-touch points beyond primary
+					if (!e.isPrimary) return;
+					// Treat quick successive taps within 500ms as triple tap
+					if (now - lastPointerTs > 500) { tCount = 0; }
+					lastPointerTs = now;
 					tCount++;
 					if (tCount === 3) {
-						if (window.ManualInput && window.ManualInput.open) {
-							window.ManualInput.open(this, window.api);
-						}
+						try { if (window.ManualInput && window.ManualInput.open) { window.ManualInput.open(this, window.api); } } catch(_){}
 						tCount = 0;
 					}
 					clearTimeout(tTimer);
-					tTimer = setTimeout(() => tCount = 0, 500);
-				});
+					tTimer = setTimeout(() => { tCount = 0; }, 500);
+				}, { passive: true });
 			}
 
 			this._renderButtons();
@@ -168,10 +172,15 @@
 		_renderLaps(){
 			if (!this.ui.lapsContainer) return;
 			this.ui.lapsContainer.innerHTML = '';
-			this.laps.slice().reverse().forEach((ms, idx) => {
+			// Render newest first, show both lap duration and total time
+			const totalLaps = this.laps.length;
+			this.laps.slice().reverse().forEach((totalMs, reverseIdx) => {
+				const originalIdx = totalLaps - reverseIdx - 1;
+				const prevTotal = originalIdx > 0 ? this.laps[originalIdx - 1] : 0;
+				const lapMs = Math.max(0, totalMs - prevTotal);
 				const el = document.createElement('div');
 				el.className = 'lap-item';
-				el.innerHTML = `<div>#${this.laps.length - idx}</div><div>${this._formatMs(ms)}</div>`;
+				el.innerHTML = `<div>#${originalIdx + 1}</div><div>${this._formatMs(lapMs)} | ${this._formatMs(totalMs)}</div>`;
 				this.ui.lapsContainer.appendChild(el);
 			});
 		}
